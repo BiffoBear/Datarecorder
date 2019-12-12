@@ -98,11 +98,15 @@ if __name__ == '__main__':
         radio = hardware.Radio()
     else:
         radio = unittest_helper.Radio()
+        radio.set_realism()
     thread = init_data_processing_thread()
-    for x in range(10):
-        radio_q.put(unittest_helper.dummy_radio_data)
+    for x in range(100):
+        y = check_for_radio_data(radio)
+        if y is not None:
+            radio_q.put(y)
     radio_q.join()
-    print(unittest_helper.count_all_records() // 9)
-    print(unittest_helper.count_all_records() % 9)
+    z = radio.get_stats()
+    print(f'Packets written: {unittest_helper.count_all_records() // 9}')
+    print(f'Packets sent   : {len(z) - z.count(None)}')
 #    print(f'Missing Packets: {unittest_helper.check_for_gaps()}')
     unittest_helper.kill_database()

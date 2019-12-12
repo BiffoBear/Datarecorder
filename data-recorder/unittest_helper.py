@@ -9,6 +9,8 @@ from datetime import datetime
 import struct
 import database
 import radiodata
+import random
+import time
 
 global_test_time  = datetime(2019, 12, 10, 21, 45, 56)
 dummy_data = (0x0a, 0x0a, 0x0a0a, 0xf0f0, 0xaa, 0xbb,
@@ -26,14 +28,37 @@ sensor_count = 10
 class Radio():
     
     def __init__(self):
-        pass
+        self.realism = False
+        self.packets_returned = []
+        self.packet_serial_number = 0
     
     def get_buffer(self):
-        return rx_data_CRC_good
+        if self.realism:
+            time.sleep(random.random())
+            if random.random() < 0.2:
+                self.packets_returned.append(None)
+                return None
+        self.packet_serial_number += 1    
+        self.packets_returned.append(self.packet_serial_number)
+        return radiodata.append_crc(dummy_buffer_data_with_serial_number(self.packet_serial_number))
+    
+    def set_realism(self, realistic=True):
+        self.realism = realistic
+        
+    def get_stats(self):
+        return self.packets_returned
+
+
+def dummy_buffer_data_with_serial_number(sn):
+    x = list(dummy_data)
+    x[2] = sn
+    return struct.pack(radiodata.radio_data_format, *x)
 
 
 def dummy_radio_data():
     return struct.pack(radiodata.radio_data_format, *dummy_data)
+    # TODO: check where this is used and whether it is used as raw buffer data
+    # TODO: refactor to dummy_radio_struct_data
 
 
 def dummy_unpacked_data():    
