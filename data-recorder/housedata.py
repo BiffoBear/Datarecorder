@@ -6,6 +6,7 @@ Created on Tue Dec  3 10:39:49 2019
 @author: martinstephens
 """
 import threading
+import queue
 import time
 from datetime import datetime
 import struct
@@ -13,7 +14,9 @@ import hardware
 import database
 import radiodata
 import unittest_helper
+from __config__ import TESTING
 
+radio_q = queue.Queue()
 
 def check_for_radio_data(radio_to_check):
     """Returns the result of a Radio's get_buffer method as a dict with a timestamp.
@@ -21,10 +24,10 @@ def check_for_radio_data(radio_to_check):
     Arguments:
         radio -- an instance of class Radio.
         """
-    buffer_data = radiodata.read_radio_buffer(radio_to_check)
-    if buffer_data is not None:
-        return {'timestamp': datetime.utcnow(), 'radio_data': buffer_data}
-    return None
+    return radiodata.read_radio_buffer(radio_to_check)
+#    if buffer_data is not None:
+#        return {'timestamp': datetime.utcnow(), 'radio_data': buffer_data}
+#    return None
 
 
 def unpack_data_packet(format_string, data_packet):
@@ -60,38 +63,56 @@ def check_for_duplicate_packet(node_data):
     return True
 
 
-def process_radio_data(data_to_process, db_write_lock):
-    '''Receives a data packet, checks that it is new, then writes it to the database.'''
-    unpacked_data = unpack_data_packet(radiodata.radio_data_format, data_to_process)
+def process_radio_data():
+    '''Gets a data packet, checks that it is new, then writes it to the database.'''
+    global radio_q
+    received_data = {'timestamp': datetime.utcnow(), 'radio_data': radio_q.get()}
+    unpacked_data = unpack_data_packet(radiodata.radio_data_format, received_data)
     expanded_data = expand_radio_data_into_dict(unpacked_data)
-    with db_write_lock:
-        if not check_for_duplicate_packet(expanded_data['node']):
-            database.write_sensor_reading_to_db(expanded_data['sensors'])
+    if not check_for_duplicate_packet(expanded_data['node']):
+        database.write_sensor_reading_to_db(expanded_data['sensors'])
+    radio_q.task_done()
 
 
-def check_radio_buffer_and_spawn_thread_if_required(rx_radio, lock_db):
-    '''Checks the radio queue and hands off any data to a thread for processing.'''
-    data_packet = check_for_radio_data(rx_radio)
-    if data_packet is not None:
-        db_thread = threading.Thread(target=process_radio_data, args=[data_packet, lock_db],
-                                     name='db_thread')
-        db_thread.start()
+def add_data_to_queue(data_packet):
+    global radio_q
+    radio_q.put(data_packet)
+
+
+def init_data_processing_thread():
+    thread = threading.Thread(target=loop_process_radio_data)
+    thread.daemon = True
+    thread.start()
+    return thread
+
+
+def loop_process_radio_data():
+    while True:
+        process_radio_data()
 
 
 if __name__ == '__main__':
     DB_URL = 'postgresql://pi:blueberry@localhost:5432/housedata'
     database.initialize_database(DB_URL)
-    lock = threading.Lock()
-    radio = hardware.Radio()
-    start_time = time.time()
+    if not TESTING:
+        radio = hardware.Radio()
+    else:
+        radio = unittest_helper.Radio()
+        radio.set_realism()
+    thread = init_data_processing_thread()
+    finish_time = time.time() + 15
     try:
-        while time.time() < start_time + 320:
-            check_radio_buffer_and_spawn_thread_if_required(radio, lock)
-    except KeyboardInterrupt:
-        print('bye')
+#        for x in range(100):
+        while time.time() < finish_time:
+            y = check_for_radio_data(radio)
+            if y is not None:
+                radio_q.put(y)
+        radio_q.join()
+        z = radio.get_stats()
+        print(f'Packets written: {unittest_helper.count_all_records() // 9}')
+        print(f"Packets sent   : {radio.get_stats()['packets']}")
+    #    print(f'Missing Packets: {unittest_helper.check_for_gaps()}')
+    except Exception as e:
+        raise e
     finally:
-        time.sleep(2)
-        print(unittest_helper.count_all_records() // 9)
-        print(unittest_helper.count_all_records() % 9)
-        print(f'Missing Packets: {unittest_helper.check_for_gaps()}')
         unittest_helper.kill_database()

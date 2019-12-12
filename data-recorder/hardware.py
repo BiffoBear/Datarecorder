@@ -24,7 +24,15 @@ class Radio():
         except RuntimeError:
             print(f'Oops')
         self._rfm69.encryption_key = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
+        self.packets_returned = 0
+        self.buffer_read_count = 0
     
     def get_buffer(self):
+        x = self._rfm69.receive()
+        self.buffer_read_count += 1
+        if x is not None:
+            self.packets_returned +=1
         return self._rfm69.receive()
     
+    def get_stats(self):
+        return {'reads': self.buffer_read_count, 'packets': self.packets_returned}

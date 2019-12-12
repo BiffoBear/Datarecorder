@@ -7,8 +7,6 @@ Created on Tue Dec  3 10:36:28 2019
 """
 from unittest import TestCase, skip
 from unittest.mock import patch
-from threading import Lock
-from datetime import datetime
 import threading
 import housedata
 import radiodata
@@ -24,14 +22,11 @@ class TestDataReading(TestCase):
         radiodata.read_radio_buffer.return_value = None
         self.assertEqual(housedata.check_for_radio_data(radio), None)      
 
-    def test_check_radio_data_returns_a_dict_with_correct_keys_and_data(self, _):
+    def test_check_radio_data_returns_correct_data(self, _):
         radio = None
+        housedata.check_for_radio_data(radio)
         radiodata.read_radio_buffer.return_value='Some radio data'
-        x = housedata.check_for_radio_data(radio)
-        self.assertIsInstance(x, dict)
-        self.assertEqual(list(x), ['timestamp', 'radio_data'])
-        self.assertIsInstance(x['timestamp'], type(unittest_helper.global_test_time))
-        self.assertEqual(x['radio_data'], 'Some radio data')
+        self.assertEqual(housedata.check_for_radio_data(radio), 'Some radio data')
 
 
 #@skip
@@ -42,8 +37,9 @@ class TestDataPrep(TestCase):
                                                          unittest_helper.dummy_unpacked_data())
         self.assertEqual(len(decoded_data['radio_data']), len(unittest_helper.dummy_data))
         self.assertEqual(decoded_data['timestamp'], unittest_helper.global_test_time)
-        for x in zip(decoded_data['radio_data'], unittest_helper.dummy_data):
-            self.assertAlmostEqual(x[0], x[1], places=2)
+        [self.assertAlmostEqual(x[0], x[1], places=2) for x in zip(decoded_data['radio_data'],
+                                                                   unittest_helper.dummy_data)]
+
                         
     def test_data_munged_correctly(self):
         test_data = {'timestamp': unittest_helper.global_test_time,
@@ -96,35 +92,32 @@ class TestReadRadioAndWriteDataToDataBase(TestCase):
     
     def test_read_radio_process_data_write_to_db(self):
         unittest_helper.initialize_database(db_in_memory=True)
-        lock = Lock()
         initial = unittest_helper.count_all_records()
-        housedata.process_radio_data(unittest_helper.dummy_unpacked_data(), lock)
+        test_data = [unittest_helper.dummy_radio_data(),
+                     unittest_helper.dummy_radio_data()]
+        [housedata.add_data_to_queue(x) for x in test_data]
+        housedata.process_radio_data()
         final = unittest_helper.count_all_records()
         self.assertEqual(final, initial + 9)
         # shouldn't write twice with duplicate data packets
-        housedata.process_radio_data(unittest_helper.dummy_unpacked_data(), lock)
+        housedata.process_radio_data()
         final = unittest_helper.count_all_records()
         self.assertEqual(final, initial + 9)
         unittest_helper.kill_database()
 
-#@skip
-@patch('housedata.check_for_radio_data')
-@patch('threading.Thread')
-class TestThreading(TestCase):
-        
-    def test_threading_not_called_if_radio_buffer_is_empty(self, _a, _b):
-        radio = None
-        lock = None
-        housedata.check_for_radio_data.return_value = None
-        housedata.check_radio_buffer_and_spawn_thread_if_required(radio, lock)
-        threading.Thread.assert_not_called()
-        
-    def test_threading_called_with_correct_args_if_buffer_is_full(self, _a, _b):
-        radio = None
-        lock = None
-        housedata.check_for_radio_data.return_value = 'Not None'
-        housedata.check_radio_buffer_and_spawn_thread_if_required(radio, lock)
-        threading.Thread.assert_called_once_with(target=housedata.process_radio_data, args=['Not None', lock],
-                                 name='db_thread')
-        # TODO: Work out how to confirm that the thread was started        
-        
+
+class TestQueue(TestCase):
+    
+    def test_add_data_to_queue_writes_to_radio_q(self):
+        test_data = ['hello queue', 'goodbye queue']
+        [housedata.add_data_to_queue(x) for x in test_data]
+        [self.assertEqual(housedata.radio_q.get_nowait(), x) for x in test_data]
+
+
+class TestThreadingWithQueue(TestCase):
+    
+    def test_thread_spawned(self):
+        thread = housedata.init_data_processing_thread()
+        self.assertIsInstance(thread, threading.Thread)
+        self.assertTrue(thread.daemon)
+        self.assertTrue(thread.ident)
