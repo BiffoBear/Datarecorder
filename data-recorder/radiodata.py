@@ -34,7 +34,6 @@ def crc16(data):
     # Modifed from a stackoverflow answer at https://stackoverflow.com/a/55850496/7969814
     crc = 0xFFFF
     for i in range(len(data)):
-        print(i)
         crc ^= data[i] << 8
         for _ in range(8):
             if (crc & 0x8000) > 0:
