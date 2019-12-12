@@ -6,6 +6,7 @@ Created on Tue Dec  3 10:39:49 2019
 @author: martinstephens
 """
 import threading
+import queue
 import time
 from datetime import datetime
 import struct
@@ -14,6 +15,7 @@ import database
 import radiodata
 import unittest_helper
 
+radio_q = queue.Queue()
 
 def check_for_radio_data(radio_to_check):
     """Returns the result of a Radio's get_buffer method as a dict with a timestamp.
@@ -60,22 +62,27 @@ def check_for_duplicate_packet(node_data):
     return True
 
 
-def process_radio_data(data_to_process, db_write_lock):
+def process_radio_data():
     '''Receives a data packet, checks that it is new, then writes it to the database.'''
-    unpacked_data = unpack_data_packet(radiodata.radio_data_format, data_to_process)
+    global radio_q
+    unpacked_data = unpack_data_packet(radiodata.radio_data_format, radio_q.get())
     expanded_data = expand_radio_data_into_dict(unpacked_data)
-    with db_write_lock:
-        if not check_for_duplicate_packet(expanded_data['node']):
-            database.write_sensor_reading_to_db(expanded_data['sensors'])
+    if not check_for_duplicate_packet(expanded_data['node']):
+        database.write_sensor_reading_to_db(expanded_data['sensors'])
+    radio_q.task_done()
 
 
-def check_radio_buffer_and_spawn_thread_if_required(rx_radio, lock_db):
-    '''Checks the radio queue and hands off any data to a thread for processing.'''
-    data_packet = check_for_radio_data(rx_radio)
-    if data_packet is not None:
-        db_thread = threading.Thread(target=process_radio_data, args=[data_packet, lock_db],
-                                     name='db_thread')
-        db_thread.start()
+def add_data_to_queue(data_packet):
+    global radio_q
+    radio_q.put(data_packet)
+
+#def check_radio_buffer_and_spawn_thread_if_required(rx_radio, lock_db):
+#    '''Checks the radio queue and hands off any data to a thread for processing.'''
+#    data_packet = check_for_radio_data(rx_radio)
+#    if data_packet is not None:
+#        db_thread = threading.Thread(target=process_radio_data, args=[data_packet, lock_db],
+#                                     name='db_thread')
+#        db_thread.start()
 
 
 if __name__ == '__main__':

@@ -96,35 +96,46 @@ class TestReadRadioAndWriteDataToDataBase(TestCase):
     
     def test_read_radio_process_data_write_to_db(self):
         unittest_helper.initialize_database(db_in_memory=True)
-        lock = Lock()
         initial = unittest_helper.count_all_records()
-        housedata.process_radio_data(unittest_helper.dummy_unpacked_data(), lock)
+        test_data = [unittest_helper.dummy_unpacked_data(),
+                     unittest_helper.dummy_unpacked_data()]
+        [housedata.add_data_to_queue(x) for x in test_data]
+        housedata.process_radio_data()
         final = unittest_helper.count_all_records()
         self.assertEqual(final, initial + 9)
         # shouldn't write twice with duplicate data packets
-        housedata.process_radio_data(unittest_helper.dummy_unpacked_data(), lock)
+        housedata.process_radio_data()
         final = unittest_helper.count_all_records()
         self.assertEqual(final, initial + 9)
         unittest_helper.kill_database()
 
-#@skip
-@patch('housedata.check_for_radio_data')
-@patch('threading.Thread')
-class TestThreading(TestCase):
-        
-    def test_threading_not_called_if_radio_buffer_is_empty(self, _a, _b):
-        radio = None
-        lock = None
-        housedata.check_for_radio_data.return_value = None
-        housedata.check_radio_buffer_and_spawn_thread_if_required(radio, lock)
-        threading.Thread.assert_not_called()
-        
-    def test_threading_called_with_correct_args_if_buffer_is_full(self, _a, _b):
-        radio = None
-        lock = None
-        housedata.check_for_radio_data.return_value = 'Not None'
-        housedata.check_radio_buffer_and_spawn_thread_if_required(radio, lock)
-        threading.Thread.assert_called_once_with(target=housedata.process_radio_data, args=['Not None', lock],
-                                 name='db_thread')
-        # TODO: Work out how to confirm that the thread was started        
-        
+
+class TestQueue(TestCase):
+    
+    def test_add_data_to_queue_writes_to_radio_q(self):
+        test_data = ['hello queue', 'goodbye queue']
+        [housedata.add_data_to_queue(x) for x in test_data]
+        [self.assertEqual(housedata.radio_q.get_nowait(), x) for x in test_data]
+
+
+##@skip
+#@patch('housedata.check_for_radio_data')
+#@patch('threading.Thread')
+#class TestThreading(TestCase):
+#        
+#    def test_threading_not_called_if_radio_buffer_is_empty(self, _a, _b):
+#        radio = None
+#        lock = None
+#        housedata.check_for_radio_data.return_value = None
+#        housedata.check_radio_buffer_and_spawn_thread_if_required(radio, lock)
+#        threading.Thread.assert_not_called()
+#        
+#    def test_threading_called_with_correct_args_if_buffer_is_full(self, _a, _b):
+#        radio = None
+#        lock = None
+#        housedata.check_for_radio_data.return_value = 'Not None'
+#        housedata.check_radio_buffer_and_spawn_thread_if_required(radio, lock)
+#        threading.Thread.assert_called_once_with(target=housedata.process_radio_data, args=['Not None', lock],
+#                                 name='db_thread')
+#        # TODO: Work out how to confirm that the thread was started        
+#        
