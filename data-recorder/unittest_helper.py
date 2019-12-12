@@ -23,6 +23,15 @@ first_sensor_offset = 6
 sensor_count = 10
 
 
+class Radio():
+    
+    def __init__(self):
+        pass
+    
+    def get_buffer(self):
+        return rx_data_CRC_good
+
+
 def dummy_radio_data():
     return struct.pack(radiodata.radio_data_format, *dummy_data)
 

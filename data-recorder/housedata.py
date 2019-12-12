@@ -14,6 +14,7 @@ import hardware
 import database
 import radiodata
 import unittest_helper
+from __config__ import TESTING
 
 radio_q = queue.Queue()
 
@@ -23,10 +24,10 @@ def check_for_radio_data(radio_to_check):
     Arguments:
         radio -- an instance of class Radio.
         """
-    buffer_data = radiodata.read_radio_buffer(radio_to_check)
-    if buffer_data is not None:
-        return {'timestamp': datetime.utcnow(), 'radio_data': buffer_data}
-    return None
+    return radiodata.read_radio_buffer(radio_to_check)
+#    if buffer_data is not None:
+#        return {'timestamp': datetime.utcnow(), 'radio_data': buffer_data}
+#    return None
 
 
 def unpack_data_packet(format_string, data_packet):
@@ -65,7 +66,8 @@ def check_for_duplicate_packet(node_data):
 def process_radio_data():
     '''Gets a data packet, checks that it is new, then writes it to the database.'''
     global radio_q
-    unpacked_data = unpack_data_packet(radiodata.radio_data_format, radio_q.get())
+    received_data = {'timestamp': datetime.utcnow(), 'radio_data': radio_q.get()}
+    unpacked_data = unpack_data_packet(radiodata.radio_data_format, received_data)
     expanded_data = expand_radio_data_into_dict(unpacked_data)
     if not check_for_duplicate_packet(expanded_data['node']):
         database.write_sensor_reading_to_db(expanded_data['sensors'])
@@ -92,7 +94,10 @@ def loop_process_radio_data():
 if __name__ == '__main__':
     DB_URL = 'postgresql://pi:blueberry@localhost:5432/housedata'
     database.initialize_database(DB_URL)
-    radio = hardware.Radio()
+    if not TESTING:
+        radio = hardware.Radio()
+    else:
+        radio = unittest_helper.Radio()
     thread = init_data_processing_thread()
     for x in range(10):
         radio_q.put(unittest_helper.dummy_radio_data)
