@@ -29,25 +29,25 @@ class Radio():
     
     def __init__(self):
         self.realism = False
-        self.packets_returned = []
+        self.packets_returned = 0
+        self.buffer_read_count = 0
         self.packet_serial_number = 0
     
     def get_buffer(self):
+        self.buffer_read_count += 1
         if self.realism:
             time.sleep(random.random())
             if random.random() < 0.2:
-                self.packets_returned.append(None)
                 return None
         self.packet_serial_number += 1    
-        self.packets_returned.append(self.packet_serial_number)
+        self.packets_returned += 1
         return radiodata.append_crc(dummy_buffer_data_with_serial_number(self.packet_serial_number))
     
     def set_realism(self, realistic=True):
         self.realism = realistic
         
     def get_stats(self):
-        return self.packets_returned
-
+        return {'reads': self.buffer_read_count, 'packets': self.packets_returned}
 
 def dummy_buffer_data_with_serial_number(sn):
     x = list(dummy_data)
