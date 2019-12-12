@@ -37,8 +37,9 @@ class TestDataPrep(TestCase):
                                                          unittest_helper.dummy_unpacked_data())
         self.assertEqual(len(decoded_data['radio_data']), len(unittest_helper.dummy_data))
         self.assertEqual(decoded_data['timestamp'], unittest_helper.global_test_time)
-        for x in zip(decoded_data['radio_data'], unittest_helper.dummy_data):
-            self.assertAlmostEqual(x[0], x[1], places=2)
+        [self.assertAlmostEqual(x[0], x[1], places=2) for x in zip(decoded_data['radio_data'],
+                                                                   unittest_helper.dummy_data)]
+
                         
     def test_data_munged_correctly(self):
         test_data = {'timestamp': unittest_helper.global_test_time,

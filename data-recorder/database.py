@@ -59,8 +59,7 @@ class Conversions(Base):
 def write_sensor_reading_to_db(data):
     '''Takes a dict with timestamp and a list of tuples of sensor_readings and writes them out to the database.'''
     s = session()
-    for reading in data['sensor_readings']:
-        s.add(SensorData(Timestamp_UTC=data['timestamp'], Sensor_ID=reading[0], Reading = reading[1]))
+    [s.add(SensorData(Timestamp_UTC=data['timestamp'], Sensor_ID=r[0], Reading=r[1])) for r in data['sensor_readings']]
     s.commit()
 
 
