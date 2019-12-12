@@ -63,7 +63,7 @@ def check_for_duplicate_packet(node_data):
 
 
 def process_radio_data():
-    '''Receives a data packet, checks that it is new, then writes it to the database.'''
+    '''Gets a data packet, checks that it is new, then writes it to the database.'''
     global radio_q
     unpacked_data = unpack_data_packet(radiodata.radio_data_format, radio_q.get())
     expanded_data = expand_radio_data_into_dict(unpacked_data)
@@ -76,29 +76,28 @@ def add_data_to_queue(data_packet):
     global radio_q
     radio_q.put(data_packet)
 
-#def check_radio_buffer_and_spawn_thread_if_required(rx_radio, lock_db):
-#    '''Checks the radio queue and hands off any data to a thread for processing.'''
-#    data_packet = check_for_radio_data(rx_radio)
-#    if data_packet is not None:
-#        db_thread = threading.Thread(target=process_radio_data, args=[data_packet, lock_db],
-#                                     name='db_thread')
-#        db_thread.start()
+
+def init_data_processing_thread():
+    thread = threading.Thread(target=loop_process_radio_data)
+    thread.daemon = True
+    thread.start()
+    return thread
+
+
+def loop_process_radio_data():
+    while True:
+        process_radio_data()
 
 
 if __name__ == '__main__':
     DB_URL = 'postgresql://pi:blueberry@localhost:5432/housedata'
     database.initialize_database(DB_URL)
-    lock = threading.Lock()
     radio = hardware.Radio()
-    start_time = time.time()
-    try:
-        while time.time() < start_time + 320:
-            check_radio_buffer_and_spawn_thread_if_required(radio, lock)
-    except KeyboardInterrupt:
-        print('bye')
-    finally:
-        time.sleep(2)
-        print(unittest_helper.count_all_records() // 9)
-        print(unittest_helper.count_all_records() % 9)
-        print(f'Missing Packets: {unittest_helper.check_for_gaps()}')
-        unittest_helper.kill_database()
+    thread = init_data_processing_thread()
+    for x in range(10):
+        radio_q.put(unittest_helper.dummy_radio_data)
+    radio_q.join()
+    print(unittest_helper.count_all_records() // 9)
+    print(unittest_helper.count_all_records() % 9)
+#    print(f'Missing Packets: {unittest_helper.check_for_gaps()}')
+    unittest_helper.kill_database()

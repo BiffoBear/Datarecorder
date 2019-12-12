@@ -7,8 +7,6 @@ Created on Tue Dec  3 10:36:28 2019
 """
 from unittest import TestCase, skip
 from unittest.mock import patch
-from threading import Lock
-from datetime import datetime
 import threading
 import housedata
 import radiodata
@@ -118,24 +116,10 @@ class TestQueue(TestCase):
         [self.assertEqual(housedata.radio_q.get_nowait(), x) for x in test_data]
 
 
-##@skip
-#@patch('housedata.check_for_radio_data')
-#@patch('threading.Thread')
-#class TestThreading(TestCase):
-#        
-#    def test_threading_not_called_if_radio_buffer_is_empty(self, _a, _b):
-#        radio = None
-#        lock = None
-#        housedata.check_for_radio_data.return_value = None
-#        housedata.check_radio_buffer_and_spawn_thread_if_required(radio, lock)
-#        threading.Thread.assert_not_called()
-#        
-#    def test_threading_called_with_correct_args_if_buffer_is_full(self, _a, _b):
-#        radio = None
-#        lock = None
-#        housedata.check_for_radio_data.return_value = 'Not None'
-#        housedata.check_radio_buffer_and_spawn_thread_if_required(radio, lock)
-#        threading.Thread.assert_called_once_with(target=housedata.process_radio_data, args=['Not None', lock],
-#                                 name='db_thread')
-#        # TODO: Work out how to confirm that the thread was started        
-#        
+class TestThreadingWithQueue(TestCase):
+    
+    def test_thread_spawned(self):
+        thread = housedata.init_data_processing_thread()
+        self.assertIsInstance(thread, threading.Thread)
+        self.assertTrue(thread.daemon)
+        self.assertTrue(thread.ident)
