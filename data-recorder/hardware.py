@@ -32,7 +32,7 @@ class Radio():
         self.buffer_read_count += 1
         if x is not None:
             self.packets_returned +=1
-        return self._rfm69.receive()
+        return x
     
     def get_stats(self):
         return {'reads': self.buffer_read_count, 'packets': self.packets_returned}
