@@ -16,11 +16,14 @@ import unittest_helper
 #@skip
 @patch('radiodata.read_radio_buffer')
 class TestDataReading(TestCase):
-    
+
     def test_when_radio_buffer_returns_none_then_check_radio_data_returns_none(self, _):
         radio = None
         radiodata.read_radio_buffer.return_value = None
-        self.assertEqual(housedata.check_for_radio_data(radio), None)      
+        with self.assertLogs() as cm:
+            self.assertEqual(housedata.check_for_radio_data(radio), None)
+        self.assertEqual(cm.output, ['DEBUG:housedata:check_for_radio_data called'])
+            
 
     def test_check_radio_data_returns_correct_data(self, _):
         radio = None
@@ -31,20 +34,24 @@ class TestDataReading(TestCase):
 
 #@skip
 class TestDataPrep(TestCase):
-    
+
     def test_struct_is_unpacked_correctly(self):
-        decoded_data = housedata.unpack_data_packet(radiodata.radio_data_format,
+        with self.assertLogs() as cm:
+            decoded_data = housedata.unpack_data_packet(radiodata.radio_data_format,
                                                          unittest_helper.dummy_unpacked_data())
+        self.assertEqual(cm.output, ['DEBUG:housedata:unpack_data_packet called'])
         self.assertEqual(len(decoded_data['radio_data']), len(unittest_helper.dummy_data))
         self.assertEqual(decoded_data['timestamp'], unittest_helper.global_test_time)
         [self.assertAlmostEqual(x[0], x[1], places=2) for x in zip(decoded_data['radio_data'],
                                                                    unittest_helper.dummy_data)]
 
-                        
+
     def test_data_munged_correctly(self):
         test_data = {'timestamp': unittest_helper.global_test_time,
                      'radio_data': unittest_helper.dummy_data}
-        data_returned = housedata.expand_radio_data_into_dict(test_data)
+        with self.assertLogs() as cm:
+            data_returned = housedata.expand_radio_data_into_dict(test_data)
+        self.assertEqual(cm.output, ['DEBUG:housedata:expand_radio_data_into_dict called'])
         self.assertIsInstance(data_returned, dict)
         self.assertIsInstance(data_returned['node'], dict)
         node_data = data_returned['node']
@@ -61,11 +68,13 @@ class TestDataPrep(TestCase):
 
 
 class CheckForRepeatPacket(TestCase):
-    
+
     def test_check_for_duplicate_packet_returns_true_and_dict_if_duplicate(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
         radiodata.last_packet_serial_number = {0x01: 0x1010,}
-        x = housedata.check_for_duplicate_packet(test_data)
+        with self.assertLogs() as cm:
+            x = housedata.check_for_duplicate_packet(test_data)
+        self.assertEqual(cm.output, ['DEBUG:housedata:check_for_duplicate_packet called'])
         self.assertIsInstance(x, bool)
         self.assertTrue(x)
         self.assertEqual(radiodata.last_packet_serial_number, {0x01: 0x1010,})
@@ -74,29 +83,31 @@ class CheckForRepeatPacket(TestCase):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
         radiodata.last_packet_serial_number = {0x01: 0x1011,}
         x  = housedata.check_for_duplicate_packet(test_data)
-        self.assertIsInstance(x, bool)        
+        self.assertIsInstance(x, bool)
         self.assertFalse(x)
         self.assertEqual(radiodata.last_packet_serial_number, {0x01: 0x1010})
-        
+
     def test_new_node_added_to_dict(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
         radiodata.last_packet_serial_number = {0x02: 0xffff}
         x  = housedata.check_for_duplicate_packet(test_data)
-        self.assertIsInstance(x, bool)        
+        self.assertIsInstance(x, bool)
         self.assertFalse(x)
         self.assertEqual(radiodata.last_packet_serial_number[0x01], 0x1010)
-        
-        
+
+
 #@skip
 class TestReadRadioAndWriteDataToDataBase(TestCase):
-    
+
     def test_read_radio_process_data_write_to_db(self):
         unittest_helper.initialize_database(db_in_memory=True)
         initial = unittest_helper.count_all_records()
         test_data = [unittest_helper.dummy_radio_data(),
                      unittest_helper.dummy_radio_data()]
         [housedata.add_data_to_queue(x) for x in test_data]
-        housedata.process_radio_data()
+        with self.assertLogs() as cm:
+            housedata.process_radio_data()
+        self.assertEqual(cm.output[0], 'DEBUG:housedata:process_radio_data called')
         final = unittest_helper.count_all_records()
         self.assertEqual(final, initial + 9)
         # shouldn't write twice with duplicate data packets
@@ -107,17 +118,22 @@ class TestReadRadioAndWriteDataToDataBase(TestCase):
 
 
 class TestQueue(TestCase):
-    
+
     def test_add_data_to_queue_writes_to_radio_q(self):
         test_data = ['hello queue', 'goodbye queue']
-        [housedata.add_data_to_queue(x) for x in test_data]
+        with self.assertLogs() as cm:
+            [housedata.add_data_to_queue(x) for x in test_data]
+        self.assertEqual(cm.output[0], 'DEBUG:housedata:add_data_to_queue called')
+        
         [self.assertEqual(housedata.radio_q.get_nowait(), x) for x in test_data]
 
 
 class TestThreadingWithQueue(TestCase):
-    
+
     def test_thread_spawned(self):
-        thread = housedata.init_data_processing_thread()
+        with self.assertLogs() as cm:
+            thread = housedata.init_data_processing_thread()
+        self.assertEqual(cm.output[0], 'DEBUG:housedata:init_data_processing_thread called')
         self.assertIsInstance(thread, threading.Thread)
         self.assertTrue(thread.daemon)
         self.assertTrue(thread.ident)

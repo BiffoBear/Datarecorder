@@ -6,6 +6,7 @@ Created on Tue Dec  3 10:39:49 2019
 @author: martinstephens
 """
 import threading
+import logging
 import queue
 import time
 from datetime import datetime
@@ -17,6 +18,9 @@ import unittest_helper
 from __config__ import TESTING
 
 radio_q = queue.Queue()
+logger = logging.getLogger(__name__)
+logger.setLevel('DEBUG')
+
 
 def check_for_radio_data(radio_to_check):
     """Returns the result of a Radio's get_buffer method as a dict with a timestamp.
@@ -24,20 +28,20 @@ def check_for_radio_data(radio_to_check):
     Arguments:
         radio -- an instance of class Radio.
         """
+    logger.debug(f'check_for_radio_data called')
     return radiodata.read_radio_buffer(radio_to_check)
-#    if buffer_data is not None:
-#        return {'timestamp': datetime.utcnow(), 'radio_data': buffer_data}
-#    return None
 
 
 def unpack_data_packet(format_string, data_packet):
     '''Unpacks data using the supplied format string and returns it in a dict with the timestamp.'''
+    logger.debug(f'unpack_data_packet called')
     data_packet['radio_data'] = struct.unpack(format_string, data_packet['radio_data'])
     return data_packet
 
 
 def expand_radio_data_into_dict(data):
     '''Takes a tuple of unpacked radio data and splits it out into dictionaries.'''
+    logger.debug(f'expand_radio_data_into_dict called')
     readings = data['radio_data']
     munged_data = {'node': {'node_id': readings[0],
                             'pkt_serial': readings[2],
@@ -55,6 +59,7 @@ def expand_radio_data_into_dict(data):
 
 def check_for_duplicate_packet(node_data):
     '''Takes a data packet and checks whether the serial number exists already.'''
+    logger.debug(f'check_for_duplicate_packet called')
     node_id = node_data['node_id']
     new_packet_serial_number = node_data['pkt_serial']
     if radiodata.last_packet_serial_number.get(node_id) != new_packet_serial_number:
@@ -65,6 +70,7 @@ def check_for_duplicate_packet(node_data):
 
 def process_radio_data():
     '''Gets a data packet, checks that it is new, then writes it to the database.'''
+    logger.debug(f'process_radio_data called')
     global radio_q
     received_data = {'timestamp': datetime.utcnow(), 'radio_data': radio_q.get()}
     unpacked_data = unpack_data_packet(radiodata.radio_data_format, received_data)
@@ -75,11 +81,13 @@ def process_radio_data():
 
 
 def add_data_to_queue(data_packet):
+    logger.debug(f'add_data_to_queue called')
     global radio_q
     radio_q.put(data_packet)
 
 
 def init_data_processing_thread():
+    logger.debug(f'init_data_processing_thread called')
     thread = threading.Thread(target=loop_process_radio_data)
     thread.daemon = True
     thread.start()
@@ -87,6 +95,7 @@ def init_data_processing_thread():
 
 
 def loop_process_radio_data():
+    logger.debug(f'loop_process_radio_data called')
     while True:
         process_radio_data()
 
