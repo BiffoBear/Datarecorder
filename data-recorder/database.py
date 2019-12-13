@@ -5,11 +5,14 @@ Created on Sat Nov 30 07:17:01 2019
 
 @author: martinstephens
 """
-
+import logging
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from sqlalchemy.orm import sessionmaker
+
+logger = logging.getLogger(__name__)
+logger.setLevel('DEBUG')
 
 Base = declarative_base()
 
@@ -58,12 +61,14 @@ class Conversions(Base):
 
 def write_sensor_reading_to_db(data):
     '''Takes a dict with timestamp and a list of tuples of sensor_readings and writes them out to the database.'''
+    logger.debug(f'write_sensor_reading_to_db called')
     s = session()
     [s.add(SensorData(Timestamp_UTC=data['timestamp'], Sensor_ID=r[0], Reading=r[1])) for r in data['sensor_readings']]
     s.commit()
 
 
 def initialize_database(db_url):
+    logger.debug(f'initialize_database called')
     global Base, engine, session
     engine = create_engine(db_url)
     session = sessionmaker()
