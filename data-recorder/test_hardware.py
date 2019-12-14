@@ -19,7 +19,7 @@ class TestRadioSetup(TestCase):
     def test_radio_class_instatiation(self, mock_spi, mock_rfm69):
         with self.assertLogs() as cm:
             x = hardware.Radio()
-        self.assertEqual(cm.output, ['INFO:hardware:RFM69 radio initiated successfully'])
+        self.assertEqual(cm.output, ['INFO:hardware:RFM69 radio initialized successfully'])
         self.assertIsInstance(x, hardware.Radio)
 
     def test_correct_gpio_pins_are_set_for_radio(self, _x, _y):
@@ -40,7 +40,7 @@ class TestRadioSetup(TestCase):
         with self.assertLogs() as cm:
             with self.assertRaises(RuntimeError):
                 hardware.Radio()
-        self.assertEqual(cm.output, ['CRITICAL:hardware:RFM69 radio failed to initialize'])
+        self.assertEqual(cm.output, ['CRITICAL:hardware:RFM69 radio failed to initialize with RuntimeError'])
 
     def test_get_buffer_returns_correct_values_and_increments_counters(self, _x, _y):
         radio = hardware.Radio()
@@ -57,6 +57,15 @@ class TestRadioSetup(TestCase):
         self.assertEqual(y, 'data')
         self.assertEqual(radio._buffer_read_count, 2)
         self.assertEqual(radio._packets_returned, 1)
+        
+#    def test_radio_receive_failure_logs_a_critical_error(self, _x, _y):
+#        # Crashes the Spyder unittest module
+#        radio = hardware.Radio()
+#        radio._rfm69 = Mock()
+#        radio._rfm69.side_effect = RuntimeError
+#        with self.assertLogs() as cm:
+#            radio.get_buffer()
+#        self.assertEqual(cm.output, 'blah')
 
     def test_get_stats_returns_correct_values(self, _x, _y):
         radio = hardware.Radio()

@@ -7,6 +7,7 @@ Created on Sat Nov 30 07:17:26 2019
 """
 
 from unittest import TestCase, skip
+from unittest.mock import Mock, patch
 from sqlalchemy import inspect
 import database
 import unittest_helper
@@ -46,6 +47,10 @@ class TestDataBaseInitialization(TestCase):
             database.initialize_database('sqlite://')
         self.assertEqual(cm.output, ['DEBUG:database:initialize_database called'])
         self.assertNotEqual(database.engine, None)
+        
+    def test_failure_to_initialize_database_raises_critical_error(self):
+        pass
+        # TODO: Work out how to test this
 
 #@skip
 class TestWriteDataToDataBase(TestCase):
@@ -68,3 +73,13 @@ class TestWriteDataToDataBase(TestCase):
         database_records = [[t.Timestamp_UTC, t.Sensor_ID, t.Reading] for t in q]
         expected_result = [[test_time, x[0], x[1]] for x in test_data['sensor_readings']]
         self.assertEqual(database_records, expected_result)
+    
+
+    def test_db_write_failure_logs_critical_error_and_raises_error(self):
+        pass
+        # TODO: Work out how to mock this out properly
+#        mock_session.side_effect = IOError
+#        with self.assertLogs(level='CRITICAL') as cm:
+#            with self.assertRaises(IOError):
+#                database.write_sensor_reading_to_db('data')
+#        self.assertEqual(cm.output, 'blah')

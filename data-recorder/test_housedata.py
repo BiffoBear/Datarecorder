@@ -141,5 +141,6 @@ class TestThreadingWithQueue(TestCase):
 
 @skip        
 class TestLoggingInitialization(TestCase):
+    # TODO: Implement when I've worked out how to mock it all.
     pass
 #    housedata.initialize_logging()

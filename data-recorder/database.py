@@ -62,9 +62,13 @@ class Conversions(Base):
 def write_sensor_reading_to_db(data):
     '''Takes a dict with timestamp and a list of tuples of sensor_readings and writes them out to the database.'''
     logger.debug(f'write_sensor_reading_to_db called')
-    s = session()
-    [s.add(SensorData(Timestamp_UTC=data['timestamp'], Sensor_ID=r[0], Reading=r[1])) for r in data['sensor_readings']]
-    s.commit()
+    try:
+        s = session()
+        [s.add(SensorData(Timestamp_UTC=data['timestamp'], Sensor_ID=r[0], Reading=r[1])) for r in data['sensor_readings']]
+        s.commit()
+    except Exception as error:
+        logger.critical(f'IOError writing to database')
+        raise error
 
 
 def initialize_database(db_url):
