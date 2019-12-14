@@ -42,4 +42,5 @@ class Radio():
 
     def get_stats(self):
         '''Returns the radio buffer reads and packets received since the radio started up.'''
+        logger.debug('Radio.get_stats called')
         return {'reads': self._buffer_read_count, 'packets': self._packets_returned}

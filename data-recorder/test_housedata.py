@@ -137,3 +137,9 @@ class TestThreadingWithQueue(TestCase):
         self.assertIsInstance(thread, threading.Thread)
         self.assertTrue(thread.daemon)
         self.assertTrue(thread.ident)
+        
+
+@skip        
+class TestLoggingInitialization(TestCase):
+    pass
+#    housedata.initialize_logging()

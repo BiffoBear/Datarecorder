@@ -67,3 +67,6 @@ class TestRadioSetup(TestCase):
         radio.get_buffer()
         self.assertEqual(radio.get_stats(), {'reads': radio._buffer_read_count, 'packets': radio._packets_returned})
 
+    def test_logging_for_get_stats(self, _x, _y):
+        # Keeps crashing Spyder unittest module, so I gave up.
+        pass

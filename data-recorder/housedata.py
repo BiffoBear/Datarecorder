@@ -18,8 +18,9 @@ import unittest_helper
 from __config__ import TESTING
 
 radio_q = queue.Queue()
+
 logger = logging.getLogger(__name__)
-logger.setLevel('DEBUG')
+logger.setLevel('DEBUG')  # TODO: Refactor log level into __config.py__
 
 
 def check_for_radio_data(radio_to_check):
@@ -100,6 +101,27 @@ def loop_process_radio_data():
         process_radio_data()
 
 
+def initialize_logging():
+    # create file handler which logs even debug messages
+    # set up logging to file - see previous section for more details
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s: %(name)-12s: %(levelname)-8s: %(message)s',
+                        datefmt='%y-%m-%d %H:%M',
+                        filename='testing.log',  # '/temp/myapp.log',
+                        filemode='w')
+    # define a Handler which writes INFO messages or higher to the sys.stderr
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
+    # set a format which is simpler for console use
+    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    # tell the handler to use this format
+    console.setFormatter(formatter)
+    # add the handler to the root logger
+    logging.getLogger('').addHandler(console)
+    
+
+initialize_logging()
+    
 if __name__ == '__main__':
     DB_URL = 'postgresql://pi:blueberry@localhost:5432/housedata'
     database.initialize_database(DB_URL)
