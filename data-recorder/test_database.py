@@ -7,9 +7,9 @@ Created on Sat Nov 30 07:17:26 2019
 """
 
 from unittest import TestCase, skip
+from sqlalchemy import inspect
 import database
 import unittest_helper
-from sqlalchemy import inspect
 
 
 #@skip
