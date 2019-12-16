@@ -11,11 +11,9 @@ import queue
 import time
 from datetime import datetime
 import struct
-import hardware
-import database
-import radiodata
-import unittest_helper
-from __config__ import TESTING
+from datarecorder import hardware, database, radiodata
+from tests import unittest_helper
+from datarecorder.__config__ import TESTING
 
 radio_q = queue.Queue()
 
@@ -53,7 +51,7 @@ def expand_radio_data_into_dict(data):
                    }
     munged_data['sensors'] = {'timestamp': data['timestamp']}
     zipped_sensor_readings = list(zip(readings[radiodata.sensor_offset::2],
-                                      readings[radiodata.sensor_offset+1::2]))
+                                      readings[radiodata.sensor_offset + 1::2]))
     munged_data['sensors']['sensor_readings'] = [x for x in zipped_sensor_readings if x[0] != 0xff]
     return munged_data
 
@@ -107,7 +105,7 @@ def initialize_logging():
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s: %(name)-12s: %(levelname)-8s: %(message)s',
                         datefmt='%y-%m-%d %H:%M',
-                        filename='testing.log',  # '/temp/myapp.log',
+                        filename='../testing.log',  # '/temp/myapp.log',
                         filemode='w')
     # define a Handler which writes INFO messages or higher to the sys.stderr
     console = logging.StreamHandler()

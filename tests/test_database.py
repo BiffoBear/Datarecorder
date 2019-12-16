@@ -6,10 +6,10 @@ Created on Sat Nov 30 07:17:26 2019
 @author: martinstephens
 """
 
-from unittest import TestCase, skip
+from unittest import TestCase
 from sqlalchemy import inspect
-import database
-import unittest_helper
+from datarecorder import database
+from tests import unittest_helper
 
 
 #@skip
@@ -44,7 +44,8 @@ class TestDataBaseInitialization(TestCase):
         database.engine = None
         with self.assertLogs() as cm:
             database.initialize_database('sqlite://')
-        self.assertEqual(cm.output, ['DEBUG:database:initialize_database called', 'INFO:database:Database initialized'])
+        self.assertEqual(cm.output, ['DEBUG:datarecorder.database:initialize_database called',
+ 'INFO:datarecorder.database:Database initialized'])
         self.assertNotEqual(database.engine, None)
         
     def test_failure_to_initialize_database_raises_critical_error(self):
@@ -65,7 +66,7 @@ class TestWriteDataToDataBase(TestCase):
         test_data = {'timestamp': test_time, 'sensor_readings':[(0x01, 1.2345), (0x02, 2.3456)]}
         with self.assertLogs() as cm:
             database.write_sensor_reading_to_db(test_data)
-        self.assertEqual(cm.output, ['DEBUG:database:write_sensor_reading_to_db called'])
+        self.assertEqual(cm.output, ['DEBUG:datarecorder.database:write_sensor_reading_to_db called'])
         s = database.session()
         t = database.SensorData
         q = s.query(t).all()

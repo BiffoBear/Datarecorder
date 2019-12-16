@@ -8,11 +8,11 @@ Created on Fri Nov 22 10:23:09 2019
 from unittest import TestCase, skip
 from unittest.mock import Mock
 import struct
-import radiodata
-import unittest_helper
+from datarecorder import radiodata
+from tests import unittest_helper
 
 
-#@skip
+# @skip
 class TestDataReading(TestCase):
 
     def setUp(self):
@@ -23,15 +23,15 @@ class TestDataReading(TestCase):
         self.assertEqual(radiodata.read_radio_buffer(self.radio), None)
 
     def test_radio_data_returns_none_if_crc_is_bad(self):
-        self.radio.get_buffer.return_value=unittest_helper.rx_data_CRC_bad
+        self.radio.get_buffer.return_value= unittest_helper.rx_data_CRC_bad
         self.assertEqual(radiodata.read_radio_buffer(self.radio), None)
 
     def test_radio_data_returns_correct_data_if_crc_is_good(self):
-        self.radio.get_buffer.return_value=unittest_helper.rx_data_CRC_good
+        self.radio.get_buffer.return_value= unittest_helper.rx_data_CRC_good
         self.assertEqual(radiodata.read_radio_buffer(self.radio), unittest_helper.dummy_radio_data())
 
 
-#@skip
+# @skip
 class TestDecodeData(TestCase):
 
     def split_crc_result_into_bytes(self, crc_result):

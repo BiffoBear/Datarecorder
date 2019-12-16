@@ -7,8 +7,7 @@ Created on Thu Dec  5 14:25:40 2019
 """
 from datetime import datetime
 import struct
-import database
-import radiodata
+from datarecorder import database, radiodata
 import random
 import time
 

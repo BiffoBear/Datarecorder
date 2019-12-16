@@ -8,28 +8,27 @@ Created on Tue Dec  3 10:36:28 2019
 from unittest import TestCase, skip
 from unittest.mock import patch
 import threading
-import housedata
-import radiodata
-import unittest_helper
+from datarecorder import datarecorder, radiodata
+from tests import unittest_helper
 
 
-#@skip
-@patch('radiodata.read_radio_buffer')
+# @skip
+@patch('datarecorder.radiodata.read_radio_buffer')
 class TestDataReading(TestCase):
 
     def test_when_radio_buffer_returns_none_then_check_radio_data_returns_none(self, _):
         radio = None
         radiodata.read_radio_buffer.return_value = None
         with self.assertLogs() as cm:
-            self.assertEqual(housedata.check_for_radio_data(radio), None)
-        self.assertEqual(cm.output, ['DEBUG:housedata:check_for_radio_data called'])
+            self.assertEqual(datarecorder.check_for_radio_data(radio), None)
+        self.assertEqual(cm.output, ['DEBUG:datarecorder.datarecorder:check_for_radio_data called'])
             
 
     def test_check_radio_data_returns_correct_data(self, _):
         radio = None
-        housedata.check_for_radio_data(radio)
-        radiodata.read_radio_buffer.return_value='Some radio data'
-        self.assertEqual(housedata.check_for_radio_data(radio), 'Some radio data')
+        datarecorder.check_for_radio_data(radio)
+        radiodata.read_radio_buffer.return_value= 'Some radio data'
+        self.assertEqual(datarecorder.check_for_radio_data(radio), 'Some radio data')
 
 
 #@skip
@@ -37,9 +36,9 @@ class TestDataPrep(TestCase):
 
     def test_struct_is_unpacked_correctly(self):
         with self.assertLogs() as cm:
-            decoded_data = housedata.unpack_data_packet(radiodata.radio_data_format,
-                                                         unittest_helper.dummy_unpacked_data())
-        self.assertEqual(cm.output, ['DEBUG:housedata:unpack_data_packet called'])
+            decoded_data = datarecorder.unpack_data_packet(radiodata.radio_data_format,
+                                                           unittest_helper.dummy_unpacked_data())
+        self.assertEqual(cm.output, ['DEBUG:datarecorder.datarecorder:unpack_data_packet called'])
         self.assertEqual(len(decoded_data['radio_data']), len(unittest_helper.dummy_data))
         self.assertEqual(decoded_data['timestamp'], unittest_helper.global_test_time)
         [self.assertAlmostEqual(x[0], x[1], places=2) for x in zip(decoded_data['radio_data'],
@@ -50,8 +49,8 @@ class TestDataPrep(TestCase):
         test_data = {'timestamp': unittest_helper.global_test_time,
                      'radio_data': unittest_helper.dummy_data}
         with self.assertLogs() as cm:
-            data_returned = housedata.expand_radio_data_into_dict(test_data)
-        self.assertEqual(cm.output, ['DEBUG:housedata:expand_radio_data_into_dict called'])
+            data_returned = datarecorder.expand_radio_data_into_dict(test_data)
+        self.assertEqual(cm.output, ['DEBUG:datarecorder.datarecorder:expand_radio_data_into_dict called'])
         self.assertIsInstance(data_returned, dict)
         self.assertIsInstance(data_returned['node'], dict)
         node_data = data_returned['node']
@@ -71,18 +70,18 @@ class CheckForRepeatPacket(TestCase):
 
     def test_check_for_duplicate_packet_returns_true_and_dict_if_duplicate(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
-        radiodata.last_packet_serial_number = {0x01: 0x1010,}
+        radiodata.last_packet_serial_number = {0x01: 0x1010, }
         with self.assertLogs() as cm:
-            x = housedata.check_for_duplicate_packet(test_data)
-        self.assertEqual(cm.output, ['DEBUG:housedata:check_for_duplicate_packet called'])
+            x = datarecorder.check_for_duplicate_packet(test_data)
+        self.assertEqual(cm.output, ['DEBUG:datarecorder.datarecorder:check_for_duplicate_packet called'])
         self.assertIsInstance(x, bool)
         self.assertTrue(x)
-        self.assertEqual(radiodata.last_packet_serial_number, {0x01: 0x1010,})
+        self.assertEqual(radiodata.last_packet_serial_number, {0x01: 0x1010, })
 
     def test_check_for_duplicate_returns_false_and_updates_dict_if_not_duplicate(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
-        radiodata.last_packet_serial_number = {0x01: 0x1011,}
-        x  = housedata.check_for_duplicate_packet(test_data)
+        radiodata.last_packet_serial_number = {0x01: 0x1011, }
+        x  = datarecorder.check_for_duplicate_packet(test_data)
         self.assertIsInstance(x, bool)
         self.assertFalse(x)
         self.assertEqual(radiodata.last_packet_serial_number, {0x01: 0x1010})
@@ -90,7 +89,7 @@ class CheckForRepeatPacket(TestCase):
     def test_new_node_added_to_dict(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
         radiodata.last_packet_serial_number = {0x02: 0xffff}
-        x  = housedata.check_for_duplicate_packet(test_data)
+        x  = datarecorder.check_for_duplicate_packet(test_data)
         self.assertIsInstance(x, bool)
         self.assertFalse(x)
         self.assertEqual(radiodata.last_packet_serial_number[0x01], 0x1010)
@@ -104,14 +103,14 @@ class TestReadRadioAndWriteDataToDataBase(TestCase):
         initial = unittest_helper.count_all_records()
         test_data = [unittest_helper.dummy_radio_data(),
                      unittest_helper.dummy_radio_data()]
-        [housedata.add_data_to_queue(x) for x in test_data]
+        [datarecorder.add_data_to_queue(x) for x in test_data]
         with self.assertLogs() as cm:
-            housedata.process_radio_data()
-        self.assertEqual(cm.output[0], 'DEBUG:housedata:process_radio_data called')
+            datarecorder.process_radio_data()
+        self.assertEqual(cm.output[0], 'DEBUG:datarecorder.datarecorder:process_radio_data called')
         final = unittest_helper.count_all_records()
         self.assertEqual(final, initial + 9)
         # shouldn't write twice with duplicate data packets
-        housedata.process_radio_data()
+        datarecorder.process_radio_data()
         final = unittest_helper.count_all_records()
         self.assertEqual(final, initial + 9)
         unittest_helper.kill_database()
@@ -122,18 +121,18 @@ class TestQueue(TestCase):
     def test_add_data_to_queue_writes_to_radio_q(self):
         test_data = ['hello queue', 'goodbye queue']
         with self.assertLogs() as cm:
-            [housedata.add_data_to_queue(x) for x in test_data]
-        self.assertEqual(cm.output[0], 'DEBUG:housedata:add_data_to_queue called')
+            [datarecorder.add_data_to_queue(x) for x in test_data]
+        self.assertEqual(cm.output[0], 'DEBUG:datarecorder.datarecorder:add_data_to_queue called')
         
-        [self.assertEqual(housedata.radio_q.get_nowait(), x) for x in test_data]
+        [self.assertEqual(datarecorder.radio_q.get_nowait(), x) for x in test_data]
 
 
 class TestThreadingWithQueue(TestCase):
 
     def test_thread_spawned(self):
         with self.assertLogs() as cm:
-            thread = housedata.init_data_processing_thread()
-        self.assertEqual(cm.output[0], 'DEBUG:housedata:init_data_processing_thread called')
+            thread = datarecorder.init_data_processing_thread()
+        self.assertEqual(cm.output[0], 'DEBUG:datarecorder.datarecorder:init_data_processing_thread called')
         self.assertIsInstance(thread, threading.Thread)
         self.assertTrue(thread.daemon)
         self.assertTrue(thread.ident)
