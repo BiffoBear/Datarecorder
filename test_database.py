@@ -7,7 +7,6 @@ Created on Sat Nov 30 07:17:26 2019
 """
 
 from unittest import TestCase, skip
-from unittest.mock import Mock, patch
 from sqlalchemy import inspect
 import database
 import unittest_helper
@@ -45,7 +44,7 @@ class TestDataBaseInitialization(TestCase):
         database.engine = None
         with self.assertLogs() as cm:
             database.initialize_database('sqlite://')
-        self.assertEqual(cm.output, ['DEBUG:database:initialize_database called'])
+        self.assertEqual(cm.output, ['DEBUG:database:initialize_database called', 'INFO:database:Database initialized'])
         self.assertNotEqual(database.engine, None)
         
     def test_failure_to_initialize_database_raises_critical_error(self):

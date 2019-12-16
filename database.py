@@ -78,3 +78,4 @@ def initialize_database(db_url):
     session = sessionmaker()
     session.configure(bind=engine)
     Base.metadata.create_all(engine)
+    logger.info('Database initialized')
