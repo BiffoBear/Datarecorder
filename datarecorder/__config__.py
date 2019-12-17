@@ -6,4 +6,4 @@ Created on Thu Dec 12 13:21:10 2019
 @author: pi
 """
 
-TESTING = True
+HAS_RADIO = True

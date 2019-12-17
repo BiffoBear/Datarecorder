@@ -13,7 +13,7 @@ from datetime import datetime
 import struct
 from datarecorder import hardware, database, radiodata
 from tests import unittest_helper
-from datarecorder.__config__ import TESTING
+from datarecorder.__config__ import HAS_RADIO
 
 radio_q = queue.Queue()
 
@@ -123,7 +123,7 @@ initialize_logging()
 if __name__ == '__main__':
     DB_URL = 'postgresql://pi:blueberry@localhost:5432/housedata'
     database.initialize_database(DB_URL)
-    if not TESTING:
+    if HAS_RADIO:
         radio = hardware.Radio()
     else:
         radio = unittest_helper.Radio()
