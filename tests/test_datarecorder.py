@@ -8,7 +8,8 @@ Created on Tue Dec  3 10:36:28 2019
 from unittest import TestCase, skip
 from unittest.mock import patch
 import threading
-from datarecorder import datarecorder, radiodata
+import radiodata
+import datarecorder
 from tests import unittest_helper
 
 
@@ -21,7 +22,7 @@ class TestDataReading(TestCase):
         radiodata.read_radio_buffer.return_value = None
         with self.assertLogs() as cm:
             self.assertEqual(datarecorder.check_for_radio_data(radio), None)
-        self.assertEqual(cm.output, ['DEBUG:datarecorder.datarecorder:check_for_radio_data called'])
+        self.assertIn('check_for_radio_data called', cm.output[0])
             
 
     def test_check_radio_data_returns_correct_data(self, _):
@@ -38,7 +39,7 @@ class TestDataPrep(TestCase):
         with self.assertLogs() as cm:
             decoded_data = datarecorder.unpack_data_packet(radiodata.radio_data_format,
                                                            unittest_helper.dummy_unpacked_data())
-        self.assertEqual(cm.output, ['DEBUG:datarecorder.datarecorder:unpack_data_packet called'])
+        self.assertIn('unpack_data_packet called', cm.output[0])
         self.assertEqual(len(decoded_data['radio_data']), len(unittest_helper.dummy_data))
         self.assertEqual(decoded_data['timestamp'], unittest_helper.global_test_time)
         [self.assertAlmostEqual(x[0], x[1], places=2) for x in zip(decoded_data['radio_data'],
@@ -50,7 +51,7 @@ class TestDataPrep(TestCase):
                      'radio_data': unittest_helper.dummy_data}
         with self.assertLogs() as cm:
             data_returned = datarecorder.expand_radio_data_into_dict(test_data)
-        self.assertEqual(cm.output, ['DEBUG:datarecorder.datarecorder:expand_radio_data_into_dict called'])
+        self.assertIn('expand_radio_data_into_dict called', cm.output[0])
         self.assertIsInstance(data_returned, dict)
         self.assertIsInstance(data_returned['node'], dict)
         node_data = data_returned['node']
@@ -73,7 +74,7 @@ class CheckForRepeatPacket(TestCase):
         radiodata.last_packet_serial_number = {0x01: 0x1010, }
         with self.assertLogs() as cm:
             x = datarecorder.check_for_duplicate_packet(test_data)
-        self.assertEqual(cm.output, ['DEBUG:datarecorder.datarecorder:check_for_duplicate_packet called'])
+        self.assertIn('check_for_duplicate_packet called', cm.output[0])
         self.assertIsInstance(x, bool)
         self.assertTrue(x)
         self.assertEqual(radiodata.last_packet_serial_number, {0x01: 0x1010, })
@@ -95,7 +96,6 @@ class CheckForRepeatPacket(TestCase):
         self.assertEqual(radiodata.last_packet_serial_number[0x01], 0x1010)
 
 
-#@skip
 class TestReadRadioAndWriteDataToDataBase(TestCase):
 
     def test_read_radio_process_data_write_to_db(self):
@@ -106,7 +106,7 @@ class TestReadRadioAndWriteDataToDataBase(TestCase):
         [datarecorder.add_data_to_queue(x) for x in test_data]
         with self.assertLogs() as cm:
             datarecorder.process_radio_data()
-        self.assertEqual(cm.output[0], 'DEBUG:datarecorder.datarecorder:process_radio_data called')
+        self.assertIn('process_radio_data called', cm.output[0])
         final = unittest_helper.count_all_records()
         self.assertEqual(final, initial + 9)
         # shouldn't write twice with duplicate data packets
@@ -122,8 +122,7 @@ class TestQueue(TestCase):
         test_data = ['hello queue', 'goodbye queue']
         with self.assertLogs() as cm:
             [datarecorder.add_data_to_queue(x) for x in test_data]
-        self.assertEqual(cm.output[0], 'DEBUG:datarecorder.datarecorder:add_data_to_queue called')
-        
+        self.assertIn('add_data_to_queue called', cm.output[0])
         [self.assertEqual(datarecorder.radio_q.get_nowait(), x) for x in test_data]
 
 
@@ -132,7 +131,7 @@ class TestThreadingWithQueue(TestCase):
     def test_thread_spawned(self):
         with self.assertLogs() as cm:
             thread = datarecorder.init_data_processing_thread()
-        self.assertEqual(cm.output[0], 'DEBUG:datarecorder.datarecorder:init_data_processing_thread called')
+        self.assertIn('init_data_processing_thread called', cm.output[0])
         self.assertIsInstance(thread, threading.Thread)
         self.assertTrue(thread.daemon)
         self.assertTrue(thread.ident)

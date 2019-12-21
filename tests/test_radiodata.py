@@ -5,14 +5,13 @@ Created on Fri Nov 22 10:23:09 2019
 
 @author: martinstephens
 """
-from unittest import TestCase, skip
+from unittest import TestCase
 from unittest.mock import Mock
 import struct
-from datarecorder import radiodata
+import radiodata
 from tests import unittest_helper
 
 
-# @skip
 class TestDataReading(TestCase):
 
     def setUp(self):

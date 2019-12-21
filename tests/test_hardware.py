@@ -9,17 +9,17 @@ Created on Fri Dec 13 20:12:30 2019
 from unittest import TestCase
 from unittest.mock import Mock, patch
 import board
-from datarecorder import hardware
+import hardware
 
 
 @patch('adafruit_rfm69.RFM69')
 @patch('busio.SPI')  # A bug in busio seems to cause Spyder to crash
 class TestRadioSetup(TestCase):
 
-    def test_radio_class_instatiation(self, mock_spi, mock_rfm69):
+    def test_radio_class_instantiation(self, mock_spi, mock_rfm69):
         with self.assertLogs() as cm:
             x = hardware.Radio()
-        self.assertEqual(cm.output, ['INFO:datarecorder.hardware:RFM69 radio initialized successfully'])
+        self.assertIn('RFM69 radio initialized successfully', cm.output[0])
         self.assertIsInstance(x, hardware.Radio)
 
     def test_correct_gpio_pins_are_set_for_radio(self, _x, _y):
@@ -40,7 +40,7 @@ class TestRadioSetup(TestCase):
         with self.assertLogs() as cm:
             with self.assertRaises(RuntimeError):
                 hardware.Radio()
-        self.assertEqual(cm.output, ['CRITICAL:datarecorder.hardware:RFM69 radio failed to initialize with RuntimeError'])
+        self.assertIn('RFM69 radio failed to initialize with RuntimeError', cm.output[0])
 
     def test_get_buffer_returns_correct_values_and_increments_counters(self, _x, _y):
         radio = hardware.Radio()
@@ -48,7 +48,7 @@ class TestRadioSetup(TestCase):
         radio._rfm69.receive.return_value = None
         with self.assertLogs() as cm:
             y = radio.get_buffer()
-        self.assertEqual(cm.output, ['DEBUG:datarecorder.hardware:Radio.get_buffer called'])
+        self.assertIn('Radio.get_buffer called', cm.output[0])
         self.assertEqual(y, None)
         self.assertEqual(radio._buffer_read_count, 1)
         self.assertEqual(radio._packets_returned, 0)

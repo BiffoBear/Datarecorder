@@ -74,8 +74,13 @@ def write_sensor_reading_to_db(data):
 def initialize_database(db_url):
     logger.debug(f'initialize_database called')
     global Base, engine, session
-    engine = create_engine(db_url)
-    session = sessionmaker()
-    session.configure(bind=engine)
-    Base.metadata.create_all(engine)
-    logger.info('Database initialized')
+    try:
+        engine = create_engine(db_url)
+        session = sessionmaker()
+        session.configure(bind=engine)
+        Base.metadata.create_all(engine)
+    except Exception as e:
+        logger.critical(f'Database initialization failed: {e}')
+        raise e
+    else:
+        logger.info('Database initialized')

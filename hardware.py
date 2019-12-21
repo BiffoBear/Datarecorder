@@ -7,6 +7,7 @@ Created on Fri Dec  6 12:30:25 2019
 """
 import logging
 import board
+import time
 import busio
 import digitalio
 import adafruit_rfm69
@@ -14,7 +15,8 @@ import adafruit_rfm69
 logger = logging.getLogger(__name__)
 logger.setLevel('DEBUG')
 
-class Radio():
+
+class Radio:
     '''Connects to an Adafruit RFM69 radio and has methods to check for data and return stats.'''
 
     def __init__(self):
@@ -49,3 +51,29 @@ class Radio():
         '''Returns the radio buffer reads and packets received since the radio started up.'''
         logger.debug(f'Radio.get_stats called')
         return {'reads': self._buffer_read_count, 'packets': self._packets_returned}
+
+
+class FakeRadio:
+    '''Dummy Radio with methods to check for data and return stats.'''
+
+    def __init__(self):
+        self.realism = False
+        self.packets_returned = 0
+        self.buffer_read_count = 0
+        self.packet_serial_number = 0
+
+    def get_buffer(self):
+        self.buffer_read_count += 1
+        if self.realism:
+            time.sleep(random.random())
+            if random.random() < 0.2:
+                return None
+        self.packet_serial_number += 1
+        self.packets_returned += 1
+        return radiodata.append_crc(dummy_buffer_data_with_serial_number(self.packet_serial_number))
+
+    def set_realism(self, realistic=True):
+        self.realism = realistic
+
+    def get_stats(self):
+        return {'reads': self.buffer_read_count, 'packets': self.packets_returned}

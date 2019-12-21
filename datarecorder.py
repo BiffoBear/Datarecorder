@@ -11,9 +11,11 @@ import queue
 import time
 from datetime import datetime
 import struct
-from datarecorder import hardware, database, radiodata
+import database
+import hardware
+import radiodata
 from tests import unittest_helper
-from datarecorder.__config__ import HAS_RADIO
+from __config__ import HAS_RADIO
 
 radio_q = queue.Queue()
 
@@ -47,9 +49,7 @@ def expand_radio_data_into_dict(data):
                             'status_register': readings[3],
                             'unused_1': readings[4],
                             'unused_2': readings[5],
-                            }
-                   }
-    munged_data['sensors'] = {'timestamp': data['timestamp']}
+                            }, 'sensors': {'timestamp': data['timestamp']}}
     zipped_sensor_readings = list(zip(readings[radiodata.sensor_offset::2],
                                       readings[radiodata.sensor_offset + 1::2]))
     munged_data['sensors']['sensor_readings'] = [x for x in zipped_sensor_readings if x[0] != 0xff]
@@ -87,10 +87,10 @@ def add_data_to_queue(data_packet):
 
 def init_data_processing_thread():
     logger.debug(f'init_data_processing_thread called')
-    thread = threading.Thread(target=loop_process_radio_data)
-    thread.daemon = True
-    thread.start()
-    return thread
+    data_thread = threading.Thread(target=loop_process_radio_data)
+    data_thread.daemon = True
+    data_thread.start()
+    return data_thread
 
 
 def loop_process_radio_data():
@@ -105,7 +105,7 @@ def initialize_logging():
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s: %(name)-12s: %(levelname)-8s: %(message)s',
                         datefmt='%y-%m-%d %H:%M',
-                        filename='../testing.log',  # '/temp/myapp.log',
+                        filename='testing.log',  # '/temp/myapp.log',
                         filemode='w')
     # define a Handler which writes INFO messages or higher to the sys.stderr
     console = logging.StreamHandler()
@@ -119,14 +119,15 @@ def initialize_logging():
     
 
 initialize_logging()
-    
+
+
 if __name__ == '__main__':
     DB_URL = 'postgresql://pi:blueberry@localhost:5432/housedata'
     database.initialize_database(DB_URL)
     if HAS_RADIO:
         radio = hardware.Radio()
     else:
-        radio = unittest_helper.Radio()
+        radio = hardware.FakeRadio()
         radio.set_realism()
     thread = init_data_processing_thread()
     finish_time = time.time() + 15

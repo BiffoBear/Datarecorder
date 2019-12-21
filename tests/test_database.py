@@ -8,7 +8,8 @@ Created on Sat Nov 30 07:17:26 2019
 
 from unittest import TestCase
 from sqlalchemy import inspect
-from datarecorder import database
+import sqlalchemy
+import database
 from tests import unittest_helper
 
 
@@ -41,18 +42,24 @@ class TestDataBaseInitialization(TestCase):
 
     def test_database_initalized(self):
         database.engine.dispose()
-        database.engine = None
-        with self.assertLogs() as cm:
+        with self.assertLogs(level='DEBUG') as cm:
             database.initialize_database('sqlite://')
-        self.assertEqual(cm.output, ['DEBUG:datarecorder.database:initialize_database called',
- 'INFO:datarecorder.database:Database initialized'])
+        self.assertIn('initialize_database called', cm.output[0])
         self.assertNotEqual(database.engine, None)
-        
-    def test_failure_to_initialize_database_raises_critical_error(self):
-        pass
-        # TODO: Work out how to test this
+        database.engine.dispose()
+        with self.assertLogs(level='INFO') as cm:
+            database.initialize_database('sqlite://')
+        self.assertIn('Database initialized', cm.output[1])
+        database.engine.dispose()
 
-#@skip
+    def test_failure_to_initialize_database_raises_critical_error(self):
+        database.engine.dispose()
+        with self.assertRaises(sqlalchemy.exc.ArgumentError) as dm:
+            with self.assertLogs(level='CRITICAL') as cm:
+                database.initialize_database('')
+            self.assertIn('Database initialization failed', cm.output[-1])
+
+
 class TestWriteDataToDataBase(TestCase):
 
     def setUp(self):
@@ -63,10 +70,10 @@ class TestWriteDataToDataBase(TestCase):
 
     def test_write_sensor_data_to_database(self):
         test_time = unittest_helper.global_test_time
-        test_data = {'timestamp': test_time, 'sensor_readings':[(0x01, 1.2345), (0x02, 2.3456)]}
+        test_data = {'timestamp': test_time, 'sensor_readings': [(0x01, 1.2345), (0x02, 2.3456)]}
         with self.assertLogs() as cm:
             database.write_sensor_reading_to_db(test_data)
-        self.assertEqual(cm.output, ['DEBUG:datarecorder.database:write_sensor_reading_to_db called'])
+        self.assertIn('write_sensor_reading_to_db called', cm.output[0])
         s = database.session()
         t = database.SensorData
         q = s.query(t).all()
