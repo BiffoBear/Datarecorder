@@ -130,9 +130,9 @@ if __name__ == '__main__':
         radio = hardware.FakeRadio()
         radio.set_realism()
     thread = init_data_processing_thread()
-    finish_time = time.time() + 15
+    finish_time = time.time() + 30
     try:
-#        for x in range(100):
+        # for x in range(100):
         while time.time() < finish_time:
             y = check_for_radio_data(radio)
             if y is not None:
