@@ -11,7 +11,7 @@ import time
 import busio
 import digitalio
 import adafruit_rfm69
-import adafruit_ssd1306
+# import adafruit_ssd1306
 
 logger = logging.getLogger(__name__)
 logger.setLevel('DEBUG')
