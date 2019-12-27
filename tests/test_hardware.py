@@ -6,14 +6,14 @@ Created on Fri Dec 13 20:12:30 2019
 @author: pi
 """
 
-from unittest import TestCase
+from unittest import TestCase, skip
 from unittest.mock import Mock, patch
 import board
 import hardware
 
 
 @patch('adafruit_rfm69.RFM69')
-@patch('busio.SPI')  # A bug in busio seems to cause Spyder to crash
+@patch('busio.SPI')
 class TestRadioSetup(TestCase):
 
     def test_radio_class_instantiation(self, mock_spi, mock_rfm69):
@@ -58,14 +58,14 @@ class TestRadioSetup(TestCase):
         self.assertEqual(radio._buffer_read_count, 2)
         self.assertEqual(radio._packets_returned, 1)
         
-#    def test_radio_receive_failure_logs_a_critical_error(self, _x, _y):
-#        # Crashes the Spyder unittest module
-#        radio = hardware.Radio()
-#        radio._rfm69 = Mock()
-#        radio._rfm69.side_effect = RuntimeError
-#        with self.assertLogs() as cm:
-#            radio.get_buffer()
-#        self.assertEqual(cm.output, 'blah')
+    # def test_radio_receive_failure_logs_a_critical_error(self, _x, _y):
+    #     radio = hardware.Radio()
+    #     radio._rfm69 = Mock()
+    #     radio._rfm69.receive.side_effect = RuntimeError
+    #     with self.assertLogs(level='CRITICAL') as cm:
+    #         with self.assertRaises(RuntimeError):
+    #             radio.get_buffer()
+    #     self.assertIn('Unable to read RFM69 buffer', cm.output[-1])
 
     def test_get_stats_returns_correct_values(self, _x, _y):
         radio = hardware.Radio()
@@ -79,3 +79,26 @@ class TestRadioSetup(TestCase):
     def test_logging_for_get_stats(self, _x, _y):
         # Keeps crashing Spyder unittest module, so I gave up.
         pass
+
+@skip
+class TestPiDisplay(TestCase):
+
+    def test_initialization_of_display(self):
+        display = hardware.Display()
+        self.assertIsInstance(display, hardware.Display)
+        self.assertEqual(display._reset_pin, board.D4)
+
+    # @patch('busio.I2C')
+    # def test_i2c_bus_initiated_with_correct_settings(self, mock_i2c):
+    #     display = hardware.Display()
+    #     mock_i2c.assert_called_once_with(board.SCL, board.SDA)
+    #
+    # @patch('adafruit_ssd1306.SSD1306_I2C')
+    # def test_display_initiated_with_correct_settings(self, mock_ssd1306):
+    #     display = hardware.Display()
+    #     mock_ssd1306.assert_called_once_with(128, 32, display._i2c, reset=display._reset_pin)
+
+
+
+
+

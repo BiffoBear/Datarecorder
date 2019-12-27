@@ -11,6 +11,7 @@ import time
 import busio
 import digitalio
 import adafruit_rfm69
+import adafruit_ssd1306
 
 logger = logging.getLogger(__name__)
 logger.setLevel('DEBUG')
@@ -40,7 +41,7 @@ class Radio:
         try:
             buffer_content = self._rfm69.receive()
         except Exception as error:
-            logger.critical(f'Unable to read RFM69 buffer due to RuntimeError')
+            logger.critical(f'Unable to read RFM69 buffer')
             raise error
         self._buffer_read_count += 1
         if buffer_content is not None:
@@ -53,27 +54,35 @@ class Radio:
         return {'reads': self._buffer_read_count, 'packets': self._packets_returned}
 
 
-class FakeRadio:
-    '''Dummy Radio with methods to check for data and return stats.'''
+# class FakeRadio:
+#     '''Dummy Radio with methods to check for data and return stats.'''
+#
+#     def __init__(self):
+#         self.realism = False
+#         self.packets_returned = 0
+#         self.buffer_read_count = 0
+#         self.packet_serial_number = 0
+#
+#     def get_buffer(self):
+#         self.buffer_read_count += 1
+#         if self.realism:
+#             time.sleep(random.random())
+#             if random.random() < 0.2:
+#                 return None
+#         self.packet_serial_number += 1
+#         self.packets_returned += 1
+#         return radiodata.append_crc(dummy_buffer_data_with_serial_number(self.packet_serial_number))
+#
+#     def set_realism(self, realistic=True):
+#         self.realism = realistic
+#
+#     def get_stats(self):
+#         return {'reads': self.buffer_read_count, 'packets': self.packets_returned}
 
-    def __init__(self):
-        self.realism = False
-        self.packets_returned = 0
-        self.buffer_read_count = 0
-        self.packet_serial_number = 0
 
-    def get_buffer(self):
-        self.buffer_read_count += 1
-        if self.realism:
-            time.sleep(random.random())
-            if random.random() < 0.2:
-                return None
-        self.packet_serial_number += 1
-        self.packets_returned += 1
-        return radiodata.append_crc(dummy_buffer_data_with_serial_number(self.packet_serial_number))
-
-    def set_realism(self, realistic=True):
-        self.realism = realistic
-
-    def get_stats(self):
-        return {'reads': self.buffer_read_count, 'packets': self.packets_returned}
+# class Display:
+#
+#     def __init__(self):
+#         self._reset_pin = digitalio.DigitalInOut(board.D4)
+#         self._i2c = busio.I2C(board.SCL, board.SDA)
+#         self._display = adafruit_ssd1306.SSD1306_I2C(128, 32, self._i2c, reset=self._reset_pin)
