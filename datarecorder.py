@@ -61,7 +61,13 @@ def check_for_duplicate_packet(node_data):
     logger.debug(f'check_for_duplicate_packet called')
     node_id = node_data['node_id']
     new_packet_serial_number = node_data['pkt_serial']
-    if radiodata.last_packet_serial_number.get(node_id) != new_packet_serial_number:
+    old_packet_serial_number = radiodata.last_packet_serial_number.get(node_id)
+    if new_packet_serial_number != old_packet_serial_number:
+        try:
+            if new_packet_serial_number != (old_packet_serial_number + 1) % 0xffff:
+                logger.warning(f'Data packet missing from node 0x{node_id:02x}')
+        except TypeError:  # This is the first packet from this node, so there is nothing to compare.
+            pass
         radiodata.last_packet_serial_number[node_id] = new_packet_serial_number
         return False
     return True
