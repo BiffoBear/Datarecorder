@@ -10,11 +10,27 @@ import board
 import time
 import busio
 import digitalio
+import RPi.GPIO as rpigpio
 import adafruit_rfm69
-# import adafruit_ssd1306
 
 logger = logging.getLogger(__name__)
 logger.setLevel('DEBUG')
+
+RFM69_G0 = 24
+
+
+def setup_gpio_interrupt(RFM69_G0):
+    rpigpio.setmode(rpigpio.BCM)
+    rpigpio.setup(RFM69_G0, rpigpio.IN, pull_up_down=rpigpio.PUD_DOWN)
+    rpigpio.remove_event_detect(RFM69_G0)
+    rpigpio.add_event_detect(RFM69_G0, rpigpio.RISING)
+    rpigpio.add_event_callback(RFM69_G0, rfm69_callback)
+
+
+def rfm69_callback():
+    if rfm69.payload_ready:
+        packet = rfm69.receive(timeout=None)
+        if packet is not None:
 
 
 class Radio:

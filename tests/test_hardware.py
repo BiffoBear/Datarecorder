@@ -9,7 +9,36 @@ Created on Fri Dec 13 20:12:30 2019
 from unittest import TestCase, skip
 from unittest.mock import Mock, patch
 import board
+import RPi.GPIO as rpigpio
 import hardware
+from __config__ import RFM69_INTERRUPT_PIN
+
+
+class TestInterruptSetup(TestCase):
+
+    def test_interrupt_pin_is_24(self):
+        self.assertEqual(RFM69_INTERRUPT_PIN, 24)
+
+    def test_gpio_setmode_called_with_correct_args(self):
+        with patch('RPi.GPIO.setmode') as mock_gpio_setmode:
+            hardware.setup_gpio_interrupt(RFM69_INTERRUPT_PIN)
+        mock_gpio_setmode.assert_called_with(rpigpio.BCM)
+
+    def test_gpio_setup_called_with_correct_args(self):
+        with patch('RPi.GPIO.setup') as mock_gpio_setup:
+            hardware.setup_gpio_interrupt(RFM69_INTERRUPT_PIN)
+        mock_gpio_setup.assert_called_with(RFM69_INTERRUPT_PIN, rpigpio.IN, pull_up_down=rpigpio.PUD_DOWN)
+
+    def test_gpio_event_setup_called_with_correct_args(self):
+        with patch('RPi.GPIO.add_event_callback'):
+            with patch('RPi.GPIO.add_event_detect') as mock_add_event_detect:
+                hardware.setup_gpio_interrupt(RFM69_INTERRUPT_PIN)
+        mock_add_event_detect.assert_called_with(RFM69_INTERRUPT_PIN, rpigpio.RISING)
+
+    def test_gpio_event_callback_called_with_correct_args(self):
+        with patch('RPi.GPIO.add_event_callback') as mock_add_event_callback:
+            hardware.setup_gpio_interrupt(RFM69_INTERRUPT_PIN)
+        mock_add_event_callback.assert_called_with(RFM69_INTERRUPT_PIN, hardware.rfm69_callback)
 
 
 @patch('adafruit_rfm69.RFM69')
