@@ -50,21 +50,19 @@ def append_crc(data_packet : (bytes, bytearray)):
 
 
 print('starting')
-start_time = time.time()
-end_time = start_time + 57600
-#x = 0
-time.sleep(NODE_ID * 0.3)
+sleep_time = SAMPLE_INTERVAL
+time.sleep(NODE_ID * random.random() + 1)
 for x in range(samples_to_send):
-#while time.time() < end_time:
     z = x % 65536
     dummy_data[2] = z
     packed_data = struct.pack(radio_data_format, *dummy_data)
     data_packet = append_crc(packed_data)
     rfm69.send(data_packet)
-    time.sleep(0.2)
+    time.sleep(0.1 + random.random() * 0.1)
     rfm69.send(data_packet)
     x += 1
     print(x)
-    time.sleep(SAMPLE_INTERVAL)
+    sleep_time = SAMPLE_INTERVAL + SAMPLE_INTERVAL / 20 * (random.random() - 0.5)
+    print(sleep_time)
+    time.sleep(sleep_time)
 print('{} packets sent'.format(x))
-print('Time = {} seconds.'.format(time.time() - start_time))
