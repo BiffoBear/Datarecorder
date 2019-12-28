@@ -1,161 +1,130 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Dec  3 10:36:28 2019
+Created on Fri Dec 13 20:12:30 2019
 
-@author: martinstephens
+@author: pi
 """
+
 from unittest import TestCase, skip
-from unittest.mock import patch
-import threading
-import radiodata
+from unittest.mock import Mock, patch, call
+import board
+import RPi.GPIO as rpigpio
+import adafruit_rfm69
 import datarecorder
-from tests import unittest_helper
+import dataprocessing
+from __config__ import RFM69_INTERRUPT_PIN, DB_URL
 
 
-# @skip
-@patch('datarecorder.radiodata.read_radio_buffer')
-class TestDataReading(TestCase):
+class TestInterruptSetup(TestCase):
 
-    def test_when_radio_buffer_returns_none_then_check_radio_data_returns_none(self, mock_read_radio):
-        radio = None  # Never called by Mock, so value unimportant.
-        mock_read_radio.return_value = None
-        with self.assertLogs() as cm:
-            self.assertEqual(datarecorder.check_for_radio_data(radio), None)
-        self.assertIn('check_for_radio_data called', cm.output[0])
+    def test_interrupt_pin_is_24(self):
+        self.assertEqual(RFM69_INTERRUPT_PIN, 24)
 
-    def test_check_radio_data_returns_correct_data(self, mock_read_radio):
-        radio = None
-        mock_read_radio.return_value = 'Some radio data'
-        self.assertEqual(datarecorder.check_for_radio_data(radio), 'Some radio data')
+    def test_gpio_setmode_called_with_correct_args(self):
+        with patch('RPi.GPIO.setmode') as mock_gpio_setmode:
+            datarecorder.initialize_gpio_interrupt(RFM69_INTERRUPT_PIN)
+        mock_gpio_setmode.assert_called_with(rpigpio.BCM)
 
+    def test_gpio_setup_called_with_correct_args(self):
+        with patch('RPi.GPIO.setup') as mock_gpio_setup:
+            datarecorder.initialize_gpio_interrupt(RFM69_INTERRUPT_PIN)
+        mock_gpio_setup.assert_called_with(RFM69_INTERRUPT_PIN, rpigpio.IN, pull_up_down=rpigpio.PUD_DOWN)
 
-#@skip
-class TestDataPrep(TestCase):
+    def test_gpio_event_setup_called_with_correct_args(self):
+        with patch('RPi.GPIO.add_event_callback'):
+            with patch('RPi.GPIO.add_event_detect') as mock_add_event_detect:
+                datarecorder.initialize_gpio_interrupt(RFM69_INTERRUPT_PIN)
+        mock_add_event_detect.assert_called_with(RFM69_INTERRUPT_PIN, rpigpio.RISING)
 
-    def test_struct_is_unpacked_correctly(self):
-        with self.assertLogs() as cm:
-            decoded_data = datarecorder.unpack_data_packet(radiodata.radio_data_format,
-                                                           unittest_helper.dummy_unpacked_data())
-        self.assertIn('unpack_data_packet called', cm.output[0])
-        self.assertEqual(len(decoded_data['radio_data']), len(unittest_helper.dummy_data))
-        self.assertEqual(decoded_data['timestamp'], unittest_helper.global_test_time)
-        [self.assertAlmostEqual(x[0], x[1], places=2) for x in zip(decoded_data['radio_data'],
-                                                                   unittest_helper.dummy_data)]
-
-    def test_data_munged_correctly(self):
-        test_data = {'timestamp': unittest_helper.global_test_time,
-                     'radio_data': unittest_helper.dummy_data}
-        with self.assertLogs() as cm:
-            data_returned = datarecorder.expand_radio_data_into_dict(test_data)
-        self.assertIn('expand_radio_data_into_dict called', cm.output[0])
-        self.assertIsInstance(data_returned, dict)
-        self.assertIsInstance(data_returned['node'], dict)
-        node_data = data_returned['node']
-        self.assertEqual(list(node_data.keys()), unittest_helper.node_keys)
-        self.assertEqual(node_data['node_id'], unittest_helper.dummy_data[0])
-        self.assertEqual(node_data['pkt_serial'], unittest_helper.dummy_data[2])
-        self.assertEqual(node_data['status_register'], unittest_helper.dummy_data[3])
-        self.assertEqual(node_data['unused_1'], unittest_helper.dummy_data[4])
-        self.assertEqual(node_data['unused_2'], unittest_helper.dummy_data[5])
-        self.assertEqual(data_returned['sensors']['timestamp'], unittest_helper.global_test_time)
-        sensor_data = data_returned['sensors']['sensor_readings']
-        self.assertIsInstance(data_returned, dict)
-        self.assertEqual(len(sensor_data), radiodata.sensor_count - 1)  # One sensor is 0xff, thus ignored
+    def test_gpio_event_callback_called_with_correct_args(self):
+        with patch('RPi.GPIO.add_event_callback') as mock_add_event_callback:
+            datarecorder.initialize_gpio_interrupt(RFM69_INTERRUPT_PIN)
+        mock_add_event_callback.assert_called_with(RFM69_INTERRUPT_PIN, datarecorder.rfm69_callback)
 
 
-class CheckForRepeatPacket(TestCase):
+class TestRadioSetup(TestCase):
 
-    def test_check_for_duplicate_packet_returns_true_and_dict_if_duplicate(self):
-        test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
-        radiodata.last_packet_serial_number = {0x01: 0x1010, }
-        with self.assertLogs() as cm:
-            x = datarecorder.check_for_duplicate_packet(test_data)
-        self.assertIn('check_for_duplicate_packet called', cm.output[0])
-        self.assertIsInstance(x, bool)
-        self.assertTrue(x)
-        self.assertEqual(radiodata.last_packet_serial_number, {0x01: 0x1010, })
+    def test_radio_initialization(self):
+        with patch('adafruit_rfm69.RFM69'):
+            with self.assertLogs(level='DEBUG') as cm:
+                datarecorder.initialize_rfm69()
+        self.assertIn('RFM69 radio initialized successfully', cm.output[0])
 
-    def test_check_for_duplicate_returns_false_and_updates_dict_if_not_duplicate(self):
-        test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
-        radiodata.last_packet_serial_number = {0x01: 0x1011, }
-        x = datarecorder.check_for_duplicate_packet(test_data)
-        self.assertIsInstance(x, bool)
-        self.assertFalse(x)
-        self.assertEqual(radiodata.last_packet_serial_number, {0x01: 0x1010})
+    def test_correct_gpio_pins_are_set_for_radio(self):
+        with patch('adafruit_rfm69.RFM69'):
+            with patch('digitalio.DigitalInOut') as mock_digi_io:
+                datarecorder.initialize_rfm69()
+        mock_digi_io.assert_has_calls([call(board.CE1), call(board.D25)])
 
-    def test_check_for_duplicate_logs_a_warning_for_a_missing_packet(self):
-        test_data = {'node_id': 0x01, 'pkt_serial': 0x1012}
-        radiodata.last_packet_serial_number = {0x01: 0x1010, }
-        with self.assertLogs() as cm:
-            datarecorder.check_for_duplicate_packet(test_data)
-        self.assertIn('Data packet missing from node 0x01', cm.output[-1])
+    def test_spi_bus_is_set_to_correct_gpio_pins(self):
+        with patch('adafruit_rfm69.RFM69'):
+            with patch('busio.SPI') as mock_spi:
+                datarecorder.initialize_rfm69()
+        mock_spi.assert_called_once_with(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 
-    def test_check_for_duplicate_handles_wrap_around_of_serial_numbers(self):
-        test_data = {'node_id': 0x02, 'pkt_serial': 0x0001}
-        radiodata.last_packet_serial_number = {0x02: 0xfffe, }
-        with self.assertLogs(level='CRITICAL') as cm:
-            datarecorder.check_for_duplicate_packet(test_data)
-        self.assertIn('Data packet missing from node 0x02', cm.output[-1])
-        self.assertEqual(radiodata.last_packet_serial_number, {0x02: 0x0001})
-        test_data = {'node_id': 0x01, 'pkt_serial': 0x0000}
-        radiodata.last_packet_serial_number = {0x01: 0xfffe, }
-        with self.assertLogs() as cm:
-            datarecorder.check_for_duplicate_packet(test_data)
-        self.assertNotIn('Data packet missing from node 0x01', cm.output[-1])
-
-    def test_new_node_added_to_dict(self):
-        test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
-        radiodata.last_packet_serial_number = {0x02: 0xffff}
-        x = datarecorder.check_for_duplicate_packet(test_data)
-        self.assertIsInstance(x, bool)
-        self.assertFalse(x)
-        self.assertEqual(radiodata.last_packet_serial_number[0x01], 0x1010)
+    def test_rfm69_fails_to_initialize_logged_as_critical_and_raised(self):
+        with patch('adafruit_rfm69.RFM69') as mock_rfm69:
+            mock_rfm69.side_effect = RuntimeError
+            with self.assertLogs(level='CRITICAL') as cm:
+                with self.assertRaises(RuntimeError):
+                    datarecorder.initialize_rfm69()
+        self.assertIn('RFM69 radio failed to initialize with RuntimeError', cm.output[0])
 
 
-class TestReadRadioAndWriteDataToDataBase(TestCase):
+class TestInitializeDataBase(TestCase):
 
-    def test_read_radio_process_data_write_to_db(self):
-        unittest_helper.initialize_database(db_in_memory=True)
-        initial = unittest_helper.count_all_records()
-        test_data = [unittest_helper.dummy_radio_data(),
-                     unittest_helper.dummy_radio_data()]
-        [datarecorder.add_data_to_queue(x) for x in test_data]
-        with self.assertLogs() as cm:
-            datarecorder.process_radio_data()
-        self.assertIn('process_radio_data called', cm.output[0])
-        final = unittest_helper.count_all_records()
-        self.assertEqual(final, initial + 9)
-        # shouldn't write twice with duplicate data packets
-        datarecorder.process_radio_data()
-        final = unittest_helper.count_all_records()
-        self.assertEqual(final, initial + 9)
-        unittest_helper.kill_database()
+    def test_database_initialize_database_is_called(self):
+        with patch('database.initialize_database') as mock_db_init:
+            datarecorder.initialize_database(DB_URL)
+        mock_db_init.assert_called_once_with(DB_URL)
 
 
-class TestQueue(TestCase):
+class TestIrqCallbackFunc(TestCase):
 
-    def test_add_data_to_queue_writes_to_radio_q(self):
-        test_data = ['hello queue', 'goodbye queue']
-        with self.assertLogs() as cm:
-            [datarecorder.add_data_to_queue(x) for x in test_data]
-        self.assertIn('add_data_to_queue called', cm.output[0])
-        [self.assertEqual(datarecorder.radio_q.get_nowait(), x) for x in test_data]
+    def test_payload_not_ready_does_not_write_to_queue(self):
+        datarecorder.radio = Mock()
+        dataprocessing.radio_q = Mock()
+        datarecorder.radio.payload_ready = False
+        datarecorder.rfm69_callback(None)
+        datarecorder.radio.receive.assert_not_called()
+        dataprocessing.radio_q.put.assert_not_called()
+
+    def test_empty_buffer_does_not_write_to_queue(self):
+        datarecorder.radio = Mock()
+        dataprocessing.radio_q = Mock()
+        datarecorder.radio.payload_ready = True
+        datarecorder.radio.receive.return_value = None
+        datarecorder.rfm69_callback(None)
+        datarecorder.radio.receive.assert_called()
+        dataprocessing.radio_q.put.assert_not_called()
+
+    def test_data_in_buffer_written_to_queue(self):
+        datarecorder.radio = Mock()
+        dataprocessing.radio_q = Mock()
+        datarecorder.radio.payload_ready = True
+        datarecorder.radio.receive.return_value = 'Hello World!'
+        datarecorder.rfm69_callback(None)
+        datarecorder.radio.receive.assert_called()
+        dataprocessing.radio_q.put.assert_called_once_with('Hello World!')
 
 
-class TestThreadingWithQueue(TestCase):
+@patch('datarecorder.initialize_gpio_interrupt')
+@patch('datarecorder.initialize_rfm69')
+@patch('datarecorder.initialize_processing_thread')
+@patch('datarecorder.initialize_database')
+@patch('datarecorder.initialize_logging')
+class TestStartUpFunc(TestCase):
 
-    def test_thread_spawned(self):
-        with self.assertLogs() as cm:
-            thread = datarecorder.init_data_processing_thread()
-        self.assertIn('init_data_processing_thread called', cm.output[0])
-        self.assertIsInstance(thread, threading.Thread)
-        self.assertTrue(thread.daemon)
-        self.assertTrue(thread.ident)
-        
-
-@skip        
-class TestLoggingInitialization(TestCase):
-    # TODO: Implement when I've worked out how to mock it all.
-    pass
-#    housedata.initialize_logging()
+    def test_start_up_calls_initialize_logging(self, mock_init_logging,
+                                               mock_init_db,
+                                               mock_init_thread,
+                                               mock_init_rfm69,
+                                               mock_init_irq,
+                                               ):
+        datarecorder.start_up(db_url='Fake_URL', pi_irq_pin=6)
+        mock_init_logging.assert_called_once()
+        mock_init_db.assert_called_once_with('Fake_URL')
+        mock_init_thread.assert_called_once()
+        mock_init_rfm69.assert_called_once()
+        mock_init_irq.assert_called_once_with(6)
