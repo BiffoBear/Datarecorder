@@ -17,18 +17,16 @@ from tests import unittest_helper
 @patch('datarecorder.radiodata.read_radio_buffer')
 class TestDataReading(TestCase):
 
-    def test_when_radio_buffer_returns_none_then_check_radio_data_returns_none(self, _):
-        radio = None
-        radiodata.read_radio_buffer.return_value = None
+    def test_when_radio_buffer_returns_none_then_check_radio_data_returns_none(self, mock_read_radio):
+        radio = None  # Never called by Mock, so value unimportant.
+        mock_read_radio.return_value = None
         with self.assertLogs() as cm:
             self.assertEqual(datarecorder.check_for_radio_data(radio), None)
         self.assertIn('check_for_radio_data called', cm.output[0])
-            
 
-    def test_check_radio_data_returns_correct_data(self, _):
+    def test_check_radio_data_returns_correct_data(self, mock_read_radio):
         radio = None
-        datarecorder.check_for_radio_data(radio)
-        radiodata.read_radio_buffer.return_value= 'Some radio data'
+        mock_read_radio.return_value = 'Some radio data'
         self.assertEqual(datarecorder.check_for_radio_data(radio), 'Some radio data')
 
 
@@ -44,7 +42,6 @@ class TestDataPrep(TestCase):
         self.assertEqual(decoded_data['timestamp'], unittest_helper.global_test_time)
         [self.assertAlmostEqual(x[0], x[1], places=2) for x in zip(decoded_data['radio_data'],
                                                                    unittest_helper.dummy_data)]
-
 
     def test_data_munged_correctly(self):
         test_data = {'timestamp': unittest_helper.global_test_time,
@@ -82,15 +79,35 @@ class CheckForRepeatPacket(TestCase):
     def test_check_for_duplicate_returns_false_and_updates_dict_if_not_duplicate(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
         radiodata.last_packet_serial_number = {0x01: 0x1011, }
-        x  = datarecorder.check_for_duplicate_packet(test_data)
+        x = datarecorder.check_for_duplicate_packet(test_data)
         self.assertIsInstance(x, bool)
         self.assertFalse(x)
         self.assertEqual(radiodata.last_packet_serial_number, {0x01: 0x1010})
 
+    def test_check_for_duplicate_logs_a_warning_for_a_missing_packet(self):
+        test_data = {'node_id': 0x01, 'pkt_serial': 0x1012}
+        radiodata.last_packet_serial_number = {0x01: 0x1010, }
+        with self.assertLogs() as cm:
+            datarecorder.check_for_duplicate_packet(test_data)
+        self.assertIn('Data packet missing from node 0x01', cm.output[-1])
+
+    def test_check_for_duplicate_handles_wrap_around_of_serial_numbers(self):
+        test_data = {'node_id': 0x02, 'pkt_serial': 0x0001}
+        radiodata.last_packet_serial_number = {0x02: 0xfffe, }
+        with self.assertLogs(level='CRITICAL') as cm:
+            datarecorder.check_for_duplicate_packet(test_data)
+        self.assertIn('Data packet missing from node 0x02', cm.output[-1])
+        self.assertEqual(radiodata.last_packet_serial_number, {0x02: 0x0001})
+        test_data = {'node_id': 0x01, 'pkt_serial': 0x0000}
+        radiodata.last_packet_serial_number = {0x01: 0xfffe, }
+        with self.assertLogs() as cm:
+            datarecorder.check_for_duplicate_packet(test_data)
+        self.assertNotIn('Data packet missing from node 0x01', cm.output[-1])
+
     def test_new_node_added_to_dict(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
         radiodata.last_packet_serial_number = {0x02: 0xffff}
-        x  = datarecorder.check_for_duplicate_packet(test_data)
+        x = datarecorder.check_for_duplicate_packet(test_data)
         self.assertIsInstance(x, bool)
         self.assertFalse(x)
         self.assertEqual(radiodata.last_packet_serial_number[0x01], 0x1010)
