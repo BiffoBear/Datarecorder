@@ -15,6 +15,7 @@ import adafruit_rfm69
 import database
 import dataprocessing
 from __config__ import DB_URL, RFM69_INTERRUPT_PIN
+import tests.unittest_helper
 
 logger = logging.getLogger(__name__)
 logger.setLevel('DEBUG')
@@ -45,7 +46,7 @@ def initialize_logging():
                         filemode='w')
     # define a Handler which writes INFO messages or higher to the sys.stderr
     console = logging.StreamHandler()
-    console.setLevel(logging.INFO)
+    console.setLevel(logging.DEBUG)
     # set a format which is simpler for console use
     formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
     # tell the handler to use this format
@@ -81,25 +82,19 @@ def start_up(db_url=None, pi_irq_pin=None):
     initialize_processing_thread()
     rfm69 = initialize_rfm69()
     initialize_gpio_interrupt(pi_irq_pin)
-#     return rfm69
+    return rfm69
 
 
 if __name__ == '__main__':
-
     radio = start_up(db_url=DB_URL, pi_irq_pin=RFM69_INTERRUPT_PIN)
     finish_time = time.time() + 30
     try:
         # for x in range(100):
         while time.time() < finish_time:
-            y = check_for_radio_data(radio)
-            if y is not None:
-                radio_q.put(y)
-        radio_q.join()
-        z = radio.get_stats()
-        print(f'Packets written: {unittest_helper.count_all_records() // 9}')
-        print(f"Packets sent   : {radio.get_stats()['packets']}")
-    #    print(f'Missing Packets: {unittest_helper.check_for_gaps()}')
+            time.sleep(0.1)
+        dataprocessing.radio_q.join()
+        print(f'Packets written to db: {tests.unittest_helper.count_all_records() // 9}')
     except Exception as e:
         raise e
     finally:
-        unittest_helper.kill_database()
+        tests.unittest_helper.kill_database()
