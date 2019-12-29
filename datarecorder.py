@@ -21,7 +21,18 @@ logger = logging.getLogger(__name__)
 logger.setLevel('DEBUG')
 
 
+def rfm69_callback(rfm69_irq):
+    logger.debug('Called')
+    if radio.payload_ready:
+        logger.debug('payload ready')
+        packet = radio.receive(timeout=None)
+        if packet is not None:
+            logger.debug('Data packet!!!')
+            dataprocessing.radio_q.put(packet)
+
+
 def initialize_gpio_interrupt(rfm69_g0):
+    logger.debug('initialize_gpio_interrupt')
     rpigpio.setmode(rpigpio.BCM)
     rpigpio.setup(rfm69_g0, rpigpio.IN, pull_up_down=rpigpio.PUD_DOWN)
     rpigpio.remove_event_detect(rfm69_g0)
@@ -29,15 +40,7 @@ def initialize_gpio_interrupt(rfm69_g0):
     rpigpio.add_event_callback(rfm69_g0, rfm69_callback)
 
 
-def rfm69_callback(rfm69_irq):
-    if radio.payload_ready:
-        packet = radio.receive(timeout=None)
-        if packet is not None:
-            dataprocessing.radio_q.put(packet)
-
-
 def initialize_logging():
-    pass
     # create file handler which logs even debug messages
     # set up logging to file - see previous section for more details
     # logging.basicConfig(level=logging.DEBUG,
@@ -46,14 +49,14 @@ def initialize_logging():
     #                     filename='testing.log',  # '/temp/myapp.log',
     #                     filemode='w')
     # # define a Handler which writes INFO messages or higher to the sys.stderr
-    # console = logging.StreamHandler()
-    # console.setLevel(logging.DEBUG)
+    console = logging.StreamHandler()
+    console.setLevel(logging.DEBUG)
     # # set a format which is simpler for console use
-    # formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
     # # tell the handler to use this format
-    # console.setFormatter(formatter)
+    console.setFormatter(formatter)
     # add the handler to the root logger
-    # logging.getLogger('').addHandler(console)
+    logging.getLogger('').addHandler(console)
 
 
 def initialize_rfm69():
@@ -83,6 +86,7 @@ def start_up(db_url=None, pi_irq_pin=None):
     initialize_processing_thread()
     rfm69 = initialize_rfm69()
     initialize_gpio_interrupt(pi_irq_pin)
+    print(rfm69)
     return rfm69
 
 
