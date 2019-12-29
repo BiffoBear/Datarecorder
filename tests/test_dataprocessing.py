@@ -26,13 +26,6 @@ class TestDataPrep(TestCase):
         [self.assertAlmostEqual(x[0], x[1], places=2) for x in zip(decoded_data['radio_data'],
                                                                    unittest_helper.dummy_data)]
 
-    def test_bad_struct_logs_a_warning_and_returns_none(self):
-        with self.assertLogs(level='WARNING') as cm:
-            decoded_data = dataprocessing.unpack_data_packet(radiodata.radio_data_format,
-                                                             {'radio_data': b'bad data'})
-        self.assertIn('Bad data packet detected', cm.output[-1])
-        self.assertEqual(decoded_data['radio_data'], None)
-
     def test_data_munged_correctly(self):
         test_data = {'timestamp': unittest_helper.global_test_time,
                      'radio_data': unittest_helper.dummy_data}
@@ -121,6 +114,17 @@ class TestReadRadioAndWriteDataToDataBase(TestCase):
         final = unittest_helper.count_all_records()
         self.assertEqual(final, initial + 9)
         unittest_helper.kill_database()
+
+    def test_bad_data_packet_logs_a_warning_and_continues_without_writing_to_db(self):
+        unittest_helper.initialize_database(db_in_memory=True)
+        initial = unittest_helper.count_all_records()
+        test_data = [b'bad_data', ]
+        [dataprocessing.radio_q.put(x) for x in test_data]
+        with self.assertLogs() as cm:
+            dataprocessing.process_radio_data()
+        self.assertIn('Bad data packet detected', cm.output[-1])
+        final = unittest_helper.count_all_records()
+        self.assertEqual(final, initial)
 
 
 class TestThreadingWithQueue(TestCase):

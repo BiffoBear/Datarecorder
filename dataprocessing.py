@@ -22,11 +22,7 @@ logger.setLevel('DEBUG')  # TODO: Refactor log level into __config.py__
 def unpack_data_packet(format_string, data_packet):
     '''Unpacks data using the supplied format string and returns it in a dict with the timestamp.'''
     logger.debug(f'unpack_data_packet called')
-    try:
-        data_packet['radio_data'] = struct.unpack(format_string, data_packet['radio_data'])
-    except struct.error:
-        logger.warning('Bad data packet detected')
-        data_packet['radio_data'] = None
+    data_packet['radio_data'] = struct.unpack(format_string, data_packet['radio_data'])
     return data_packet
 
 
@@ -68,10 +64,13 @@ def process_radio_data():
     logger.debug(f'process_radio_data called')
     global radio_q
     received_data = {'timestamp': datetime.utcnow(), 'radio_data': radio_q.get()}
-    unpacked_data = unpack_data_packet(radiodata.radio_data_format, received_data)
-    expanded_data = expand_radio_data_into_dict(unpacked_data)
-    if not check_for_duplicate_packet(expanded_data['node']):
-        database.write_sensor_reading_to_db(expanded_data['sensors'])
+    try:
+        unpacked_data = unpack_data_packet(radiodata.radio_data_format, received_data)
+        expanded_data = expand_radio_data_into_dict(unpacked_data)
+        if not check_for_duplicate_packet(expanded_data['node']):
+            database.write_sensor_reading_to_db(expanded_data['sensors'])
+    except struct.error:
+        logger.warning('Bad data packet detected')
     radio_q.task_done()
 
 
