@@ -14,11 +14,11 @@ import RPi.GPIO as rpigpio
 import adafruit_rfm69
 import database
 import dataprocessing
-from __config__ import DB_URL, RFM69_INTERRUPT_PIN
+from __config__ import DB_URL, RFM69_INTERRUPT_PIN, DEBUG_LEVEl
 import tests.unittest_helper
 
 logger = logging.getLogger(__name__)
-logger.setLevel('DEBUG')
+logger.setLevel(DEBUG_LEVEl)
 
 
 def rfm69_callback(rfm69_irq):
@@ -86,11 +86,13 @@ def start_up(db_url=None, pi_irq_pin=None):
     rfm69 = initialize_rfm69()
     initialize_gpio_interrupt(pi_irq_pin)
     rfm69.listen()
+    logger.info('Listening for radio data…')
     return rfm69
 
 
-def shut_down():
-    logger.debug('shutdown_called')
+def shut_down(pi_irq_pin=24):
+    logger.info('shutdown_called')
+    rpigpio.remove_event_detect(pi_irq_pin)
     dataprocessing.radio_q.join()
     print(f'Packets written to db: {tests.unittest_helper.count_all_records() // 9}')
     tests.unittest_helper.kill_database()
@@ -98,7 +100,7 @@ def shut_down():
 
 if __name__ == '__main__':
     radio = start_up(db_url=DB_URL, pi_irq_pin=RFM69_INTERRUPT_PIN)
-    finish_time = time.time() + 30
+    finish_time = time.time() + 3600
     try:
         while time.time() < finish_time:
             time.sleep(0.1)

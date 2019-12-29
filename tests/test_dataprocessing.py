@@ -19,7 +19,9 @@ class TestDataPrep(TestCase):
     def test_struct_is_unpacked_correctly(self):
         with self.assertLogs() as cm:
             decoded_data = dataprocessing.unpack_data_packet(radiodata.radio_data_format,
-                                                             unittest_helper.dummy_unpacked_data())
+                                                             {'timestamp': unittest_helper.global_test_time,
+                                                              'radio_data': unittest_helper.rx_data_CRC_good
+                                                              })
         self.assertIn('unpack_data_packet called', cm.output[0])
         self.assertEqual(len(decoded_data['radio_data']), len(unittest_helper.dummy_data))
         self.assertEqual(decoded_data['timestamp'], unittest_helper.global_test_time)
@@ -101,8 +103,8 @@ class TestReadRadioAndWriteDataToDataBase(TestCase):
     def test_read_radio_process_data_write_to_db(self):
         unittest_helper.initialize_database(db_in_memory=True)
         initial = unittest_helper.count_all_records()
-        test_data = [unittest_helper.dummy_radio_data(),
-                     unittest_helper.dummy_radio_data()]
+        test_data = [unittest_helper.rx_data_CRC_good,
+                     unittest_helper.rx_data_CRC_good]
         [dataprocessing.radio_q.put(x) for x in test_data]
         with self.assertLogs() as cm:
             dataprocessing.process_radio_data()

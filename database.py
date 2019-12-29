@@ -10,9 +10,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from sqlalchemy.orm import sessionmaker
+from __config__ import DEBUG_LEVEl
 
 logger = logging.getLogger(__name__)
-logger.setLevel('DEBUG')
+logger.setLevel(DEBUG_LEVEl)
 
 Base = declarative_base()
 

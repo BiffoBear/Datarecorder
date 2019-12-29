@@ -20,6 +20,11 @@ Created on Fri Nov 22 10:23:09 2019
 # sensor 0xff is sent as padding when no sensor exists and should not be recorded in the database.
 
 import struct
+import logging
+from __config__ import DEBUG_LEVEl
+
+logger = logging.getLogger(__name__)
+logger.setLevel(DEBUG_LEVEl)
 
 radio_data_format = '>BBHHBBBfBfBfBfBfBfBfBfBfBf'
 max_packet_length = 58  # Leaves two bytes for the CRC16
@@ -32,6 +37,7 @@ last_packet_serial_number = {} # Stores the latest packet serial number from eac
 def crc16(data):
     '''Takes a bytes object and calcuates the CRC-16/CCITT-FALSE.'''
     # Modifed from a stackoverflow answer at https://stackoverflow.com/a/55850496/7969814
+    logger.debug('crc-16 called')
     crc = 0xFFFF
     for i in range(len(data)):
         crc ^= data[i] << 8
@@ -52,15 +58,15 @@ def append_crc(data_packet):
 
 def check_crc(data_packet):
     '''Checks the CRC of a data_packet and reuturns True if it's 0 and False otherwise.'''
+    logger.debug('check_crc called')
     return bool(crc16(data_packet) == 0)
 
 
-def read_radio_buffer(radio):
+def confirm_and_strip_crc(rx_packet):
     '''Returns the result of a Radio's get_buffer method after confirming and removing CRC.'''
-    rx_packet = radio.get_buffer()
-    if rx_packet is None:
-        return None
+    logger.debug('confirm_and_strip_crc called')
     if check_crc(rx_packet):
+        logger.debug('Good packet')
         return rx_packet[:-2]
-    # TODO: Log an error
-    return None
+    logger.debug('Bad packet')
+    raise ValueError('Bad data packet')

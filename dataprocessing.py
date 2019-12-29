@@ -12,17 +12,19 @@ from datetime import datetime
 import struct
 import database
 import radiodata
+from __config__ import DEBUG_LEVEl
 
 radio_q = queue.Queue()
 
 logger = logging.getLogger(__name__)
-logger.setLevel('DEBUG')  # TODO: Refactor log level into __config.py__
+logger.setLevel(DEBUG_LEVEl)
 
 
 def unpack_data_packet(format_string, data_packet):
     '''Unpacks data using the supplied format string and returns it in a dict with the timestamp.'''
     logger.debug(f'unpack_data_packet called')
-    data_packet['radio_data'] = struct.unpack(format_string, data_packet['radio_data'])
+    data_packet['radio_data'] = struct.unpack(format_string,
+                                              radiodata.confirm_and_strip_crc(data_packet['radio_data']))
     return data_packet
 
 
@@ -69,7 +71,7 @@ def process_radio_data():
         expanded_data = expand_radio_data_into_dict(unpacked_data)
         if not check_for_duplicate_packet(expanded_data['node']):
             database.write_sensor_reading_to_db(expanded_data['sensors'])
-    except struct.error:
+    except ValueError:
         logger.warning('Bad data packet detected')
     radio_q.task_done()
 

@@ -12,22 +12,15 @@ import radiodata
 from tests import unittest_helper
 
 
-class TestDataReading(TestCase):
+class TestCrcChecking(TestCase):
 
-    def setUp(self):
-        self.radio = Mock()
-
-    def test_radio_get_buffer_returns_none_if_buffer_empty(self):
-        self.radio.get_buffer.return_value=None
-        self.assertEqual(radiodata.read_radio_buffer(self.radio), None)
-
-    def test_radio_data_returns_none_if_crc_is_bad(self):
-        self.radio.get_buffer.return_value= unittest_helper.rx_data_CRC_bad
-        self.assertEqual(radiodata.read_radio_buffer(self.radio), None)
+    def test_radio_data_raises_valueerror_if_crc_is_bad(self):
+        with self.assertRaises(ValueError):
+            self.assertEqual(radiodata.confirm_and_strip_crc(unittest_helper.rx_data_CRC_bad), None)
 
     def test_radio_data_returns_correct_data_if_crc_is_good(self):
-        self.radio.get_buffer.return_value= unittest_helper.rx_data_CRC_good
-        self.assertEqual(radiodata.read_radio_buffer(self.radio), unittest_helper.dummy_radio_data())
+        self.assertEqual(radiodata.confirm_and_strip_crc(unittest_helper.rx_data_CRC_good),
+                         unittest_helper.dummy_radio_data())
 
 
 # @skip
