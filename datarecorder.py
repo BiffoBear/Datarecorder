@@ -22,12 +22,10 @@ logger.setLevel('DEBUG')
 
 
 def rfm69_callback(rfm69_irq):
-    logger.debug('Called')
+    logger.debug('rfm69_callback called')
     if radio.payload_ready:
-        logger.debug('payload ready')
         packet = radio.receive(timeout=None)
         if packet is not None:
-            logger.debug('Data packet!!!')
             dataprocessing.radio_q.put(packet)
 
 
@@ -65,6 +63,7 @@ def initialize_rfm69():
     spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
     try:
         rfm69 = adafruit_rfm69.RFM69(spi, cs, reset, 433.0)
+        rfm69.encryption_key = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
         logger.info(f'RFM69 radio initialized successfully')
         return rfm69
     except RuntimeError as error:
@@ -86,20 +85,24 @@ def start_up(db_url=None, pi_irq_pin=None):
     initialize_processing_thread()
     rfm69 = initialize_rfm69()
     initialize_gpio_interrupt(pi_irq_pin)
-    print(rfm69)
+    rfm69.listen()
     return rfm69
+
+
+def shut_down():
+    logger.debug('shutdown_called')
+    dataprocessing.radio_q.join()
+    print(f'Packets written to db: {tests.unittest_helper.count_all_records() // 9}')
+    tests.unittest_helper.kill_database()
 
 
 if __name__ == '__main__':
     radio = start_up(db_url=DB_URL, pi_irq_pin=RFM69_INTERRUPT_PIN)
     finish_time = time.time() + 30
     try:
-        # for x in range(100):
         while time.time() < finish_time:
             time.sleep(0.1)
-        dataprocessing.radio_q.join()
-        print(f'Packets written to db: {tests.unittest_helper.count_all_records() // 9}')
     except Exception as e:
         raise e
     finally:
-        tests.unittest_helper.kill_database()
+        shut_down()

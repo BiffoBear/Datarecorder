@@ -22,7 +22,11 @@ logger.setLevel('DEBUG')  # TODO: Refactor log level into __config.py__
 def unpack_data_packet(format_string, data_packet):
     '''Unpacks data using the supplied format string and returns it in a dict with the timestamp.'''
     logger.debug(f'unpack_data_packet called')
-    data_packet['radio_data'] = struct.unpack(format_string, data_packet['radio_data'])
+    try:
+        data_packet['radio_data'] = struct.unpack(format_string, data_packet['radio_data'])
+    except struct.error:
+        logger.warning('Bad data packet detected')
+        data_packet['radio_data'] = None
     return data_packet
 
 
