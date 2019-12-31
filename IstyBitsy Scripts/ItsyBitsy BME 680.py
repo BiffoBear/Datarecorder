@@ -49,7 +49,7 @@ x = 0
 
 while True:
     data = [NODE_ID, NODE_ID, x % 65536, 0x0000, 0x00, 0x00,
-            0x01, bme680.temperature + 275, 0x02, bme680.gas,
+            0x01, bme680.temperature + 273.15, 0x02, bme680.gas,
             0x03, bme680.humidity, 0x04, bme680.pressure / 100, 0xff, 0.0,
             0xff, 0.0, 0xff, 0.0, 0xff, 0.0, 0xff, 0.0, 0xff, 0.0,
             ]

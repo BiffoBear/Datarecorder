@@ -23,30 +23,6 @@ first_sensor_offset = 6
 sensor_count = 10
 
 
-# class Radio():
-#
-#     def __init__(self):
-#         self.realism = False
-#         self.packets_returned = 0
-#         self.buffer_read_count = 0
-#         self.packet_serial_number = 0
-#
-#     def get_buffer(self):
-#         self.buffer_read_count += 1
-#         if self.realism:
-#             time.sleep(random.random())
-#             if random.random() < 0.2:
-#                 return None
-#         self.packet_serial_number += 1
-#         self.packets_returned += 1
-#         return radiodata.append_crc(dummy_buffer_data_with_serial_number(self.packet_serial_number))
-#
-#     def set_realism(self, realistic=True):
-#         self.realism = realistic
-#
-#     def get_stats(self):
-#         return {'reads': self.buffer_read_count, 'packets': self.packets_returned}
-
 def dummy_buffer_data_with_serial_number(sn):
     x = list(dummy_data)
     x[2] = sn
@@ -91,7 +67,16 @@ def return_first_record():
     t = database.SensorData
     r = s.query(t).first()
     s.close()   
-    return r    
+    return r
+
+
+def print_all_records():
+    s = database.session()
+    t = database.SensorData
+    q = s.query(t).with_entities(t.Timestamp_UTC, t.Sensor_ID, t.Reading).order_by(t.Timestamp_UTC.desc())
+    [print(x) for x in q]
+    s.close()
+
 
 def check_for_gaps():
     s = database.session()
