@@ -95,7 +95,6 @@ def shut_down(pi_irq_pin=24):
     logger.info('shutdown_called')
     rpigpio.remove_event_detect(pi_irq_pin)
     dataprocessing.radio_q.join()
-    print(f'Packets written to db: {tests.unittest_helper.count_all_records() // 9}')
     # tests.unittest_helper.kill_database()
 
 
