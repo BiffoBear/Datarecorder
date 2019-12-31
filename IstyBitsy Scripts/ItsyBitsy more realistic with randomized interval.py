@@ -58,7 +58,7 @@ for x in range(samples_to_send):
     packed_data = struct.pack(radio_data_format, *dummy_data)
     data_packet = append_crc(packed_data)
     rfm69.send(data_packet)
-    time.sleep(0.1 + random.random() * 0.1)
+    time.sleep(NODE_ID / 10 + random.random() * 0.1)
     rfm69.send(data_packet)
     x += 1
     print(x)

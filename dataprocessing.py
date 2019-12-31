@@ -49,6 +49,7 @@ def check_for_duplicate_packet(node_data):
     logger.debug(f'check_for_duplicate_packet called')
     node_id = node_data['node_id']
     new_packet_serial_number = node_data['pkt_serial']
+    logger.info(f'Pkt sn : 0x{new_packet_serial_number:04x}')
     old_packet_serial_number = radiodata.last_packet_serial_number.get(node_id)
     if new_packet_serial_number != old_packet_serial_number:
         try:
