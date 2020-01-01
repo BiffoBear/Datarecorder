@@ -68,6 +68,7 @@ def process_radio_data():
     received_data = {'timestamp': datetime.utcnow(), 'radio_data': radio_q.get()}
     try:
         unpacked_data = unpack_data_packet(radiodata.radio_data_format, received_data)
+        logger.debug(f'Data packet = {unpacked_data}')
         expanded_data = expand_radio_data_into_dict(unpacked_data)
         if not check_for_duplicate_packet(expanded_data['node']):
             database.write_sensor_reading_to_db(expanded_data['sensors'])
