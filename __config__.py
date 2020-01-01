@@ -8,4 +8,4 @@ Created on Thu Dec 12 13:21:10 2019
 
 RFM69_INTERRUPT_PIN = 24
 DB_URL = 'postgresql://pi:blueberry@localhost:5432/housedata'
-DEBUG_LEVEl = 'DEBUG'
+DEBUG_LEVEl = 'INFO'
