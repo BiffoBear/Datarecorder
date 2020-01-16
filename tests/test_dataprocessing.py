@@ -8,6 +8,7 @@ Created on Tue Dec  3 10:36:28 2019
 from unittest import TestCase, skip
 from unittest.mock import patch
 import threading
+import datetime
 import radiodata
 import dataprocessing
 from tests import unittest_helper
@@ -53,49 +54,50 @@ class CheckForRepeatPacket(TestCase):
 
     def test_check_for_duplicate_packet_returns_true_and_dict_if_duplicate(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
-        radiodata.last_packet_serial_number = {0x01: 0x1010, }
+        dataprocessing.last_packet_info = {0x01: {'pkt_serial': 0x1010, 'timestamp': None}}
         with self.assertLogs() as cm:
             x = dataprocessing.check_for_duplicate_packet(test_data)
         self.assertIn('check_for_duplicate_packet called', cm.output[0])
         self.assertIsInstance(x, bool)
         self.assertTrue(x)
-        self.assertEqual(radiodata.last_packet_serial_number, {0x01: 0x1010, })
+        self.assertEqual(dataprocessing.last_packet_info[0x01]['pkt_serial'], 0x1010)
 
     def test_check_for_duplicate_returns_false_and_updates_dict_if_not_duplicate(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
-        radiodata.last_packet_serial_number = {0x01: 0x1011, }
+        dataprocessing.last_packet_info = {0x01: {'pkt_serial': 0x1011, 'timestamp': None}}
         x = dataprocessing.check_for_duplicate_packet(test_data)
         self.assertIsInstance(x, bool)
         self.assertFalse(x)
-        self.assertEqual(radiodata.last_packet_serial_number, {0x01: 0x1010})
+        self.assertEqual(dataprocessing.last_packet_info[0x01]['pkt_serial'], 0x1010)
 
     def test_check_for_duplicate_logs_a_warning_for_a_missing_packet(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1012}
-        radiodata.last_packet_serial_number = {0x01: 0x1010, }
+        dataprocessing.last_packet_info = {0x01: {'pkt_serial': 0x0101, 'timestamp': None}}
         with self.assertLogs() as cm:
             dataprocessing.check_for_duplicate_packet(test_data)
         self.assertIn('Data packet missing from node 0x01', cm.output[-1])
 
     def test_check_for_duplicate_handles_wrap_around_of_serial_numbers(self):
         test_data = {'node_id': 0x02, 'pkt_serial': 0x0001}
-        radiodata.last_packet_serial_number = {0x02: 0xfffe, }
+        dataprocessing.last_packet_info = {0x02: {'pkt_serial': 0xfffe, 'timestamp': None}}
         with self.assertLogs(level='CRITICAL') as cm:
             dataprocessing.check_for_duplicate_packet(test_data)
         self.assertIn('Data packet missing from node 0x02', cm.output[-1])
-        self.assertEqual(radiodata.last_packet_serial_number, {0x02: 0x0001})
+        self.assertEqual(dataprocessing.last_packet_info[0x02]['pkt_serial'], 0x0001)
         test_data = {'node_id': 0x01, 'pkt_serial': 0x0000}
-        radiodata.last_packet_serial_number = {0x01: 0xfffe, }
+        dataprocessing.last_packet_info = {0x01: 0xfffe, }
         with self.assertLogs() as cm:
             dataprocessing.check_for_duplicate_packet(test_data)
         self.assertNotIn('Data packet missing from node 0x01', cm.output[-1])
 
     def test_new_node_added_to_dict(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
-        radiodata.last_packet_serial_number = {0x02: 0xffff}
+        dataprocessing.last_packet_info = {0x02: {'pkt_serial': 0xffff, 'timestamp': None}}
         x = dataprocessing.check_for_duplicate_packet(test_data)
         self.assertIsInstance(x, bool)
         self.assertFalse(x)
-        self.assertEqual(radiodata.last_packet_serial_number[0x01], 0x1010)
+        self.assertEqual(dataprocessing.last_packet_info[0x01]['pkt_serial'], 0x1010)
+        self.assertIsInstance(dataprocessing.last_packet_info[0x01]['timestamp'], datetime.datetime)
 
 
 class TestReadRadioAndWriteDataToDataBase(TestCase):
@@ -118,7 +120,7 @@ class TestReadRadioAndWriteDataToDataBase(TestCase):
         unittest_helper.kill_database()
 
     def test_first_packet_from_node_logs_to_info(self):
-        radiodata.last_packet_serial_number = {}
+        dataprocessing.last_packet_info = {}
         with self.assertLogs() as cm:
             dataprocessing.check_for_duplicate_packet({'node_id': 0x01, 'pkt_serial': 9999})
         self.assertIn('First data packet from node 0x01', cm.output[1])

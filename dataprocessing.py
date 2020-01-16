@@ -19,6 +19,7 @@ radio_q = queue.Queue()
 logger = logging.getLogger(__name__)
 logger.setLevel(FILE_DEBUG_LEVEL)
 
+last_packet_info = {}  # Stores the latest packet serial number and time from each node.
 
 def unpack_data_packet(format_string, data_packet):
     '''Unpacks data using the supplied format string and returns it in a dict with the timestamp.'''
@@ -49,17 +50,22 @@ def check_for_duplicate_packet(node_data):
     logger.debug(f'check_for_duplicate_packet called')
     node_id = node_data['node_id']
     new_packet_serial_number = node_data['pkt_serial']
-    old_packet_serial_number = radiodata.last_packet_serial_number.get(node_id)
+    try:
+        old_packet_serial_number = last_packet_info.get(node_id)['pkt_serial']
+    except TypeError:
+        logger.info(f'First data packet from node 0x{node_id:02x}')
+        last_packet_info[node_id] = {'pkt_serial': new_packet_serial_number,
+                                     'timestamp': datetime.utcnow()
+                                     }
+        # TODO: Check that the sensors on this node match the database record for the node
+        # If nodes do not match, log an error and return True, so that the data is not recorded
+        return False
     if new_packet_serial_number != old_packet_serial_number:
-        try:
-            if new_packet_serial_number != (old_packet_serial_number + 1) % 0xffff:
-                logger.warning(f'Data packet missing from node 0x{node_id:02x}')
-        except TypeError:  # This is the first packet from this node, so there is nothing to compare.
-            # TODO: Check that the sensors on this node match the database record for the node
-            # If nodes do not match, log an error and return True, so that the data is not recorded
-            logger.info(f'First data packet from node 0x{node_id:02x}')
-        radiodata.last_packet_serial_number[node_id] = new_packet_serial_number
-        # TODO: Add the time to this so that time since last packet can be monitored
+        if new_packet_serial_number != (old_packet_serial_number + 1) % 0xffff:
+            logger.warning(f'Data packet missing from node 0x{node_id:02x}')
+        last_packet_info[node_id] = {'pkt_serial': new_packet_serial_number,
+                                     'timestamp': datetime.utcnow()
+                                     }
         return False
     return True
 
