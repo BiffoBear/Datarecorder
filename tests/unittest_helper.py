@@ -10,7 +10,7 @@ import struct
 import database
 import radiodata
 
-global_test_time  = datetime(2019, 12, 10, 21, 45, 56)
+global_test_time = datetime(2019, 12, 10, 21, 45, 56)
 dummy_data = (0x0a, 0x0a, 0x0a0a, 0xf0f0, 0xaa, 0xbb,
               0x00, 0.1234, 0x01, 1.2345, 0x02, 2.3456, 0x03, 3.4567, 0x04, 4.5678,
               0x05, -5.6789, 0x06, 0.0, 0x07, 7891, 0x08, -999, 0xff, 0,
@@ -23,10 +23,10 @@ first_sensor_offset = 6
 sensor_count = 10
 
 
-def dummy_buffer_data_with_serial_number(sn):
-    x = list(dummy_data)
-    x[2] = sn
-    return struct.pack(radiodata.radio_data_format, *x)
+# def dummy_buffer_data_with_serial_number(sn):
+#     x = list(dummy_data)
+#     x[2] = sn
+#     return struct.pack(radiodata.radio_data_format, *x)
 
 
 def dummy_radio_data():
@@ -35,9 +35,9 @@ def dummy_radio_data():
     # TODO: refactor to dummy_radio_struct_data
 
 
-def dummy_unpacked_data():    
-    return {'timestamp': global_test_time,
-            'radio_data': dummy_radio_data()}
+# def dummy_unpacked_data():
+#     return {'timestamp': global_test_time,
+#             'radio_data': dummy_radio_data()}
 
 
 def initialize_database(db_in_memory=True):

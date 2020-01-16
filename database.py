@@ -5,15 +5,16 @@ Created on Sat Nov 30 07:17:01 2019
 
 @author: martinstephens
 """
+# TODO: Add a get all nodes query that returns the nodes and associated sensors
 import logging
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from sqlalchemy.orm import sessionmaker
-from __config__ import DEBUG_LEVEl
+from __config__ import FILE_DEBUG_LEVEL
 
 logger = logging.getLogger(__name__)
-logger.setLevel(DEBUG_LEVEl)
+logger.setLevel(FILE_DEBUG_LEVEL)
 
 Base = declarative_base()
 

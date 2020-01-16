@@ -14,12 +14,10 @@ import RPi.GPIO as rpigpio
 import adafruit_rfm69
 import database
 import dataprocessing
-import tests.unittest_helper
-from __config__ import DB_URL, RFM69_INTERRUPT_PIN, DEBUG_LEVEl
-import tests.unittest_helper
+from __config__ import DB_URL, RFM69_INTERRUPT_PIN, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 
 logger = logging.getLogger(__name__)
-logger.setLevel(DEBUG_LEVEl)
+logger.setLevel(FILE_DEBUG_LEVEL)
 
 
 def rfm69_callback(rfm69_irq):
@@ -39,22 +37,25 @@ def initialize_gpio_interrupt(rfm69_g0):
     rpigpio.add_event_callback(rfm69_g0, rfm69_callback)
 
 
-def initialize_logging():
+def initialize_logging(file_logging_level, console_logging_level):
+    # TODO: Implement file logging to /tmp/datarecorder.log with file rotation
+    # TODO: Add a custom handler to output to the OLED screen
+    # TODO: Add a QueueHandler and QueueListener to handle logging to the OLED display
+
     # create file handler which logs even debug messages
     # set up logging to file - see previous section for more details
-    # logging.basicConfig(level=logging.DEBUG,
-    #                     format='%(asctime)s: %(name)-12s: %(levelname)-8s: %(message)s',
-    #                     datefmt='%y-%m-%d %H:%M',
-    #                     filename='testing.log',  # '/temp/myapp.log',
-    #                     filemode='w')
-    # # define a Handler which writes INFO messages or higher to the sys.stderr
+    logging.basicConfig(level=file_logging_level,
+                        format='%(asctime)s: %(name)-14s: %(levelname)-8s: %(message)s',
+                        datefmt='%y-%m-%d %H:%M',
+                        filename='/tmp/datarecorder.log',
+                        filemode='w'
+                        )
+    # file_handler = logging.FileHandler('/tmp/datarecorder.log')
+    # logging.getLogger('').addHandler(file_handler)
     console = logging.StreamHandler()
-    console.setLevel(logging.DEBUG)
-    # # set a format which is simpler for console use
-    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
-    # # tell the handler to use this format
-    console.setFormatter(formatter)
-    # add the handler to the root logger
+    console.setLevel(console_logging_level)
+    console_formatter = logging.Formatter('%(name)-14s: %(levelname)-8s %(message)s')
+    console.setFormatter(console_formatter)
     logging.getLogger('').addHandler(console)
 
 
@@ -80,8 +81,8 @@ def initialize_processing_thread():
     dataprocessing.init_data_processing_thread()
 
 
-def start_up(db_url=None, pi_irq_pin=None):
-    initialize_logging()
+def start_up(db_url=None, pi_irq_pin=None, logging_levels=(FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL)):
+    initialize_logging(*logging_levels)
     initialize_database(db_url)
     initialize_processing_thread()
     rfm69 = initialize_rfm69()

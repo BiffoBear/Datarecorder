@@ -5,15 +5,16 @@ Created on Fri Dec 13 20:12:30 2019
 
 @author: pi
 """
-
+import pathlib
 from unittest import TestCase, skip
 from unittest.mock import Mock, patch, call
+import logging
 import board
 import RPi.GPIO as rpigpio
 import adafruit_rfm69
 import datarecorder
 import dataprocessing
-from __config__ import RFM69_INTERRUPT_PIN, DB_URL
+from __config__ import RFM69_INTERRUPT_PIN, DB_URL, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 
 
 class TestInterruptSetup(TestCase):
@@ -116,7 +117,7 @@ class TestIrqCallbackFunc(TestCase):
 @patch('datarecorder.initialize_logging')
 class TestStartUpFunc(TestCase):
 
-    def test_start_up_calls_initialize_logging(self, mock_init_logging,
+    def test_start_up_calls_all_init_functions(self, mock_init_logging,
                                                mock_init_db,
                                                mock_init_thread,
                                                mock_init_rfm69,
@@ -124,7 +125,25 @@ class TestStartUpFunc(TestCase):
                                                ):
         datarecorder.start_up(db_url='Fake_URL', pi_irq_pin=6)
         mock_init_logging.assert_called_once()
+        mock_init_logging.assert_called_once_with(FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL)
         mock_init_db.assert_called_once_with('Fake_URL')
         mock_init_thread.assert_called_once()
         mock_init_rfm69.assert_called_once()
         mock_init_irq.assert_called_once_with(6)
+
+
+class TestLoggingSetup(TestCase):
+
+    def test_log_file_exists_and_is_written_to(self):
+        logging_file = pathlib.Path('/tmp/datarecorder.log')
+        try:
+            logging_file.unlink()
+        except:
+            pass
+        datarecorder.initialize_logging(FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL)
+        logger = logging.getLogger(__name__)
+        logger.warning('test logging')
+        self.assertTrue(logging_file.is_file())
+        with open('/tmp/datarecorder.log') as f:
+            self.assertIn('test logging', f.read())
+

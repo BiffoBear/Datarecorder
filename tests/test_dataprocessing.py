@@ -117,6 +117,12 @@ class TestReadRadioAndWriteDataToDataBase(TestCase):
         self.assertEqual(final, initial + 9)
         unittest_helper.kill_database()
 
+    def test_first_packet_from_node_logs_to_info(self):
+        radiodata.last_packet_serial_number = {}
+        with self.assertLogs() as cm:
+            dataprocessing.check_for_duplicate_packet({'node_id': 0x01, 'pkt_serial': 9999})
+        self.assertIn('First data packet from node 0x01', cm.output[1])
+
     def test_bad_data_packet_logs_a_warning_and_continues_without_writing_to_db(self):
         unittest_helper.initialize_database(db_in_memory=True)
         initial = unittest_helper.count_all_records()

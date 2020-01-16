@@ -21,17 +21,18 @@ Created on Fri Nov 22 10:23:09 2019
 
 import struct
 import logging
-from __config__ import DEBUG_LEVEl
+from __config__ import FILE_DEBUG_LEVEL
 
 logger = logging.getLogger(__name__)
-logger.setLevel(DEBUG_LEVEl)
+logger.setLevel(FILE_DEBUG_LEVEL)
 
 radio_data_format = '>BBHHBBBfBfBfBfBfBfBfBfBfBf'
 max_packet_length = 58  # Leaves two bytes for the CRC16
 set_packet_length = struct.calcsize(radio_data_format)
 sensor_count = radio_data_format.count('f')
 sensor_offset = radio_data_format.find('Bf') - 1  # lists are zero indexed
-last_packet_serial_number = {} # Stores the latest packet serial number from each node. Lock before updating!
+last_packet_serial_number = {}  # Stores the latest packet serial number from each node.
+# TODO: Refactor last_packet_serial_number into dataprocessing, not used elsewhere
 
 
 def crc16(data):

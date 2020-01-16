@@ -9,9 +9,13 @@ Created on Sat Nov 30 07:17:26 2019
 from unittest import TestCase
 from sqlalchemy import inspect
 import sqlalchemy
+import logging
 import database
 from tests import unittest_helper
 
+import __config__
+
+__config__.FILE_DEBUG_LEVEL = logging.DEBUG
 
 #@skip
 class ConfirmDatabaseSetup(TestCase):
