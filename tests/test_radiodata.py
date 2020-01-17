@@ -6,10 +6,13 @@ Created on Fri Nov 22 10:23:09 2019
 @author: martinstephens
 """
 from unittest import TestCase
-from unittest.mock import Mock
 import struct
 import radiodata
 from tests import unittest_helper
+
+
+def split_crc_result_into_bytes(crc_result):
+    return bytes([crc_result >> 8, crc_result & 0xff])
 
 
 class TestCrcChecking(TestCase):
@@ -23,11 +26,7 @@ class TestCrcChecking(TestCase):
                          unittest_helper.dummy_radio_data())
 
 
-# @skip
 class TestDecodeData(TestCase):
-
-    def split_crc_result_into_bytes(self, crc_result):
-        return bytes([crc_result >> 8, crc_result & 0xff])
 
     def test_confirm_crc16_func_is_correct(self):
         crc_test_data = '123456789'
@@ -53,4 +52,4 @@ class TestDecodeData(TestCase):
         test_data = struct.pack('>HH', 0xaaaa, 0xbbbb)
         crc = radiodata.crc16(test_data)
         test_data_with_crc = radiodata.append_crc(test_data)
-        self.assertEqual(test_data_with_crc[-2:], self.split_crc_result_into_bytes(crc))
+        self.assertEqual(test_data_with_crc[-2:], split_crc_result_into_bytes(crc))

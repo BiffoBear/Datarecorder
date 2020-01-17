@@ -5,7 +5,6 @@ Created on Sat Nov 30 07:17:01 2019
 
 @author: martinstephens
 """
-# TODO: Add a get all nodes query that returns the nodes and associated sensors
 import logging
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -18,7 +17,7 @@ logger.setLevel(FILE_DEBUG_LEVEL)
 
 Base = declarative_base()
 
-# For PoatGreSQL on local machine (host is None for Unix path instead of TCP)
+# For PostGreSQL on local machine (host is None for Unix path instead of TCP)
 # postgresql+psycopg2://user:password@host:port/dbname[?key=value&key=value...]
 
 engine = None
@@ -62,11 +61,14 @@ class Conversions(Base):
 
 
 def write_sensor_reading_to_db(data):
-    '''Takes a dict with timestamp and a list of tuples of sensor_readings and writes them out to the database.'''
+    """Takes a dict with timestamp and a list of tuples of sensor_readings and writes them out to the database."""
     logger.debug(f'write_sensor_reading_to_db called')
     try:
+        # noinspection PyCallingNonCallable
         s = session()
-        [s.add(SensorData(Timestamp_UTC=data['timestamp'], Sensor_ID=r[0], Reading=r[1])) for r in data['sensor_readings']]
+        [s.add(SensorData(Timestamp_UTC=data['timestamp'],
+                          Sensor_ID=r[0],
+                          Reading=r[1])) for r in data['sensor_readings']]
         s.commit()
     except Exception as error:
         logger.critical(f'IOError writing to database')

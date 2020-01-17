@@ -1,7 +1,7 @@
 # Write your code here :-)
 import time
-import random
 import struct
+# noinspection PyPackageRequirements
 import board
 import busio
 import digitalio
@@ -27,22 +27,23 @@ dummy_data = [NODE_ID, NODE_ID, 0x0000, 0xf0f0, 0xaa, 0xbb,
               0x05, -5.6789, 0x06, 0.0, 0x07, 7891, 0x08, -999, 0xff, 0,
               ]
 
+
 def crc16(data):
-    '''Takes a bytes object and calcuates the CRC-16/CCITT-FALSE.'''
+    """Takes a bytes object and calcuates the CRC-16/CCITT-FALSE."""
     # Modifed from a stackoverflow answer at https://stackoverflow.com/a/55850496/7969814
     crc = 0xFFFF
     for i in range(len(data)):
         crc ^= data[i] << 8
-        for j in range(0,8):
+        for j in range(0, 8):
             if (crc & 0x8000) > 0:
-                crc =(crc << 1) ^ 0x1021
+                crc = (crc << 1) ^ 0x1021
             else:
                 crc = crc << 1
     return crc & 0xFFFF
 
 
-def append_crc(data_packet : (bytes, bytearray)):
-    '''Appends the 16 bit CRC to the end of the datapacket.'''
+def append_crc(data_packet: (bytes, bytearray)):
+    """Appends the 16 bit CRC to the end of the datapacket."""
     crc = crc16(data_packet)
     data_packet += bytes([crc >> 8])  # high byte
     data_packet += bytes([crc & 0xff])  # low byte
@@ -52,10 +53,10 @@ def append_crc(data_packet : (bytes, bytearray)):
 print('starting')
 start_time = time.time()
 end_time = start_time + 57600
-#x = 0
+# x = 0
 time.sleep(NODE_ID * 0.3)
+# while time.time() < end_time:
 for x in range(samples_to_send):
-#while time.time() < end_time:
     z = x % 65536
     dummy_data[2] = z
     packed_data = struct.pack(radio_data_format, *dummy_data)

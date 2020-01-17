@@ -17,14 +17,15 @@ import __config__
 
 __config__.FILE_DEBUG_LEVEL = logging.DEBUG
 
-#@skip
+
+# @skip
 class ConfirmDatabaseSetup(TestCase):
 
     def setUp(self):
-        self.required_tables_and_columns = {'Sensor Readings': ['ID', 'Timestamp_UTC', 'Sensor_ID', 'Reading',],
-                                            'Sensors': ['ID', 'Node_ID', 'Unit', 'Name',],
-                                            'Nodes': ['ID', 'Name', 'Location',],
-                                            'Conversions': ['ID',],
+        self.required_tables_and_columns = {'Sensor Readings': ['ID', 'Timestamp_UTC', 'Sensor_ID', 'Reading', ],
+                                            'Sensors': ['ID', 'Node_ID', 'Unit', 'Name', ],
+                                            'Nodes': ['ID', 'Name', 'Location', ],
+                                            'Conversions': ['ID', ],
                                             }
         unittest_helper.initialize_database()
         self.inspector = inspect(database.engine)
@@ -58,6 +59,7 @@ class TestDataBaseInitialization(TestCase):
 
     def test_failure_to_initialize_database_raises_critical_error(self):
         database.engine.dispose()
+        # noinspection PyUnresolvedReferences
         with self.assertRaises(sqlalchemy.exc.ArgumentError) as dm:
             with self.assertLogs(level='CRITICAL') as cm:
                 database.initialize_database('')
@@ -84,13 +86,3 @@ class TestWriteDataToDataBase(TestCase):
         database_records = [[t.Timestamp_UTC, t.Sensor_ID, t.Reading] for t in q]
         expected_result = [[test_time, x[0], x[1]] for x in test_data['sensor_readings']]
         self.assertEqual(database_records, expected_result)
-    
-
-    def test_db_write_failure_logs_critical_error_and_raises_error(self):
-        pass
-        # TODO: Work out how to mock this out properly
-#        mock_session.side_effect = IOError
-#        with self.assertLogs(level='CRITICAL') as cm:
-#            with self.assertRaises(IOError):
-#                database.write_sensor_reading_to_db('data')
-#        self.assertEqual(cm.output, 'blah')

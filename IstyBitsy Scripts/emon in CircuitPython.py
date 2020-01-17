@@ -1,5 +1,5 @@
-import digitalio
 import analogio
+# noinspection PyPackageRequirements
 import board
 import time
 import math
@@ -12,18 +12,18 @@ emon = {'house': {'v_pin': voltage_pin,
                   },
         'garden': {'v_pin': voltage_pin,
                    'i_pin': analogio.AnalogIn(board.A3),
-                  'v': [],
-                  'i': [],
+                   'v': [],
+                   'i': [],
                    },
         'pool': {'v_pin': voltage_pin,
                  'i_pin': analogio.AnalogIn(board.A4),
-                  'v': [],
-                  'i': [],
+                 'v': [],
+                 'i': [],
                  },
         'kitchen': {'v_pin': voltage_pin,
                     'i_pin': analogio.AnalogIn(board.A5),
-                  'v': [],
-                  'i': [],
+                    'v': [],
+                    'i': [],
                     },
         }
 
@@ -47,6 +47,7 @@ def filter_phaseshift_and_calibrate_list(readings_dict, phaseshift):
     readings_dict['v'] = [y[x-1] + phaseshift * (y[x] - y[x-1]) for x in range(1, len(y))]
     return readings_dict
 
+
 def sample_electricity_a(current_set, duration):
     v_readings = []
     i_readings = []
@@ -61,7 +62,8 @@ def sample_electricity_a(current_set, duration):
     current_set['i'] = i_readings
     return current_set
 
-#print(filter_list(dummy_data)['v'][:100])
+
+# print(filter_list(dummy_data)['v'][:100])
 st = time.monotonic()
 sample_electricity_a(emon['house'], SAMPLE_TIME)
 filter_phaseshift_and_calibrate_list(dummy_data, PHASE_CAL)

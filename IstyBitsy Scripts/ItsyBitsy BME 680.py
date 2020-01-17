@@ -2,10 +2,12 @@
 import time
 import random
 import struct
+# noinspection PyPackageRequirements
 import board
 import busio
 import digitalio
 import adafruit_rfm69
+# noinspection PyUnresolvedReferences
 import adafruit_bme680
 i2c = busio.I2C(board.SCL, board.SDA)
 bme680 = adafruit_bme680.Adafruit_BME680_I2C(i2c)
@@ -20,22 +22,23 @@ radio_data_format = '>BBHHBBBfBfBfBfBfBfBfBfBfBf'
 NODE_ID = 0x02
 SAMPLE_INTERVAL = 15  # seconds
 
+
 def crc16(data):
-    '''Takes a bytes object and calcuates the CRC-16/CCITT-FALSE.'''
+    """Takes a bytes object and calcuates the CRC-16/CCITT-FALSE."""
     # Modifed from a stackoverflow answer at https://stackoverflow.com/a/55850496/7969814
     crc = 0xFFFF
     for i in range(len(data)):
         crc ^= data[i] << 8
-        for j in range(0,8):
+        for j in range(0, 8):
             if (crc & 0x8000) > 0:
-                crc =(crc << 1) ^ 0x1021
+                crc = (crc << 1) ^ 0x1021
             else:
                 crc = crc << 1
     return crc & 0xFFFF
 
 
-def append_crc(data_packet : (bytes, bytearray)):
-    '''Appends the 16 bit CRC to the end of the datapacket.'''
+def append_crc(data_packet: (bytes, bytearray)):
+    """Appends the 16 bit CRC to the end of the datapacket."""
     crc = crc16(data_packet)
     data_packet += bytes([crc >> 8])  # high byte
     data_packet += bytes([crc & 0xff])  # low byte

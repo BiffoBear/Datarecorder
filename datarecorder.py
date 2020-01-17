@@ -6,10 +6,13 @@ Created on Fri Dec  6 12:30:25 2019
 @author: martinstephens
 """
 import logging
+import logging.handlers
+# noinspection PyPackageRequirements
 import board
 import time
 import busio
 import digitalio
+# noinspection PyPep8Naming
 import RPi.GPIO as rpigpio
 import adafruit_rfm69
 import database
@@ -20,6 +23,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(FILE_DEBUG_LEVEL)
 
 
+# noinspection PyUnusedLocal
 def rfm69_callback(rfm69_irq):
     logger.debug('rfm69_callback called')
     if radio.payload_ready:
@@ -38,25 +42,15 @@ def initialize_gpio_interrupt(rfm69_g0):
 
 
 def initialize_logging(file_logging_level, console_logging_level):
-    # TODO: Implement file logging to /tmp/datarecorder.log with file rotation
-    # TODO: Add a custom handler to output to the OLED screen
-    # TODO: Add a QueueHandler and QueueListener to handle logging to the OLED display
-
-    # create file handler which logs even debug messages
-    # set up logging to file - see previous section for more details
-    logging.basicConfig(level=file_logging_level,
-                        format='%(asctime)s: %(name)-14s: %(levelname)-8s: %(message)s',
+    logging.basicConfig(level=console_logging_level,
+                        format='%(name)-14s: %(levelname)-8s %(message)s',
                         datefmt='%y-%m-%d %H:%M',
-                        filename='/tmp/datarecorder.log',
-                        filemode='w'
                         )
-    # file_handler = logging.FileHandler('/tmp/datarecorder.log')
-    # logging.getLogger('').addHandler(file_handler)
-    console = logging.StreamHandler()
-    console.setLevel(console_logging_level)
-    console_formatter = logging.Formatter('%(name)-14s: %(levelname)-8s %(message)s')
-    console.setFormatter(console_formatter)
-    logging.getLogger('').addHandler(console)
+    file_handler = logging.handlers.RotatingFileHandler('/tmp/datarecorder.log', maxBytes=1000000, backupCount=5)
+    file_handler_formatter = logging.Formatter('%(asctime)s: %(name)-14s: %(levelname)-8s: %(message)s')
+    file_handler.setFormatter(file_handler_formatter)
+    file_handler.setLevel(file_logging_level)
+    logging.getLogger('').addHandler(file_handler)
 
 
 def initialize_rfm69():
@@ -74,7 +68,7 @@ def initialize_rfm69():
 
 
 def initialize_database(url_db):
-    database.initialize_database(DB_URL)
+    database.initialize_database(url_db)
 
 
 def initialize_processing_thread():

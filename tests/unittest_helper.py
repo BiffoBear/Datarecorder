@@ -16,28 +16,17 @@ dummy_data = (0x0a, 0x0a, 0x0a0a, 0xf0f0, 0xaa, 0xbb,
               0x05, -5.6789, 0x06, 0.0, 0x07, 7891, 0x08, -999, 0xff, 0,
               )
 current_format = '>BBHHBBBfBfBfBfBfBfBfBfBfBf'
+# noinspection PyPep8,PyPep8
 rx_data_CRC_good = b'\n\n\n\n\xf0\xf0\xaa\xbb\x00=\xfc\xb9$\x01?\x9e\x04\x19\x02@\x16\x1eO\x03@]:\x93\x04@\x92+k\x05\xc0\xb5\xb9\x8c\x06\x00\x00\x00\x00\x07E\xf6\x98\x00\x08\xc4y\xc0\x00\xff\x00\x00\x00\x00\x94\x1b'
+# noinspection PyPep8,PyPep8,PyPep8
 rx_data_CRC_bad = b'\m\n\n\n\xf0\xf0\xaa\xbb\x00=\xfc\xb9$\x01?\x9e\x04\x19\x02@\x16\x1eO\x03@]:\x93\x04@\x92+k\x05\xc0\xb5\xb9\x8c\x06\x00\x00\x00\x00\x07E\xf6\x98\x00\x08\xc4y\xc0\x00\xff\x00\x00\x00\x00\x94\x1b'
-node_keys = ['node_id', 'pkt_serial', 'status_register', 'unused_1', 'unused_2',]
+node_keys = ['node_id', 'pkt_serial', 'status_register', 'unused_1', 'unused_2', ]
 first_sensor_offset = 6
 sensor_count = 10
 
 
-# def dummy_buffer_data_with_serial_number(sn):
-#     x = list(dummy_data)
-#     x[2] = sn
-#     return struct.pack(radiodata.radio_data_format, *x)
-
-
 def dummy_radio_data():
     return struct.pack(radiodata.radio_data_format, *dummy_data)
-    # TODO: check where this is used and whether it is used as raw buffer data
-    # TODO: refactor to dummy_radio_struct_data
-
-
-# def dummy_unpacked_data():
-#     return {'timestamp': global_test_time,
-#             'radio_data': dummy_radio_data()}
 
 
 def initialize_database(db_in_memory=True):
@@ -60,31 +49,3 @@ def count_all_records():
     r = s.query(t).count()
     s.close()   
     return r
-
-
-def return_first_record():
-    s = database.session()
-    t = database.SensorData
-    r = s.query(t).first()
-    s.close()   
-    return r
-
-
-def print_all_records():
-    s = database.session()
-    t = database.SensorData
-    q = s.query(t).with_entities(t.Timestamp_UTC, t.Sensor_ID, t.Reading).order_by(t.Timestamp_UTC.desc())
-    [print(x) for x in q]
-    s.close()
-
-
-def check_for_gaps():
-    s = database.session()
-    t = database.Serial
-    q = s.query(t).with_entities(t.Pkt_Serial).order_by(t.Pkt_Serial)
-    m = [x[0] for x in list(q)]
-    r = list(set(m))
-    v = zip(r[:-2], r[1:])
-    u = [x[0] + 1 for x in v if abs(x[1] - x[0]) > 1]
-    s.close()
-    return u

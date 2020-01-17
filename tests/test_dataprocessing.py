@@ -6,7 +6,6 @@ Created on Tue Dec  3 10:36:28 2019
 @author: martinstephens
 """
 from unittest import TestCase, skip
-from unittest.mock import patch
 import threading
 import datetime
 import radiodata
@@ -14,7 +13,7 @@ import dataprocessing
 from tests import unittest_helper
 
 
-#@skip
+# @skip
 class TestDataPrep(TestCase):
 
     def test_struct_is_unpacked_correctly(self):
@@ -75,14 +74,14 @@ class CheckForRepeatPacket(TestCase):
         dataprocessing.last_packet_info = {0x01: {'pkt_serial': 0x0101, 'timestamp': None}}
         with self.assertLogs() as cm:
             dataprocessing.check_for_duplicate_packet(test_data)
-        self.assertIn('Data packet missing from node 0x01', cm.output[-1])
+        self.assertIn('Data packet missing from node 0x01', cm.output[-2])
 
     def test_check_for_duplicate_handles_wrap_around_of_serial_numbers(self):
         test_data = {'node_id': 0x02, 'pkt_serial': 0x0001}
         dataprocessing.last_packet_info = {0x02: {'pkt_serial': 0xfffe, 'timestamp': None}}
         with self.assertLogs(level='CRITICAL') as cm:
             dataprocessing.check_for_duplicate_packet(test_data)
-        self.assertIn('Data packet missing from node 0x02', cm.output[-1])
+        self.assertIn('Data packet missing from node 0x02', cm.output[-2])
         self.assertEqual(dataprocessing.last_packet_info[0x02]['pkt_serial'], 0x0001)
         test_data = {'node_id': 0x01, 'pkt_serial': 0x0000}
         dataprocessing.last_packet_info = {0x01: 0xfffe, }
@@ -125,6 +124,12 @@ class TestReadRadioAndWriteDataToDataBase(TestCase):
             dataprocessing.check_for_duplicate_packet({'node_id': 0x01, 'pkt_serial': 9999})
         self.assertIn('First data packet from node 0x01', cm.output[1])
 
+    def test_data_packet_ok_logged_to_info(self):
+        dataprocessing.last_packet_info = {0x02: {'pkt_serial': 0x1000, 'timestamp': None}}
+        with self.assertLogs() as cm:
+            dataprocessing.check_for_duplicate_packet({'node_id': 0x02, 'pkt_serial': 0x1001})
+        self.assertIn('Rx from node 0x02, packet serial 0x1001', cm.output[1])
+
     def test_bad_data_packet_logs_a_warning_and_continues_without_writing_to_db(self):
         unittest_helper.initialize_database(db_in_memory=True)
         initial = unittest_helper.count_all_records()
@@ -146,10 +151,3 @@ class TestThreadingWithQueue(TestCase):
         self.assertIsInstance(thread, threading.Thread)
         self.assertTrue(thread.daemon)
         self.assertTrue(thread.ident)
-        
-
-@skip        
-class TestLoggingInitialization(TestCase):
-    # TODO: Implement when I've worked out how to mock it all.
-    pass
-#    housedata.initialize_logging()

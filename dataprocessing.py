@@ -21,8 +21,9 @@ logger.setLevel(FILE_DEBUG_LEVEL)
 
 last_packet_info = {}  # Stores the latest packet serial number and time from each node.
 
+
 def unpack_data_packet(format_string, data_packet):
-    '''Unpacks data using the supplied format string and returns it in a dict with the timestamp.'''
+    """Unpacks data using the supplied format string and returns it in a dict with the timestamp."""
     logger.debug(f'unpack_data_packet called')
     data_packet['radio_data'] = struct.unpack(format_string,
                                               radiodata.confirm_and_strip_crc(data_packet['radio_data']))
@@ -30,7 +31,7 @@ def unpack_data_packet(format_string, data_packet):
 
 
 def expand_radio_data_into_dict(data):
-    '''Takes a tuple of unpacked radio data and splits it out into dictionaries.'''
+    """Takes a tuple of unpacked radio data and splits it out into dictionaries."""
     logger.debug(f'expand_radio_data_into_dict called')
     readings = data['radio_data']
     munged_data = {'node': {'node_id': readings[0],
@@ -46,7 +47,7 @@ def expand_radio_data_into_dict(data):
 
 
 def check_for_duplicate_packet(node_data):
-    '''Takes a data packet and checks whether the serial number exists already.'''
+    """Takes a data packet and checks whether the serial number exists already."""
     logger.debug(f'check_for_duplicate_packet called')
     node_id = node_data['node_id']
     new_packet_serial_number = node_data['pkt_serial']
@@ -57,8 +58,6 @@ def check_for_duplicate_packet(node_data):
         last_packet_info[node_id] = {'pkt_serial': new_packet_serial_number,
                                      'timestamp': datetime.utcnow()
                                      }
-        # TODO: Check that the sensors on this node match the database record for the node
-        # If nodes do not match, log an error and return True, so that the data is not recorded
         return False
     if new_packet_serial_number != old_packet_serial_number:
         if new_packet_serial_number != (old_packet_serial_number + 1) % 0xffff:
@@ -66,12 +65,13 @@ def check_for_duplicate_packet(node_data):
         last_packet_info[node_id] = {'pkt_serial': new_packet_serial_number,
                                      'timestamp': datetime.utcnow()
                                      }
+        logger.info(f'Rx from node 0x{node_id:02x}, packet serial 0x{new_packet_serial_number:04x}')
         return False
     return True
 
 
 def process_radio_data():
-    '''Gets a data packet, checks that it is new, then writes it to the database.'''
+    """Gets a data packet, checks that it is new, then writes it to the database."""
     logger.debug(f'process_radio_data called')
     global radio_q
     received_data = {'timestamp': datetime.utcnow(), 'radio_data': radio_q.get()}
