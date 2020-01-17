@@ -6,7 +6,7 @@ Created on Thu Dec 12 13:21:10 2019
 @author: pi
 """
 import logging
-TESTING = False
+TESTING = True
 RFM69_INTERRUPT_PIN = 24
 DB_URL = 'postgresql://pi:blueberry@localhost:5432/housedata'
 if TESTING:
