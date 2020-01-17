@@ -56,7 +56,15 @@ def show_display(display=None):
 
 
 def add_screen_line(queue=None, text=''):
+    logger.debug('add_screen_line called')
     queue.append(text)
     if len(queue) == 6:
         queue.popleft()
     return queue
+
+
+def draw_lines(lines=None, display=None):
+    logger.debug('draw_lines called')
+    line_coords = ((1, 13), (1, 25), (1, 37), (1, 49), (1, 61))
+    for line in range(len(lines)):
+        write_text_to_display(display=display, coords=line_coords[line], text=lines[line])

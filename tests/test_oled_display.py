@@ -1,5 +1,5 @@
 from unittest import TestCase, skip
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, call
 from collections import deque
 import PIL
 import board
@@ -78,3 +78,15 @@ class TestTextDeliveryAndLayout(TestCase):
             queue = oleddisplay.add_screen_line(queue=queue, text=f'{z} Line')
         self.assertEqual(deque(['1 Line', '2 Line', '3 Line', '4 Line', '5 Line']), queue)
 
+    @patch('oleddisplay.write_text_to_display')
+    def test_lines_are_drawn_at_correct_coordinates(self, mock_display_write):
+        oled = None
+        queue = deque(['0 Line', '1 Line', '2 Line', '3 Line', '4 Line'])
+        oleddisplay.draw_lines(display=oled, lines=queue)
+        calls = [call(display=None, coords=(1, 13), text='0 Line'),
+                 call(display=None, coords=(1, 25), text='1 Line'),
+                 call(display=None, coords=(1, 37), text='2 Line'),
+                 call(display=None, coords=(1, 49), text='3 Line'),
+                 call(display=None, coords=(1, 61), text='4 Line'),
+                 ]
+        mock_display_write.assert_has_calls(calls)
