@@ -1,5 +1,7 @@
 import logging
+import threading
 from collections import deque
+import queue
 import board
 import busio
 import digitalio
@@ -7,6 +9,10 @@ import adafruit_ssd1306
 from PIL import Image, ImageDraw, ImageFont
 
 logger = logging.getLogger(__name__)
+
+message_queue = queue.Queue()
+global_lines = deque([])
+global_display = None
 
 
 def initialize_i2c():
@@ -24,12 +30,12 @@ def setup():
     try:
         i2c = initialize_i2c()
         reset = digitalio.DigitalInOut(board.D17)
-        oled = initialize_oled(i2c, reset)
-        image = Image.new('1', (oled.width, oled.height))
+        display = initialize_oled(i2c, reset)
+        image = Image.new('1', (display.width, display.height))
         draw = ImageDraw.Draw(image)
         font = ImageFont.load_default()
         logger.info('OLED display initialized successfully')
-        return {'oled': oled, 'image': image, 'draw': draw, 'font': font, }
+        return {'oled': display, 'image': image, 'draw': draw, 'font': font, }
     except ValueError:
         logger.error('OLED display failed to initialize. Check that I2C bus enabled and wiring is correct')
         return None
@@ -55,12 +61,12 @@ def show_display(display=None):
     return display
 
 
-def add_screen_line(queue=None, text=''):
+def add_screen_line(lines=None, text=''):
     logger.debug('add_screen_line called')
-    queue.append(text)
-    if len(queue) == 6:
-        queue.popleft()
-    return queue
+    lines.append(text)
+    if len(lines) == 6:
+        lines.popleft()
+    return lines
 
 
 def draw_lines(lines=None, display=None):
@@ -68,3 +74,33 @@ def draw_lines(lines=None, display=None):
     line_coords = ((1, 13), (1, 25), (1, 37), (1, 49), (1, 61))
     for line in range(len(lines)):
         write_text_to_display(display=display, coords=line_coords[line], text=lines[line])
+    return display
+
+
+def read_message_queue_write_to_display(lines=None, display=None):
+    logger.debug('read_message_queue_write_to_display called')
+    global message_queue
+    while True:
+        try:
+            lines = add_screen_line(lines=lines, text=message_queue.get_nowait())
+        except queue.Empty:
+            break
+    draw_lines(lines=lines, display=display)
+    return lines, display
+
+
+def loop_read_message_queue():
+    logger.debug(f'loop_read_message_queue called')
+    global global_lines, global_display
+    while True:
+        read_message_queue_write_to_display(lines=global_lines, display=global_display)
+
+
+def init_display_thread():
+    logger.debug(f'init_display_thread called')
+    global global_display
+    global_display = setup()
+    message_thread = threading.Thread(target=loop_read_message_queue)
+    message_thread.daemon = True
+    message_thread.start()
+    return message_thread
