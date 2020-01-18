@@ -9,6 +9,7 @@ import adafruit_ssd1306
 import oleddisplay
 
 
+@skip
 class TestDisplaySetupAndFunction(TestCase):
 
     @patch('busio.I2C')
@@ -47,23 +48,23 @@ class TestDisplaySetupAndFunction(TestCase):
         self.assertIn('OLED display initialized successfully', cm.output[0])
 
     def test_clear_display(self):
-        oled = oleddisplay.setup()
-        x = oleddisplay.clear_display(oled)
-        self.assertEqual(x, oled)
+        test_display = oleddisplay.setup()
+        x = oleddisplay.clear_display(test_display)
+        self.assertEqual(x, test_display)
 
     def test_write_to_display_returns_dict(self):
-        oled = oleddisplay.setup()
+        test_display = oleddisplay.setup()
         coords = (1, 1)
-        x = oleddisplay.write_text_to_display(display=oled, coords=coords, text='Hello World')
-        self.assertEqual(x, oled)
+        data_returned = oleddisplay.write_text_to_display(display=test_display, coords=coords, text='Hello World')
+        self.assertEqual(data_returned, test_display)
 
     def test_show_display_returns_dict(self):
-        oled = oleddisplay.setup()
-        oled['draw'].text((10, 10), 'Hi Mars!', font=oled['font'], fill=255)
-        oled['draw'].text((10, 22), 'Yo Pluto!', font=oled['font'], fill=255)
-        oled['oled'].image(oled['image'])
-        x = oleddisplay.show_display(display=oled)
-        self.assertEqual(x, oled)
+        test_display = oleddisplay.setup()
+        test_display['draw'].text((10, 10), 'Hi Mars!', font=test_display['font'], fill=255)
+        test_display['draw'].text((10, 22), 'Yo Pluto!', font=test_display['font'], fill=255)
+        test_display['oled'].image(test_display['image'])
+        x = oleddisplay.show_display(display=test_display)
+        self.assertEqual(x, test_display)
 
 
 class TestTextDeliveryAndLayout(TestCase):
@@ -79,8 +80,9 @@ class TestTextDeliveryAndLayout(TestCase):
             queue = oleddisplay.add_screen_line(lines=queue, text=f'{z} Line')
         self.assertEqual(deque(['1 Line', '2 Line', '3 Line', '4 Line', '5 Line']), queue)
 
+    @patch('oleddisplay.show_display')
     @patch('oleddisplay.write_text_to_display')
-    def test_lines_are_drawn_at_correct_coordinates(self, mock_write_to_display):
+    def test_lines_are_drawn_at_correct_coordinates(self, mock_write_to_display, _):
         display = None
         lines = deque(['0 Line', '1 Line', '2 Line', '3 Line', '4 Line'])
         oleddisplay.draw_lines(display=display, lines=lines)
@@ -92,16 +94,24 @@ class TestTextDeliveryAndLayout(TestCase):
                  ]
         mock_write_to_display.assert_has_calls(calls)
 
+    @patch('oleddisplay.show_display')
     @patch('oleddisplay.write_text_to_display')
-    def test_draw_lines_returns_display(self, _):
+    def test_draw_lines_returns_display(self, _1, _2):
         display = 'Fake Display'
         lines = deque(['Test Line'])
         returned_data = oleddisplay.draw_lines(display=display, lines=lines)
         self.assertEqual(display, returned_data)
 
+    @patch('oleddisplay.show_display')
+    def test_draw_lines_calls_show_display(self, mock_show_display):
+        test_display = oleddisplay.setup()
+        test_lines = deque(['Test text'])
+        oleddisplay.draw_lines(lines=test_lines, display=test_display)
+        mock_show_display.assert_called_once()
+
 
 class TestDataFlow(TestCase):
-    
+
     @patch('oleddisplay.draw_lines')
     def test_read_one_line_from_queue_write_to_screen(self, mock_draw_lines):
         msg_queue = oleddisplay.message_queue
@@ -126,12 +136,22 @@ class TestDataFlow(TestCase):
         with self.assertRaises(queue.Empty):
             msg_queue.get_nowait()
 
+    @patch('oleddisplay.show_display')
     @patch('oleddisplay.write_text_to_display')
-    def test_read_message_queue_write_to_display_returns_lines_and_display(self, _):
+    def test_read_message_queue_write_to_display_returns_lines_and_display(self, _1, _2):
         lines = deque(['test_lines'])
         display = 'fake_display'
         returned_data = oleddisplay.read_message_queue_write_to_display(lines=lines, display=display)
         self.assertEqual((lines, display), returned_data)
+
+    @patch('oleddisplay.show_display')
+    def test_display_is_passed_up_and_down_correctly(self, mock_show_display):
+        mock_show_display.return_value = 'Show Display'
+        oleddisplay.message_queue.put_nowait('Test passing display dict')
+        test_display = oleddisplay.setup()
+        test_lines = deque([])
+        data_returned = oleddisplay.read_message_queue_write_to_display(lines=test_lines, display=test_display)
+        mock_show_display.assert_called_once()
 
 
 class TestInitAndThreadingCalls(TestCase):
@@ -149,6 +169,7 @@ class TestInitAndThreadingCalls(TestCase):
         oleddisplay.init_display_thread()
         mock_thread.assert_called_once_with(target=oleddisplay.loop_read_message_queue)
 
+    @skip
     def test_thread_spawned_as_daemon(self):
         thread = oleddisplay.init_display_thread()
         self.assertIsInstance(thread, threading.Thread)

@@ -74,6 +74,7 @@ def draw_lines(lines=None, display=None):
     line_coords = ((1, 13), (1, 25), (1, 37), (1, 49), (1, 61))
     for line in range(len(lines)):
         write_text_to_display(display=display, coords=line_coords[line], text=lines[line])
+    show_display(display)
     return display
 
 
