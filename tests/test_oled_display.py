@@ -63,16 +63,13 @@ class TestDisplaySetupAndFunction(TestCase):
         x = oleddisplay.show_display(display=test_display)
         self.assertEqual(x, test_display)
 
-    @patch('oleddisplay.clear_display')
-    def test_show_display_calls_clear_display(self, mock_clear_display):
-        test_display = oleddisplay.setup()
-        oleddisplay.show_display(display=test_display)
-        mock_clear_display.assert_called_once()
 
-
+@patch('oleddisplay.clear_display')
+@patch('oleddisplay.show_display')
+@patch('oleddisplay.write_text_to_display')
 class TestTextDeliveryAndLayout(TestCase):
 
-    def test_screen_queue_fifo(self):
+    def test_screen_queue_fifo(self, _1, _2, _3):
         queue = deque([])
         x = oleddisplay.add_screen_line(lines=queue, text='0 Line')
         self.assertEqual(x, deque(['0 Line']))
@@ -83,30 +80,32 @@ class TestTextDeliveryAndLayout(TestCase):
             queue = oleddisplay.add_screen_line(lines=queue, text=f'{z} Line')
         self.assertEqual(deque(['1 Line', '2 Line', '3 Line', '4 Line', '5 Line']), queue)
 
-    @patch('oleddisplay.show_display')
-    @patch('oleddisplay.write_text_to_display')
-    def test_lines_are_drawn_at_correct_coordinates(self, mock_write_to_display, _):
+    def test_lines_are_drawn_at_correct_coordinates(self, mock_write_to_display, _1, mock_clear_display):
         display = None
+        mock_clear_display.return_value = display
         lines = deque(['0 Line', '1 Line', '2 Line', '3 Line', '4 Line'])
         oleddisplay.draw_lines(display=display, lines=lines)
-        calls = [call(display=None, coords=(1, 13), text='0 Line'),
-                 call(display=None, coords=(1, 25), text='1 Line'),
-                 call(display=None, coords=(1, 37), text='2 Line'),
-                 call(display=None, coords=(1, 49), text='3 Line'),
-                 call(display=None, coords=(1, 61), text='4 Line'),
+        calls = [call(display=None, coords=(1, 1), text='0 Line'),
+                 call(display=None, coords=(1, 13), text='1 Line'),
+                 call(display=None, coords=(1, 25), text='2 Line'),
+                 call(display=None, coords=(1, 37), text='3 Line'),
+                 call(display=None, coords=(1, 49), text='4 Line'),
                  ]
         mock_write_to_display.assert_has_calls(calls)
 
-    @patch('oleddisplay.show_display')
-    @patch('oleddisplay.write_text_to_display')
-    def test_draw_lines_returns_display(self, _1, mock_show_display):
+    def test_draw_lines_returns_display(self, _1, mock_show_display, _2):
         mock_show_display.side_effect = ['Display']
         lines = deque(['Test Line'])
         returned_data = oleddisplay.draw_lines(display=None, lines=lines)
         self.assertEqual('Display', returned_data)
 
-    @patch('oleddisplay.show_display')
-    def test_draw_lines_calls_show_display(self, mock_show_display):
+    def test_draw_lines_calls_clear_display(self, _1, _2, mock_clear_display):
+        test_display = oleddisplay.setup()
+        test_lines = deque(['Test text'])
+        oleddisplay.draw_lines(lines=test_lines, display=test_display)
+        mock_clear_display.assert_called_once()
+
+    def test_draw_lines_calls_show_display(self, _1, mock_show_display, _2):
         test_display = oleddisplay.setup()
         test_lines = deque(['Test text'])
         oleddisplay.draw_lines(lines=test_lines, display=test_display)
@@ -125,9 +124,10 @@ class TestDataFlow(TestCase):
         mock_message_queue.get.assert_called()
         mock_message_queue.task_done.assert_called()
 
+    @patch('oleddisplay.clear_display')
     @patch('oleddisplay.show_display')
     @patch('oleddisplay.write_text_to_display')
-    def test_read_message_queue_write_to_display_returns_lines_and_display(self, _1, mock_show_display):
+    def test_read_message_queue_write_to_display_returns_lines_and_display(self, _1, mock_show_display, _2):
         oleddisplay.message_queue.put_nowait('dummy data')
         lines = deque(['test_lines'])
         test_display = 'test display'

@@ -43,8 +43,7 @@ def setup():
 
 def clear_display(display):
     logger.debug('clear_display called')
-    display['oled'].fill(0)
-    display['oled'].show()
+    display['draw'].rectangle((0, 0, display['oled'].width, display['oled'].height), outline=0, fill=0)
     return display
 
 
@@ -56,7 +55,6 @@ def write_text_to_display(display=None, coords=(0, 0), text=''):
 
 def show_display(display=None):
     logger.debug('show_display called')
-    display = clear_display(display)
     display['oled'].image(display['image'])
     display['oled'].show()
     return display
@@ -73,6 +71,7 @@ def add_screen_line(lines=None, text=''):
 def draw_lines(lines=None, display=None):
     logger.debug('draw_lines called')
     line_coords = ((1, 1), (1, 13), (1, 25), (1, 37), (1, 49))
+    display = clear_display(display)
     for line in range(len(lines)):
         write_text_to_display(display=display, coords=line_coords[line], text=lines[line])
     display = show_display(display)
