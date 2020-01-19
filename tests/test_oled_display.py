@@ -114,11 +114,11 @@ class TestDataFlow(TestCase):
     @patch('oleddisplay.message_queue')
     @patch('oleddisplay.draw_lines')
     def test_read_one_line_from_queue_write_to_screen(self, mock_draw_lines, mock_message_queue):
-        mock_message_queue.get_nowait.return_value = 'dummy text'
+        mock_message_queue.get.return_value = 'dummy text'
         display_queue = deque([])
         oleddisplay.read_message_queue_write_to_display(lines=display_queue, display=None)
         mock_draw_lines.assert_called_once_with(display=None, lines=deque(['dummy text']))
-        mock_message_queue.get_nowait.assert_called()
+        mock_message_queue.get.assert_called()
         mock_message_queue.task_done.assert_called()
 
     @patch('oleddisplay.show_display')

@@ -82,7 +82,7 @@ def read_message_queue_write_to_display(lines=None, display=None):
     logger.debug('read_message_queue_write_to_display called')
     global message_queue
     try:
-        lines = add_screen_line(lines=lines, text=message_queue.get_nowait())
+        lines = add_screen_line(lines=lines, text=message_queue.get())
         print(lines[-1])
         display = draw_lines(lines=lines, display=display)
         message_queue.task_done()
