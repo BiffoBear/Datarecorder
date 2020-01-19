@@ -1,14 +1,12 @@
 from unittest import TestCase, skip
 from unittest.mock import Mock, patch, call
 from collections import deque
-import queue
 import PIL
 import board
 import adafruit_ssd1306
 import oleddisplay
 
 
-@skip
 class TestDisplaySetupAndFunction(TestCase):
 
     @patch('busio.I2C')
@@ -64,6 +62,12 @@ class TestDisplaySetupAndFunction(TestCase):
         test_display['oled'].image(test_display['image'])
         x = oleddisplay.show_display(display=test_display)
         self.assertEqual(x, test_display)
+
+    @patch('oleddisplay.clear_display')
+    def test_show_display_calls_clear_display(self, mock_clear_display):
+        test_display = oleddisplay.setup()
+        oleddisplay.show_display(display=test_display)
+        mock_clear_display.assert_called_once()
 
 
 class TestTextDeliveryAndLayout(TestCase):
