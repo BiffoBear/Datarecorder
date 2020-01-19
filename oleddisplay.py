@@ -81,9 +81,13 @@ def draw_lines(lines=None, display=None):
 def read_message_queue_write_to_display(lines=None, display=None):
     logger.debug('read_message_queue_write_to_display called')
     global message_queue
-    lines = add_screen_line(lines=lines, text=message_queue.get_nowait())
-    display = draw_lines(lines=lines, display=display)
-    message_queue.task_done()
+    try:
+        lines = add_screen_line(lines=lines, text=message_queue.get_nowait())
+        print(lines[-1])
+        display = draw_lines(lines=lines, display=display)
+        message_queue.task_done()
+    except queue.Empty:
+        print(f'Empty queue')
     return lines, display
 
 

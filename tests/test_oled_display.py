@@ -111,16 +111,15 @@ class TestTextDeliveryAndLayout(TestCase):
 
 class TestDataFlow(TestCase):
 
+    @patch('oleddisplay.message_queue')
     @patch('oleddisplay.draw_lines')
-    def test_read_one_line_from_queue_write_to_screen(self, mock_draw_lines):
-        msg_queue = oleddisplay.message_queue
-        msg_queue.put_nowait('0 Line')
+    def test_read_one_line_from_queue_write_to_screen(self, mock_draw_lines, mock_message_queue):
+        mock_message_queue.get_nowait.return_value = 'dummy text'
         display_queue = deque([])
-        self.assertIsInstance(msg_queue, queue.Queue)
         oleddisplay.read_message_queue_write_to_display(lines=display_queue, display=None)
-        mock_draw_lines.assert_called_once_with(display=None, lines=deque(['0 Line']))
-        with self.assertRaises(queue.Empty):
-            msg_queue.get_nowait()
+        mock_draw_lines.assert_called_once_with(display=None, lines=deque(['dummy text']))
+        mock_message_queue.get_nowait.assert_called()
+        mock_message_queue.task_done.assert_called()
 
     @patch('oleddisplay.show_display')
     @patch('oleddisplay.write_text_to_display')
