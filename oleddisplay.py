@@ -74,19 +74,16 @@ def draw_lines(lines=None, display=None):
     line_coords = ((1, 13), (1, 25), (1, 37), (1, 49), (1, 61))
     for line in range(len(lines)):
         write_text_to_display(display=display, coords=line_coords[line], text=lines[line])
-    show_display(display)
+    display = show_display(display)
     return display
 
 
 def read_message_queue_write_to_display(lines=None, display=None):
     logger.debug('read_message_queue_write_to_display called')
     global message_queue
-    while True:
-        try:
-            lines = add_screen_line(lines=lines, text=message_queue.get_nowait())
-        except queue.Empty:
-            break
-    draw_lines(lines=lines, display=display)
+    lines = add_screen_line(lines=lines, text=message_queue.get_nowait())
+    display = draw_lines(lines=lines, display=display)
+    message_queue.task_done()
     return lines, display
 
 
@@ -94,7 +91,7 @@ def loop_read_message_queue():
     logger.debug(f'loop_read_message_queue called')
     global global_lines, global_display
     while True:
-        read_message_queue_write_to_display(lines=global_lines, display=global_display)
+        global_lines, global_display = read_message_queue_write_to_display(lines=global_lines, display=global_display)
 
 
 def init_display_thread():

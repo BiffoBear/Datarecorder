@@ -1,7 +1,6 @@
 from unittest import TestCase, skip
 from unittest.mock import Mock, patch, call
 from collections import deque
-import threading
 import queue
 import PIL
 import board
@@ -96,11 +95,11 @@ class TestTextDeliveryAndLayout(TestCase):
 
     @patch('oleddisplay.show_display')
     @patch('oleddisplay.write_text_to_display')
-    def test_draw_lines_returns_display(self, _1, _2):
-        display = 'Fake Display'
+    def test_draw_lines_returns_display(self, _1, mock_show_display):
+        mock_show_display.side_effect = ['Display']
         lines = deque(['Test Line'])
-        returned_data = oleddisplay.draw_lines(display=display, lines=lines)
-        self.assertEqual(display, returned_data)
+        returned_data = oleddisplay.draw_lines(display=None, lines=lines)
+        self.assertEqual('Display', returned_data)
 
     @patch('oleddisplay.show_display')
     def test_draw_lines_calls_show_display(self, mock_show_display):
@@ -123,26 +122,15 @@ class TestDataFlow(TestCase):
         with self.assertRaises(queue.Empty):
             msg_queue.get_nowait()
 
-    @patch('oleddisplay.draw_lines')
-    def test_read_two_lines_from_queue_write_to_screen(self, mock_draw_lines):
-        msg_queue = oleddisplay.message_queue
-        display_queue = deque([])
-        mock_draw_lines.reset_mock()
-        msg_queue.put_nowait('0 Line')
-        msg_queue.put_nowait('1 Line')
-        oleddisplay.read_message_queue_write_to_display(lines=display_queue, display=None)
-        calls = ([call(display=None, lines=deque(['0 Line', '1 Line']))])
-        mock_draw_lines.assert_has_calls(calls)
-        with self.assertRaises(queue.Empty):
-            msg_queue.get_nowait()
-
     @patch('oleddisplay.show_display')
     @patch('oleddisplay.write_text_to_display')
-    def test_read_message_queue_write_to_display_returns_lines_and_display(self, _1, _2):
+    def test_read_message_queue_write_to_display_returns_lines_and_display(self, _1, mock_show_display):
+        oleddisplay.message_queue.put_nowait('dummy data')
         lines = deque(['test_lines'])
-        display = 'fake_display'
-        returned_data = oleddisplay.read_message_queue_write_to_display(lines=lines, display=display)
-        self.assertEqual((lines, display), returned_data)
+        test_display = 'test display'
+        mock_show_display.return_value = test_display
+        returned_data = oleddisplay.read_message_queue_write_to_display(lines=lines, display=None)
+        self.assertEqual((lines, test_display), returned_data)
 
     @patch('oleddisplay.show_display')
     def test_display_is_passed_up_and_down_correctly(self, mock_show_display):
@@ -152,26 +140,23 @@ class TestDataFlow(TestCase):
         test_lines = deque([])
         data_returned = oleddisplay.read_message_queue_write_to_display(lines=test_lines, display=test_display)
         mock_show_display.assert_called_once()
+        self.assertEqual('Show Display', data_returned[1])
 
 
 class TestInitAndThreadingCalls(TestCase):
 
     @patch('oleddisplay.setup')
-    def test_init_display_thread_calls_setup(self, mock_setup):
-        mock_setup.return_value = 'mock display dict'
-        oleddisplay.init_display_thread()
-        mock_setup.assert_called_once()
-        self.assertEqual('mock display dict', oleddisplay.global_display)
-
+    @patch('oleddisplay.loop_read_message_queue')
     @patch('threading.Thread')
-    def test_thread_called(self, mock_thread):
-        mock_thread.return_value = Mock()
-        oleddisplay.init_display_thread()
-        mock_thread.assert_called_once_with(target=oleddisplay.loop_read_message_queue)
-
-    @skip
-    def test_thread_spawned_as_daemon(self):
-        thread = oleddisplay.init_display_thread()
-        self.assertIsInstance(thread, threading.Thread)
-        self.assertTrue(thread.daemon)
-        self.assertTrue(thread.ident)
+    def test_setup_called_and_thread_called_and_started_as_daemon(self, mock_threading,
+                                                                  mock_loop_read_message_queue,
+                                                                  mock_setup
+                                                                  ):
+        mock_setup.return_value = 'mock display dict'
+        mock_message_thread = Mock()
+        mock_threading.return_value = mock_message_thread
+        returned_message_thread = oleddisplay.init_display_thread()
+        mock_setup.assert_called_once()
+        mock_threading.assert_called_once_with(target=mock_loop_read_message_queue)
+        self.assertTrue(returned_message_thread.daemon)
+        returned_message_thread.start.assert_called()
