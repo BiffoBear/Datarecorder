@@ -33,7 +33,9 @@ def initialize_oled(i2c_bus, reset_pin=None):
         return oled
     except ValueError:
         logger.error('OLED display failed to initialize. Check that wiring is correct')
-        return None
+    except AttributeError:
+        logger.error('OLED display failed to initialize. No I2C bus')
+    return None
 
 
 def setup_hardware_oled():

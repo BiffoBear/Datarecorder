@@ -50,11 +50,13 @@ class TestDisplayHardwareSetup(TestCase):
 
     @patch('adafruit_ssd1306.SSD1306_I2C')
     def test_initialize_oled_logs_warning_and_returns_none_if_setup_fails(self, mock_oled):
-        mock_oled.side_effect = ValueError
+        mock_oled.side_effect = [ValueError, AttributeError]
         with self.assertLogs() as cm:
             returned_result = oleddisplay.initialize_oled('dummy i2c', reset_pin='dummy reset')
         self.assertIn('OLED display failed to initialize. Check that wiring is correct',
                       cm.output[0])
+        self.assertEqual(returned_result, None)
+        returned_result = oleddisplay.initialize_oled('dummy i2c', reset_pin='dummy reset')
         self.assertEqual(returned_result, None)
 
     @patch('oleddisplay.initialize_i2c')
@@ -91,12 +93,13 @@ class TestTextImageWriting(TestCase):
         self.assertEqual(data_returned, display)
 
 
+@patch('oleddisplay.setup_hardware_oled')
 @patch('oleddisplay.clear_display')
 @patch('oleddisplay.show_display')
 @patch('oleddisplay.write_text_to_display')
 class TestTextDeliveryAndLayout(TestCase):
 
-    def test_screen_queue_fifo(self, _1, _2, _3):
+    def test_screen_queue_fifo(self, _1, _2, _3, _4):
         queue = deque([])
         x = oleddisplay.add_screen_line(lines=queue, text='0 Line')
         self.assertEqual(x, deque(['0 Line']))
@@ -107,7 +110,7 @@ class TestTextDeliveryAndLayout(TestCase):
             queue = oleddisplay.add_screen_line(lines=queue, text=f'{z} Line')
         self.assertEqual(deque(['1 Line', '2 Line', '3 Line', '4 Line', '5 Line']), queue)
 
-    def test_lines_are_drawn_at_correct_coordinates(self, mock_write_to_display, _1, mock_clear_display):
+    def test_lines_are_drawn_at_correct_coordinates(self, mock_write_to_display, _1, mock_clear_display, _4):
         display = None
         mock_clear_display.return_value = display
         lines = deque(['0 Line', '1 Line', '2 Line', '3 Line', '4 Line'])
@@ -120,20 +123,20 @@ class TestTextDeliveryAndLayout(TestCase):
                  ]
         mock_write_to_display.assert_has_calls(calls)
 
-    def test_draw_lines_returns_display(self, _1, mock_show_display, _2):
+    def test_draw_lines_returns_display(self, _1, mock_show_display, _3, _4):
         mock_show_display.side_effect = ['Display']
         lines = deque(['Test Line'])
         returned_data = oleddisplay.draw_lines(display=None, lines=lines)
         self.assertEqual('Display', returned_data)
 
-    def test_draw_lines_calls_clear_display(self, _1, _2, mock_clear_display):
-        test_display = oleddisplay.setup_hardware_oled()
+    def test_draw_lines_calls_clear_display(self, _1, _2, mock_clear_display, _4):
+        test_display = oleddisplay.setup_display_dict()
         test_lines = deque(['Test text'])
         oleddisplay.draw_lines(lines=test_lines, display=test_display)
         mock_clear_display.assert_called_once()
 
-    def test_draw_lines_calls_show_display(self, _1, mock_show_display, _2):
-        test_display = oleddisplay.setup_hardware_oled()
+    def test_draw_lines_calls_show_display(self, _1, mock_show_display, _3, _4):
+        test_display = oleddisplay.setup_display_dict()
         test_lines = deque(['Test text'])
         oleddisplay.draw_lines(lines=test_lines, display=test_display)
         mock_show_display.assert_called_once()
@@ -215,7 +218,7 @@ class TestInitAndThreadingCalls(TestCase):
                                                                   mock_setup_hardware_oled,
                                                                   ):
         mock_setup_hardware_oled.return_value = 'dummy display'
-        mock_setup_display_dict.return_value = 'x'  # oleddisplay.setup_display_dict()
+        mock_setup_display_dict.return_value = 'x'
         mock_message_thread = Mock()
         mock_threading.return_value = mock_message_thread
         returned_message_thread = oleddisplay.init_display_thread()
