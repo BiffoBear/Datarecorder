@@ -25,8 +25,8 @@ def initialize_oled(i2c_bus, reset_pin=None):
     return adafruit_ssd1306.SSD1306_I2C(128, 64, i2c_bus, addr=0x3d, reset=reset_pin)
 
 
-def setup():
-    logger.debug('setup called')
+def setup_hardware_oled():
+    logger.debug('setup_hardware_oled called')
     try:
         i2c = initialize_i2c()
         reset = digitalio.DigitalInOut(board.D17)
@@ -69,7 +69,6 @@ def add_screen_line(lines=None, text=''):
 
 
 def draw_lines(lines=None, display=None):
-    # TODO: Add vertical jitter to prevent screen burn in
     logger.debug('draw_lines called')
     line_coords = ((1, 1), (1, 13), (1, 25), (1, 37), (1, 49))
     display = clear_display(display)
@@ -102,7 +101,7 @@ def loop_read_message_queue():
 def init_display_thread():
     logger.debug(f'init_display_thread called')
     global global_display
-    global_display = setup()
+    global_display = setup_hardware_oled()
     message_thread = threading.Thread(target=loop_read_message_queue)
     message_thread.daemon = True
     message_thread.start()
