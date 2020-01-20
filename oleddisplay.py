@@ -92,12 +92,15 @@ def read_message_queue_write_to_display(lines=None, display=None):
     logger.debug('read_message_queue_write_to_display called')
     global message_queue
     try:
-        lines = add_screen_line(lines=lines, text=message_queue.get())
-        print(lines[-1])
-        display = draw_lines(lines=lines, display=display)
-        message_queue.task_done()
+        text = message_queue.get()
+        lines = add_screen_line(lines=lines, text=text)
+        if display['oled'] is not None:
+            print(lines[-1])
+            display = draw_lines(lines=lines, display=display)
     except queue.Empty:
         print(f'Empty queue')
+    finally:
+        message_queue.task_done()
     return lines, display
 
 
