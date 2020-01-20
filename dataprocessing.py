@@ -12,6 +12,7 @@ from datetime import datetime
 import struct
 import database
 import radiodata
+import oleddisplay
 from __config__ import FILE_DEBUG_LEVEL
 
 radio_q = queue.Queue()
@@ -55,6 +56,9 @@ def check_for_duplicate_packet(node_data):
         old_packet_serial_number = last_packet_info.get(node_id)['pkt_serial']
     except TypeError:
         logger.info(f'First data packet from node 0x{node_id:02x}')
+        logger.info(f'Rx from node 0x{node_id:02x}, packet serial 0x{new_packet_serial_number:04x}')
+        oleddisplay.message_queue.put_nowait(f'First data node 0x{node_id:02x}')
+        oleddisplay.message_queue.put_nowait(f'Rx 0x{node_id:02x} sn 0x{new_packet_serial_number:04x}')
         last_packet_info[node_id] = {'pkt_serial': new_packet_serial_number,
                                      'timestamp': datetime.utcnow()
                                      }
@@ -66,6 +70,7 @@ def check_for_duplicate_packet(node_data):
                                      'timestamp': datetime.utcnow()
                                      }
         logger.info(f'Rx from node 0x{node_id:02x}, packet serial 0x{new_packet_serial_number:04x}')
+        oleddisplay.message_queue.put_nowait(f'Rx 0x{node_id:02x} sn 0x{new_packet_serial_number:04x}')
         return False
     return True
 

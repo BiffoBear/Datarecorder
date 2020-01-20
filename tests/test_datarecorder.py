@@ -15,6 +15,7 @@ import board
 import RPi.GPIO as rpigpio
 import datarecorder
 import dataprocessing
+import oleddisplay
 from __config__ import RFM69_INTERRUPT_PIN, DB_URL, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 
 
@@ -111,6 +112,7 @@ class TestIrqCallbackFunc(TestCase):
         dataprocessing.radio_q.put.assert_called_once_with('Hello World!')
 
 
+@patch('oleddisplay.init_display_thread')
 @patch('datarecorder.initialize_gpio_interrupt')
 @patch('datarecorder.initialize_rfm69')
 @patch('datarecorder.initialize_processing_thread')
@@ -123,6 +125,7 @@ class TestStartUpFunc(TestCase):
                                                mock_init_thread,
                                                mock_init_rfm69,
                                                mock_init_irq,
+                                               mock_init_display_thread,
                                                ):
         datarecorder.start_up(db_url='Fake_URL', pi_irq_pin=6)
         mock_init_logging.assert_called_once()
@@ -131,6 +134,7 @@ class TestStartUpFunc(TestCase):
         mock_init_thread.assert_called_once()
         mock_init_rfm69.assert_called_once()
         mock_init_irq.assert_called_once_with(6)
+        mock_init_display_thread.assert_called_once()
 
 
 class TestLoggingSetup(TestCase):

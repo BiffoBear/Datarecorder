@@ -17,6 +17,7 @@ import RPi.GPIO as rpigpio
 import adafruit_rfm69
 import database
 import dataprocessing
+import oleddisplay
 from __config__ import DB_URL, RFM69_INTERRUPT_PIN, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 
 logger = logging.getLogger(__name__)
@@ -61,6 +62,7 @@ def initialize_rfm69():
         rfm69 = adafruit_rfm69.RFM69(spi, cs, reset, 433.0)
         rfm69.encryption_key = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
         logger.info(f'RFM69 radio initialized successfully')
+        oleddisplay.message_queue.put_nowait(f'Radio initialized OK')
         return rfm69
     except RuntimeError as error:
         logger.critical(f'RFM69 radio failed to initialize with RuntimeError')
@@ -81,6 +83,7 @@ def start_up(db_url=None, pi_irq_pin=None, logging_levels=(FILE_DEBUG_LEVEL, CON
     initialize_processing_thread()
     rfm69 = initialize_rfm69()
     initialize_gpio_interrupt(pi_irq_pin)
+    oleddisplay.init_display_thread()
     rfm69.listen()
     logger.info('Listening for radio data…')
     return rfm69
