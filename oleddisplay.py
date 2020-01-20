@@ -69,11 +69,12 @@ def add_screen_line(lines=None, text=''):
 
 
 def draw_lines(lines=None, display=None):
+    # TODO: Add vertical jitter to prevent screen burn in
     logger.debug('draw_lines called')
     line_coords = ((1, 1), (1, 13), (1, 25), (1, 37), (1, 49))
     display = clear_display(display)
-    for line in range(len(lines)):
-        write_text_to_display(display=display, coords=line_coords[line], text=lines[line])
+    for line, coord in zip(lines, line_coords):
+        write_text_to_display(display=display, coords=coord, text=line)
     display = show_display(display)
     return display
 
