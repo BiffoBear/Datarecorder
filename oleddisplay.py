@@ -7,6 +7,7 @@ import busio
 import digitalio
 import adafruit_ssd1306
 from PIL import Image, ImageDraw, ImageFont
+from __config__ import DISPLAY_WIDTH, DISPLAY_HEIGHT
 
 logger = logging.getLogger(__name__)
 
@@ -16,34 +17,43 @@ global_display = None
 
 
 def initialize_i2c():
-    logger.debug('initialize_i2c called')
-    return busio.I2C(board.SCL, board.SDA)
+    try:
+        logger.debug('initialize_i2c called')
+        return busio.I2C(board.SCL, board.SDA)
+    except ValueError:
+        logger.error('I2C bus failed to initialize. Check that I2C is enabled')
+        return None
 
 
 def initialize_oled(i2c_bus, reset_pin=None):
     logger.debug('initialize_oled called')
-    return adafruit_ssd1306.SSD1306_I2C(128, 64, i2c_bus, addr=0x3d, reset=reset_pin)
+    try:
+        oled = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c_bus, addr=0x3d, reset=reset_pin)
+        logger.info('OLED display initialized successfully')
+        return oled
+    except ValueError:
+        logger.error('OLED display failed to initialize. Check that wiring is correct')
+        return None
 
 
 def setup_hardware_oled():
     logger.debug('setup_hardware_oled called')
-    try:
-        i2c = initialize_i2c()
-        reset = digitalio.DigitalInOut(board.D17)
-        display = initialize_oled(i2c, reset)
-        image = Image.new('1', (display.width, display.height))
-        draw = ImageDraw.Draw(image)
-        font = ImageFont.load_default()
-        logger.info('OLED display initialized successfully')
-        return {'oled': display, 'image': image, 'draw': draw, 'font': font, }
-    except ValueError:
-        logger.error('OLED display failed to initialize. Check that I2C bus enabled and wiring is correct')
-        return None
+    i2c = initialize_i2c()
+    reset = digitalio.DigitalInOut(board.D17)
+    return initialize_oled(i2c, reset_pin=reset)
+
+
+def setup_display_dict():
+    oled = setup_hardware_oled()
+    image = Image.new('1', (DISPLAY_WIDTH, DISPLAY_HEIGHT))
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.load_default()
+    return {'oled': oled, 'image': image, 'draw': draw, 'font': font, }
 
 
 def clear_display(display):
     logger.debug('clear_display called')
-    display['draw'].rectangle((0, 0, display['oled'].width, display['oled'].height), outline=0, fill=0)
+    display['draw'].rectangle((0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT), outline=0, fill=0)
     return display
 
 
@@ -101,7 +111,7 @@ def loop_read_message_queue():
 def init_display_thread():
     logger.debug(f'init_display_thread called')
     global global_display
-    global_display = setup_hardware_oled()
+    global_display = setup_display_dict()
     message_thread = threading.Thread(target=loop_read_message_queue)
     message_thread.daemon = True
     message_thread.start()

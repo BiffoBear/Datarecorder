@@ -3,66 +3,91 @@ from unittest.mock import Mock, patch, call
 from collections import deque
 import PIL
 import board
-import adafruit_ssd1306
 import oleddisplay
 from __config__ import DISPLAY_WIDTH, DISPLAY_HEIGHT
 
 
-class TestDisplaySetupAndFunction(TestCase):
+class TestDisplayHardwareSetup(TestCase):
 
     @patch('busio.I2C')
-    def test_raspi_i2c_bus_initialized(self, mock_busio_i2c):
+    def test_initialize_i2c_called_with_correct_args(self, mock_busio_i2c):
         oleddisplay.initialize_i2c()
         mock_busio_i2c.assert_called_once_with(board.SCL, board.SDA)
 
+    @patch('busio.I2C')
+    def test_initialize_i2c_returns_i2c_object_if_successful(self, mock_busio_i2c):
+        mock_busio_i2c.return_value = 'busio.i2c object'
+        returned_result = oleddisplay.initialize_i2c()
+        self.assertEqual('busio.i2c object', returned_result)
+
+    @patch('busio.I2C')
+    def test_initialize_i2c_logs_warning_and_returns_none_if_setup_fails(self, mock_busio_i2c):
+        mock_busio_i2c.side_effect = ValueError
+        with self.assertLogs() as cm:
+            returned_result = oleddisplay.initialize_i2c()
+        self.assertIn('I2C bus failed to initialize. Check that I2C is enabled', cm.output[0])
+        self.assertEqual(returned_result, None)
+
     @patch('adafruit_ssd1306.SSD1306_I2C')
-    def test_oled_display_initialized_with_correct_args(self, mock_oled):
+    def test_initialize_oled_called_with_correct_args(self, mock_oled):
         i2c = 'Fake I2C'
         reset_pin = 'Fake reset_pin'
         oleddisplay.initialize_oled(i2c, reset_pin)
         mock_oled.assert_called_once_with(DISPLAY_WIDTH, DISPLAY_HEIGHT, 'Fake I2C', addr=0x3d, reset=reset_pin)
 
-    def test_setup_returns_dictionary_object(self):
-        # Assumes display is correctly connected and working
-        x = oleddisplay.setup_hardware_oled()
-        self.assertIsInstance(x, dict)
-        self.assertIsInstance(x['oled'], adafruit_ssd1306.SSD1306_I2C)
-        self.assertIsInstance(x['image'], PIL.Image.Image)
-        self.assertIsInstance(x['draw'], PIL.ImageDraw.ImageDraw)
-        self.assertIsInstance(x['font'], PIL.ImageFont.ImageFont)
+    @patch('adafruit_ssd1306.SSD1306_I2C')
+    def test_initialize_oled_returns_oled_object_if_successful(self, mock_oled):
+        mock_oled.return_value = 'adafruit_ssd1306.SSD1306_I2C object'
+        returned_result = oleddisplay.initialize_oled('dummy i2c', reset_pin='dummy reset')
+        self.assertEqual('adafruit_ssd1306.SSD1306_I2C object', returned_result)
 
     @patch('adafruit_ssd1306.SSD1306_I2C')
-    def test_setup_logs_warning_and_returns_none_if_setup_fails(self, mock_oled):
-        mock_oled.side_effect = ValueError
-        with self.assertLogs() as cm:
-           x = oleddisplay.setup_hardware_oled()
-        self.assertIn('OLED display failed to initialize. Check that I2C bus enabled and wiring is correct',
-                      cm.output[0])
-        self.assertEqual(x, None)
-
-    def test_setup_logs_oled_initialization(self):
-        with self.assertLogs() as cm:
-            oleddisplay.setup_hardware_oled()
+    def test_initialize_oled_logs_oled_initialization(self, _):
+        with self.assertLogs(level='INFO') as cm:
+            oleddisplay.initialize_oled('dummy i2c', reset_pin='dummy reset')
         self.assertIn('OLED display initialized successfully', cm.output[0])
 
-    def test_clear_display(self):
-        test_display = oleddisplay.setup_hardware_oled()
-        x = oleddisplay.clear_display(test_display)
-        self.assertEqual(x, test_display)
+    @patch('adafruit_ssd1306.SSD1306_I2C')
+    def test_initialize_oled_logs_warning_and_returns_none_if_setup_fails(self, mock_oled):
+        mock_oled.side_effect = ValueError
+        with self.assertLogs() as cm:
+            returned_result = oleddisplay.initialize_oled('dummy i2c', reset_pin='dummy reset')
+        self.assertIn('OLED display failed to initialize. Check that wiring is correct',
+                      cm.output[0])
+        self.assertEqual(returned_result, None)
 
-    def test_write_to_display_returns_dict(self):
-        test_display = oleddisplay.setup_hardware_oled()
-        coords = (1, 1)
-        data_returned = oleddisplay.write_text_to_display(display=test_display, coords=coords, text='Hello World')
-        self.assertEqual(data_returned, test_display)
+    @patch('oleddisplay.initialize_i2c')
+    @patch('oleddisplay.initialize_oled')
+    def test_setup_hardware_returns_result_of_inititalize_oled(self, mock_initialize_oled, _):
+        mock_initialize_oled.return_value = 'dummy oled'
+        returned_result = oleddisplay.setup_hardware_oled()
+        self.assertEqual('dummy oled', returned_result)
 
-    def test_show_display_returns_dict(self):
-        test_display = oleddisplay.setup_hardware_oled()
-        test_display['draw'].text((10, 10), 'Hi Mars!', font=test_display['font'], fill=255)
-        test_display['draw'].text((10, 22), 'Yo Pluto!', font=test_display['font'], fill=255)
-        test_display['oled'].image(test_display['image'])
-        x = oleddisplay.show_display(display=test_display)
-        self.assertEqual(x, test_display)
+
+@patch('oleddisplay.setup_hardware_oled')
+class TestTextImageWriting(TestCase):
+
+    def test_setup_display_dict_returns_dictionary_object(self, mock_setup_hardware_oled):
+        mock_setup_hardware_oled.return_value = 'dummy oled'
+        returned_result = oleddisplay.setup_display_dict()
+        self.assertIsInstance(returned_result, dict)
+        self.assertEqual(returned_result['oled'], 'dummy oled')
+        self.assertIsInstance(returned_result['image'], PIL.Image.Image)
+        self.assertIsInstance(returned_result['draw'], PIL.ImageDraw.ImageDraw)
+        self.assertIsInstance(returned_result['font'], PIL.ImageFont.ImageFont)
+
+    def test_clear_display_returns_display(self, mock_setup_hardware_oled):
+        mock_setup_hardware_oled.return_value = 'dummy oled'
+        display = oleddisplay.setup_display_dict()
+        returned_result = oleddisplay.clear_display(display)
+        self.assertEqual(returned_result, display)
+
+    def test_write_text_to_display_returns_display(self, mock_setup_hardware_oled):
+        mock_setup_hardware_oled.return_value = 'dummy oled'
+        display = oleddisplay.setup_display_dict()
+        coord = (1, 1)
+        data_returned = oleddisplay.write_text_to_display(display=display, coords=coord, text='Hello World')
+        self.assertEqual(data_returned, display)
 
 
 @patch('oleddisplay.clear_display')
@@ -136,11 +161,13 @@ class TestDataFlow(TestCase):
         returned_data = oleddisplay.read_message_queue_write_to_display(lines=lines, display=None)
         self.assertEqual((lines, test_display), returned_data)
 
+    @patch('oleddisplay.setup_hardware_oled')
     @patch('oleddisplay.show_display')
-    def test_display_is_passed_up_and_down_correctly(self, mock_show_display):
+    def test_display_is_passed_up_and_down_correctly(self, mock_show_display, mock_setup_hardware_oled):
+        mock_setup_hardware_oled.return_value = 'dummy display'
         mock_show_display.return_value = 'Show Display'
         oleddisplay.message_queue.put_nowait('Test passing display dict')
-        test_display = oleddisplay.setup_hardware_oled()
+        test_display = oleddisplay.setup_display_dict()
         test_lines = deque([])
         data_returned = oleddisplay.read_message_queue_write_to_display(lines=test_lines, display=test_display)
         mock_show_display.assert_called_once()
@@ -150,17 +177,20 @@ class TestDataFlow(TestCase):
 class TestInitAndThreadingCalls(TestCase):
 
     @patch('oleddisplay.setup_hardware_oled')
+    @patch('oleddisplay.setup_display_dict')
     @patch('oleddisplay.loop_read_message_queue')
     @patch('threading.Thread')
     def test_setup_called_and_thread_called_and_started_as_daemon(self, mock_threading,
                                                                   mock_loop_read_message_queue,
-                                                                  mock_setup_hardware_oled
+                                                                  mock_setup_display_dict,
+                                                                  mock_setup_hardware_oled,
                                                                   ):
-        mock_setup_hardware_oled.return_value = 'mock display dict'
+        mock_setup_hardware_oled.return_value = 'dummy display'
+        mock_setup_display_dict.return_value = 'x'  # oleddisplay.setup_display_dict()
         mock_message_thread = Mock()
         mock_threading.return_value = mock_message_thread
         returned_message_thread = oleddisplay.init_display_thread()
-        mock_setup_hardware_oled.assert_called_once()
+        mock_setup_display_dict.assert_called_once()
         mock_threading.assert_called_once_with(target=mock_loop_read_message_queue)
         self.assertTrue(returned_message_thread.daemon)
         returned_message_thread.start.assert_called()
