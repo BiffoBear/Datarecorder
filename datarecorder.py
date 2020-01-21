@@ -62,7 +62,7 @@ def initialize_rfm69():
         rfm69 = adafruit_rfm69.RFM69(spi, cs, reset, 433.0)
         rfm69.encryption_key = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
         logger.info(f'RFM69 radio initialized successfully')
-        oleddisplay.message_queue.put_nowait(f'Radio initialized OK')
+        oleddisplay.write_message_to_queue(f'Radio initialized OK')
         return rfm69
     except RuntimeError as error:
         logger.critical(f'RFM69 radio failed to initialize with RuntimeError')
@@ -93,6 +93,7 @@ def shut_down(pi_irq_pin=24):
     logger.info('shutdown_called')
     rpigpio.remove_event_detect(pi_irq_pin)
     dataprocessing.radio_q.join()
+    oleddisplay.shutdown()
     # tests.unittest_helper.kill_database()
 
 

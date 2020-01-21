@@ -6,6 +6,7 @@ import PIL
 import board
 import oleddisplay
 import datarecorder
+
 from __config__ import DISPLAY_WIDTH, DISPLAY_HEIGHT
 
 
@@ -227,6 +228,29 @@ class TestInitAndThreadingCalls(TestCase):
         mock_threading.assert_called_once_with(target=mock_loop_read_message_queue)
         self.assertTrue(returned_message_thread.daemon)
         returned_message_thread.start.assert_called()
+
+    def test_write_message_to_queue_calls_message_queue_put(self):
+        oleddisplay.message_queue = Mock()
+        oleddisplay.write_message_to_queue('Message text')
+        oleddisplay.message_queue.put_nowait.assert_called_once_with('Message text')
+
+    def test_write_message_to_queue_handles_queue_full_error(self):
+        oleddisplay.message_queue = Mock()
+        oleddisplay.message_queue.put_nowait.side_effect = queue.Full
+        oleddisplay.write_message_to_queue('Message text')
+        self.assertTrue(True)
+
+    @patch('oleddisplay.show_display')
+    @patch('oleddisplay.clear_display')
+    @patch('oleddisplay.message_queue')
+    def test_shut_down_calls_message_queue_join_and_clear_display(self, mock_message_queue,
+                                                                  mock_clear_display,
+                                                                  mock_show_display,
+                                                                  ):
+        oleddisplay.shutdown()
+        mock_message_queue.join.assert_called_once()
+        mock_clear_display.assert_called_once_with(oleddisplay.global_display)
+        mock_show_display.assert_called_once_with(oleddisplay.global_display)
 
 
 class TestIntegrationWithDataProcessing(TestCase):

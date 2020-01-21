@@ -106,6 +106,20 @@ def read_message_queue_write_to_display(lines=None, display=None):
     return lines, display
 
 
+def write_message_to_queue(message_text=''):
+    try:
+        message_queue.put_nowait(message_text)
+    except queue.Full:
+        pass
+
+
+def shutdown():
+    logger.info(f'shutdown called')
+    message_queue.join()
+    clear_display(global_display)
+    show_display(global_display)
+
+
 def loop_read_message_queue():
     logger.debug(f'loop_read_message_queue called')
     global global_lines, global_display
