@@ -1,4 +1,4 @@
-import oleddisplay
+from datarecorder import oleddisplay
 import time
 
 oleddisplay.init_display_thread()

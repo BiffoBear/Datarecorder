@@ -15,9 +15,7 @@ import digitalio
 # noinspection PyPep8Naming
 import RPi.GPIO as rpigpio
 import adafruit_rfm69
-import database
-import dataprocessing
-import oleddisplay
+from datarecorder import oleddisplay, dataprocessing, database
 from __config__ import DB_URL, RFM69_INTERRUPT_PIN, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 
 logger = logging.getLogger(__name__)

@@ -10,7 +10,7 @@ from unittest import TestCase
 from sqlalchemy import inspect
 import sqlalchemy
 import logging
-import database
+from datarecorder import database
 from tests import unittest_helper
 
 import __config__

@@ -13,8 +13,8 @@ import logging
 import board
 # noinspection PyPep8Naming
 import RPi.GPIO as rpigpio
-import datarecorder
-import dataprocessing
+from datarecorder import main
+from datarecorder import dataprocessing
 from __config__ import RFM69_INTERRUPT_PIN, DB_URL, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 
 
@@ -25,24 +25,24 @@ class TestInterruptSetup(TestCase):
 
     def test_gpio_setmode_called_with_correct_args(self):
         with patch('RPi.GPIO.setmode') as mock_gpio_setmode:
-            datarecorder.initialize_gpio_interrupt(RFM69_INTERRUPT_PIN)
+            main.initialize_gpio_interrupt(RFM69_INTERRUPT_PIN)
         mock_gpio_setmode.assert_called_with(rpigpio.BCM)
 
     def test_gpio_setup_called_with_correct_args(self):
         with patch('RPi.GPIO.setup') as mock_gpio_setup:
-            datarecorder.initialize_gpio_interrupt(RFM69_INTERRUPT_PIN)
+            main.initialize_gpio_interrupt(RFM69_INTERRUPT_PIN)
         mock_gpio_setup.assert_called_with(RFM69_INTERRUPT_PIN, rpigpio.IN, pull_up_down=rpigpio.PUD_DOWN)
 
     def test_gpio_event_setup_called_with_correct_args(self):
         with patch('RPi.GPIO.add_event_callback'):
             with patch('RPi.GPIO.add_event_detect') as mock_add_event_detect:
-                datarecorder.initialize_gpio_interrupt(RFM69_INTERRUPT_PIN)
+                main.initialize_gpio_interrupt(RFM69_INTERRUPT_PIN)
         mock_add_event_detect.assert_called_with(RFM69_INTERRUPT_PIN, rpigpio.RISING)
 
     def test_gpio_event_callback_called_with_correct_args(self):
         with patch('RPi.GPIO.add_event_callback') as mock_add_event_callback:
-            datarecorder.initialize_gpio_interrupt(RFM69_INTERRUPT_PIN)
-        mock_add_event_callback.assert_called_with(RFM69_INTERRUPT_PIN, datarecorder.rfm69_callback)
+            main.initialize_gpio_interrupt(RFM69_INTERRUPT_PIN)
+        mock_add_event_callback.assert_called_with(RFM69_INTERRUPT_PIN, main.rfm69_callback)
 
 
 class TestRadioSetup(TestCase):
@@ -50,19 +50,19 @@ class TestRadioSetup(TestCase):
     def test_radio_initialization(self):
         with patch('adafruit_rfm69.RFM69'):
             with self.assertLogs(level='DEBUG') as cm:
-                datarecorder.initialize_rfm69()
+                main.initialize_rfm69()
         self.assertIn('RFM69 radio initialized successfully', cm.output[0])
 
     def test_correct_gpio_pins_are_set_for_radio(self):
         with patch('adafruit_rfm69.RFM69'):
             with patch('digitalio.DigitalInOut') as mock_digi_io:
-                datarecorder.initialize_rfm69()
+                main.initialize_rfm69()
         mock_digi_io.assert_has_calls([call(board.CE1), call(board.D25)])
 
     def test_spi_bus_is_set_to_correct_gpio_pins(self):
         with patch('adafruit_rfm69.RFM69'):
             with patch('busio.SPI') as mock_spi:
-                datarecorder.initialize_rfm69()
+                main.initialize_rfm69()
         mock_spi.assert_called_once_with(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 
     def test_rfm69_fails_to_initialize_logged_as_critical_and_raised(self):
@@ -70,53 +70,53 @@ class TestRadioSetup(TestCase):
             mock_rfm69.side_effect = RuntimeError
             with self.assertLogs(level='CRITICAL') as cm:
                 with self.assertRaises(RuntimeError):
-                    datarecorder.initialize_rfm69()
+                    main.initialize_rfm69()
         self.assertIn('RFM69 radio failed to initialize with RuntimeError', cm.output[0])
 
 
 class TestInitializeDataBase(TestCase):
 
     def test_database_initialize_database_is_called(self):
-        with patch('database.initialize_database') as mock_db_init:
-            datarecorder.initialize_database(DB_URL)
+        with patch('datarecorder.database.initialize_database') as mock_db_init:
+            main.initialize_database(DB_URL)
         mock_db_init.assert_called_once_with(DB_URL)
 
 
 class TestIrqCallbackFunc(TestCase):
 
     def test_payload_not_ready_does_not_write_to_queue(self):
-        datarecorder.radio = Mock()
+        main.radio = Mock()
         dataprocessing.radio_q = Mock()
-        datarecorder.radio.payload_ready = False
-        datarecorder.rfm69_callback(None)
-        datarecorder.radio.receive.assert_not_called()
+        main.radio.payload_ready = False
+        main.rfm69_callback(None)
+        main.radio.receive.assert_not_called()
         dataprocessing.radio_q.put.assert_not_called()
 
     def test_empty_buffer_does_not_write_to_queue(self):
-        datarecorder.radio = Mock()
+        main.radio = Mock()
         dataprocessing.radio_q = Mock()
-        datarecorder.radio.payload_ready = True
-        datarecorder.radio.receive.return_value = None
-        datarecorder.rfm69_callback(None)
-        datarecorder.radio.receive.assert_called()
+        main.radio.payload_ready = True
+        main.radio.receive.return_value = None
+        main.rfm69_callback(None)
+        main.radio.receive.assert_called()
         dataprocessing.radio_q.put.assert_not_called()
 
     def test_data_in_buffer_written_to_queue(self):
-        datarecorder.radio = Mock()
+        main.radio = Mock()
         dataprocessing.radio_q = Mock()
-        datarecorder.radio.payload_ready = True
-        datarecorder.radio.receive.return_value = 'Hello World!'
-        datarecorder.rfm69_callback(None)
-        datarecorder.radio.receive.assert_called()
+        main.radio.payload_ready = True
+        main.radio.receive.return_value = 'Hello World!'
+        main.rfm69_callback(None)
+        main.radio.receive.assert_called()
         dataprocessing.radio_q.put.assert_called_once_with('Hello World!')
 
 
-@patch('oleddisplay.init_display_thread')
-@patch('datarecorder.initialize_gpio_interrupt')
-@patch('datarecorder.initialize_rfm69')
-@patch('datarecorder.initialize_processing_thread')
-@patch('datarecorder.initialize_database')
-@patch('datarecorder.initialize_logging')
+@patch('datarecorder.oleddisplay.init_display_thread')
+@patch('datarecorder.main.initialize_gpio_interrupt')
+@patch('datarecorder.main.initialize_rfm69')
+@patch('datarecorder.main.initialize_processing_thread')
+@patch('datarecorder.main.initialize_database')
+@patch('datarecorder.main.initialize_logging')
 class TestStartUpFunc(TestCase):
 
     def test_start_up_calls_all_init_functions(self, mock_init_logging,
@@ -126,7 +126,7 @@ class TestStartUpFunc(TestCase):
                                                mock_init_irq,
                                                mock_init_display_thread,
                                                ):
-        datarecorder.start_up(db_url='Fake_URL', pi_irq_pin=6)
+        main.start_up(db_url='Fake_URL', pi_irq_pin=6)
         mock_init_logging.assert_called_once()
         mock_init_logging.assert_called_once_with(FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL)
         mock_init_db.assert_called_once_with('Fake_URL')
@@ -144,7 +144,7 @@ class TestLoggingSetup(TestCase):
             logging_file.unlink()
         except:
             pass
-        datarecorder.initialize_logging(FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL)
+        main.initialize_logging(FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL)
         logger = logging.getLogger(__name__)
         logger.warning('test logging')
         self.assertTrue(logging_file.is_file())

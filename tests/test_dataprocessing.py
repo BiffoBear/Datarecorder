@@ -8,8 +8,7 @@ Created on Tue Dec  3 10:36:28 2019
 from unittest import TestCase
 import threading
 import datetime
-import radiodata
-import dataprocessing
+from datarecorder import radiodata, dataprocessing
 from tests import unittest_helper
 
 

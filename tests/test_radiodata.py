@@ -7,7 +7,7 @@ Created on Fri Nov 22 10:23:09 2019
 """
 from unittest import TestCase
 import struct
-import radiodata
+from datarecorder import radiodata
 from tests import unittest_helper
 
 

@@ -10,9 +10,7 @@ import logging
 import queue
 from datetime import datetime
 import struct
-import database
-import radiodata
-import oleddisplay
+from datarecorder import radiodata, oleddisplay, database
 from __config__ import FILE_DEBUG_LEVEL
 
 radio_q = queue.Queue()

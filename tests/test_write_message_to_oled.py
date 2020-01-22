@@ -1,17 +1,16 @@
 from unittest import TestCase
 from unittest.mock import patch, call
-import datarecorder
-import dataprocessing
+from datarecorder import dataprocessing, main
 
 
-@patch('oleddisplay.write_message_to_queue')
+@patch('datarecorder.oleddisplay.write_message_to_queue')
 class TestIntegrationWithDataProcessing(TestCase):
 
     @patch('digitalio.DigitalInOut')
     @patch('adafruit_rfm69.RFM69')
     @patch('busio.SPI')
     def test_message_from_init_radio(self, _1, _2, _3, mock_write_message_to_queue):
-        datarecorder.initialize_rfm69()
+        main.initialize_rfm69()
         mock_write_message_to_queue.assert_called_once_with(f'Radio initialized OK')
 
     def test_message_sent_when_packet_written(self, mock_write_message_to_queue):

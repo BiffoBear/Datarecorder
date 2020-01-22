@@ -7,8 +7,7 @@ Created on Thu Dec  5 14:25:40 2019
 """
 from datetime import datetime
 import struct
-import database
-import radiodata
+from datarecorder import radiodata, database
 
 global_test_time = datetime(2019, 12, 10, 21, 45, 56)
 dummy_data = (0x0a, 0x0a, 0x0a0a, 0xf0f0, 0xaa, 0xbb,

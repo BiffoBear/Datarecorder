@@ -1,10 +1,10 @@
-from unittest import TestCase, skip
+from unittest import TestCase
 from unittest.mock import Mock, patch, call
 from collections import deque
 import queue
 import PIL
 import board
-import oleddisplay
+from datarecorder import oleddisplay
 from __config__ import DISPLAY_WIDTH, DISPLAY_HEIGHT
 
 
@@ -59,15 +59,15 @@ class TestDisplayHardwareSetup(TestCase):
         returned_result = oleddisplay.initialize_oled('dummy i2c', reset_pin='dummy reset')
         self.assertEqual(returned_result, None)
 
-    @patch('oleddisplay.initialize_i2c')
-    @patch('oleddisplay.initialize_oled')
+    @patch('datarecorder.oleddisplay.initialize_i2c')
+    @patch('datarecorder.oleddisplay.initialize_oled')
     def test_setup_hardware_returns_result_of_inititalize_oled(self, mock_initialize_oled, _):
         mock_initialize_oled.return_value = 'dummy oled'
         returned_result = oleddisplay.setup_hardware_oled()
         self.assertEqual('dummy oled', returned_result)
 
 
-@patch('oleddisplay.setup_hardware_oled')
+@patch('datarecorder.oleddisplay.setup_hardware_oled')
 class TestTextImageWriting(TestCase):
 
     # noinspection PyUnresolvedReferences
@@ -94,10 +94,10 @@ class TestTextImageWriting(TestCase):
         self.assertEqual(data_returned, display)
 
 
-@patch('oleddisplay.setup_hardware_oled')
-@patch('oleddisplay.clear_display')
-@patch('oleddisplay.show_display')
-@patch('oleddisplay.write_text_to_display')
+@patch('datarecorder.oleddisplay.setup_hardware_oled')
+@patch('datarecorder.oleddisplay.clear_display')
+@patch('datarecorder.oleddisplay.show_display')
+@patch('datarecorder.oleddisplay.write_text_to_display')
 class TestTextDeliveryAndLayout(TestCase):
 
     def test_screen_queue_fifo(self, _1, _2, _3, _4):
@@ -145,8 +145,8 @@ class TestTextDeliveryAndLayout(TestCase):
 
 class TestDataFlow(TestCase):
 
-    @patch('oleddisplay.message_queue')
-    @patch('oleddisplay.draw_lines')
+    @patch('datarecorder.oleddisplay.message_queue')
+    @patch('datarecorder.oleddisplay.draw_lines')
     def test_read_message_queue_write_to_display_calls_draw_lines_if_oled_not_None(self, mock_draw_lines,
                                                                                    mock_message_queue,
                                                                                    ):
@@ -158,8 +158,8 @@ class TestDataFlow(TestCase):
         mock_message_queue.get.assert_called()
         mock_message_queue.task_done.assert_called()
 
-    @patch('oleddisplay.message_queue')
-    @patch('oleddisplay.draw_lines')
+    @patch('datarecorder.oleddisplay.message_queue')
+    @patch('datarecorder.oleddisplay.draw_lines')
     def test_read_message_queue_write_to_display_does_not_call_draw_lines_if_oled_None(self, mock_draw_lines,
                                                                                        mock_message_queue,
                                                                                        ):
@@ -171,9 +171,9 @@ class TestDataFlow(TestCase):
         mock_message_queue.get.assert_called()
         mock_message_queue.task_done.assert_called()
 
-    @patch('oleddisplay.clear_display')
-    @patch('oleddisplay.show_display')
-    @patch('oleddisplay.write_text_to_display')
+    @patch('datarecorder.oleddisplay.clear_display')
+    @patch('datarecorder.oleddisplay.show_display')
+    @patch('datarecorder.oleddisplay.write_text_to_display')
     def test_read_message_queue_write_to_display_returns_lines_and_display(self, _1, mock_show_display, _2):
         oleddisplay.message_queue.put_nowait('dummy data')
         lines = deque(['test_lines'])
@@ -182,8 +182,8 @@ class TestDataFlow(TestCase):
         returned_data = oleddisplay.read_message_queue_write_to_display(lines=lines, display=display)
         self.assertEqual((lines, display), returned_data)
 
-    @patch('oleddisplay.add_screen_line')
-    @patch('oleddisplay.message_queue')
+    @patch('datarecorder.oleddisplay.add_screen_line')
+    @patch('datarecorder.oleddisplay.message_queue')
     def test_read_message_queue_write_to_display_raises_exception_and_calls_task_done(self, mock_message_queue,
                                                                                       mock_add_screen_line,
                                                                                       ):
@@ -194,8 +194,8 @@ class TestDataFlow(TestCase):
         mock_add_screen_line.assert_not_called()
         mock_message_queue.task_done.assert_called_once()
 
-    @patch('oleddisplay.setup_hardware_oled')
-    @patch('oleddisplay.show_display')
+    @patch('datarecorder.oleddisplay.setup_hardware_oled')
+    @patch('datarecorder.oleddisplay.show_display')
     def test_display_is_passed_up_and_down_correctly(self, mock_show_display, mock_setup_hardware_oled):
         mock_setup_hardware_oled.return_value = 'dummy display'
         mock_show_display.return_value = 'Show Display'
@@ -209,9 +209,9 @@ class TestDataFlow(TestCase):
 
 class TestInitAndThreadingCalls(TestCase):
 
-    @patch('oleddisplay.setup_hardware_oled')
-    @patch('oleddisplay.setup_display_dict')
-    @patch('oleddisplay.loop_read_message_queue')
+    @patch('datarecorder.oleddisplay.setup_hardware_oled')
+    @patch('datarecorder.oleddisplay.setup_display_dict')
+    @patch('datarecorder.oleddisplay.loop_read_message_queue')
     @patch('threading.Thread')
     def test_setup_called_and_thread_called_and_started_as_daemon(self, mock_threading,
                                                                   mock_loop_read_message_queue,
@@ -239,9 +239,9 @@ class TestInitAndThreadingCalls(TestCase):
         oleddisplay.write_message_to_queue('Message text')
         self.assertTrue(True)
 
-    @patch('oleddisplay.show_display')
-    @patch('oleddisplay.clear_display')
-    @patch('oleddisplay.message_queue')
+    @patch('datarecorder.oleddisplay.show_display')
+    @patch('datarecorder.oleddisplay.clear_display')
+    @patch('datarecorder.oleddisplay.message_queue')
     def test_shut_down_calls_message_queue_join_and_clear_display(self, mock_message_queue,
                                                                   mock_clear_display,
                                                                   mock_show_display,
