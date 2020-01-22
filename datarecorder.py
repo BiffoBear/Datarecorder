@@ -59,7 +59,7 @@ def initialize_rfm69():
     reset = digitalio.DigitalInOut(board.D25)
     spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
     try:
-        rfm69 = adafruit_rfm69.RFM69(spi, cs, reset, 433.0)
+        rfm69 = adafruit_rfm69.RFM69(spi, cs, reset, 433)
         rfm69.encryption_key = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
         logger.info(f'RFM69 radio initialized successfully')
         oleddisplay.write_message_to_queue(f'Radio initialized OK')

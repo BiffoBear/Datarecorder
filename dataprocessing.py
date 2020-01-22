@@ -47,8 +47,8 @@ def expand_radio_data_into_dict(data):
     return munged_data
 
 
-def check_for_duplicate_packet(node_data):
-    """Takes a data packet and checks whether the serial number exists already."""
+def check_for_duplicate_or_missing_packet(node_data):
+    """Takes a data packet and checks whether the serial number exists already or a packet was skipped."""
     logger.debug(f'check_for_duplicate_packet called')
     node_id = node_data['node_id']
     new_packet_serial_number = node_data['pkt_serial']
@@ -66,6 +66,7 @@ def check_for_duplicate_packet(node_data):
     if new_packet_serial_number != old_packet_serial_number:
         if new_packet_serial_number != (old_packet_serial_number + 1) % 0xffff:
             logger.warning(f'Data packet missing from node 0x{node_id:02x}')
+            oleddisplay.write_message_to_queue(f'*Data missing from node 0x{node_id:02x}*')
         last_packet_info[node_id] = {'pkt_serial': new_packet_serial_number,
                                      'timestamp': datetime.utcnow()
                                      }
@@ -84,7 +85,7 @@ def process_radio_data():
         unpacked_data = unpack_data_packet(radiodata.radio_data_format, received_data)
         logger.debug(f'Data packet = {unpacked_data}')
         expanded_data = expand_radio_data_into_dict(unpacked_data)
-        if not check_for_duplicate_packet(expanded_data['node']):
+        if not check_for_duplicate_or_missing_packet(expanded_data['node']):
             database.write_sensor_reading_to_db(expanded_data['sensors'])
     except ValueError:
         logger.warning('Bad data packet detected')

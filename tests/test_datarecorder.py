@@ -6,7 +6,7 @@ Created on Fri Dec 13 20:12:30 2019
 @author: pi
 """
 import pathlib
-from unittest import TestCase, skip
+from unittest import TestCase
 from unittest.mock import Mock, patch, call
 import logging
 # noinspection PyPackageRequirements
@@ -15,7 +15,6 @@ import board
 import RPi.GPIO as rpigpio
 import datarecorder
 import dataprocessing
-import oleddisplay
 from __config__ import RFM69_INTERRUPT_PIN, DB_URL, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 
 
@@ -141,7 +140,6 @@ class TestLoggingSetup(TestCase):
 
     def test_log_file_exists_and_is_written_to(self):
         logging_file = pathlib.Path('/tmp/datarecorder.log')
-        # noinspection PyPep8,PyPep8
         try:
             logging_file.unlink()
         except:

@@ -1,5 +1,6 @@
 import oleddisplay
 import time
+
 oleddisplay.init_display_thread()
 greetees = ['Moon', 'Earth', 'Mars', 'Venus', 'Mercury', 'Saturn', 'Jupiter', 'Neptune', 'Uranus']
 [oleddisplay.message_queue.put(f'Hello {x}') for x in greetees]

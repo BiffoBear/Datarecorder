@@ -18,7 +18,6 @@ import __config__
 __config__.FILE_DEBUG_LEVEL = logging.DEBUG
 
 
-# @skip
 class ConfirmDatabaseSetup(TestCase):
 
     def setUp(self):
@@ -59,8 +58,7 @@ class TestDataBaseInitialization(TestCase):
 
     def test_failure_to_initialize_database_raises_critical_error(self):
         database.engine.dispose()
-        # noinspection PyUnresolvedReferences
-        with self.assertRaises(sqlalchemy.exc.ArgumentError) as dm:
+        with self.assertRaises(sqlalchemy.exc.ArgumentError):
             with self.assertLogs(level='CRITICAL') as cm:
                 database.initialize_database('')
             self.assertIn('Database initialization failed', cm.output[-1])

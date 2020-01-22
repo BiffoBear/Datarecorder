@@ -5,8 +5,6 @@ import queue
 import PIL
 import board
 import oleddisplay
-import datarecorder
-
 from __config__ import DISPLAY_WIDTH, DISPLAY_HEIGHT
 
 
@@ -72,6 +70,7 @@ class TestDisplayHardwareSetup(TestCase):
 @patch('oleddisplay.setup_hardware_oled')
 class TestTextImageWriting(TestCase):
 
+    # noinspection PyUnresolvedReferences
     def test_setup_display_dict_returns_dictionary_object(self, mock_setup_hardware_oled):
         mock_setup_hardware_oled.return_value = 'dummy oled'
         returned_result = oleddisplay.setup_display_dict()
@@ -102,15 +101,15 @@ class TestTextImageWriting(TestCase):
 class TestTextDeliveryAndLayout(TestCase):
 
     def test_screen_queue_fifo(self, _1, _2, _3, _4):
-        queue = deque([])
-        x = oleddisplay.add_screen_line(lines=queue, text='0 Line')
+        lines = deque([])
+        x = oleddisplay.add_screen_line(lines=lines, text='0 Line')
         self.assertEqual(x, deque(['0 Line']))
         y = oleddisplay.add_screen_line(lines=x, text='1 Line')
         self.assertEqual(y, deque(['0 Line', '1 Line']))
-        queue = deque([])
+        lines = deque([])
         for z in range(6):
-            queue = oleddisplay.add_screen_line(lines=queue, text=f'{z} Line')
-        self.assertEqual(deque(['1 Line', '2 Line', '3 Line', '4 Line', '5 Line']), queue)
+            lines = oleddisplay.add_screen_line(lines=lines, text=f'{z} Line')
+        self.assertEqual(deque(['1 Line', '2 Line', '3 Line', '4 Line', '5 Line']), lines)
 
     def test_lines_are_drawn_at_correct_coordinates(self, mock_write_to_display, _1, mock_clear_display, _4):
         display = None
@@ -192,7 +191,7 @@ class TestDataFlow(TestCase):
         display = {'oled': 'dummy display'}
         lines = deque(['test_lines'])
         oleddisplay.read_message_queue_write_to_display(lines=lines, display=display)
-        mock_add_screen_line.not_called
+        mock_add_screen_line.assert_not_called()
         mock_message_queue.task_done.assert_called_once()
 
     @patch('oleddisplay.setup_hardware_oled')
@@ -251,18 +250,3 @@ class TestInitAndThreadingCalls(TestCase):
         mock_message_queue.join.assert_called_once()
         mock_clear_display.assert_called_once_with(oleddisplay.global_display)
         mock_show_display.assert_called_once_with(oleddisplay.global_display)
-
-
-class TestIntegrationWithDataProcessing(TestCase):
-
-    @skip  # Fails but shouldn't. The message_queue isn't patched.
-    @patch('digitalio.DigitalInOut')
-    @patch('adafruit_rfm69.RFM69')
-    @patch('busio.SPI')
-    def test_message_from_init_radio(self, _1, _2, _3):
-        oleddisplay.message_queue = Mock()
-        datarecorder.initialize_rfm69()
-        oleddisplay.message_queue.assert_called_once_with(f'Radio initialized OK')
-
-    def test_message_sent_when_packet_written(self):
-        pass
