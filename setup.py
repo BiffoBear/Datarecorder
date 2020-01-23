@@ -1,11 +1,14 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 from setuptools import setup
 
 setup(name='datarecorder',
-      version='0.1',
+      version='0.9a',
       description='House data recorder',
       url=None,
       author='Martin Stephens',
       author_email='martin@martinstephens.net',
       license='MIT',
-      packages=['datarecorder'],
+      packages=['datarecorder', 'radiohelper'],
       zip_safe=False)

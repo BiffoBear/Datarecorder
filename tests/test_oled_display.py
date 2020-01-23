@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 from unittest import TestCase
 from unittest.mock import Mock, patch, call
 from collections import deque

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """A library of shared functions that are used by radio Rx and Tx scripts.
 
 increment_number_with_wrap(serial_number, wrap_at=0x10000) -- increment and modulo a number
