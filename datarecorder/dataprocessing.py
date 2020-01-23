@@ -11,6 +11,7 @@ import queue
 from datetime import datetime
 import struct
 from datarecorder import radiodata, oleddisplay, database
+from radiohelper import radiohelper
 from __config__ import FILE_DEBUG_LEVEL
 
 radio_q = queue.Queue()
@@ -62,7 +63,7 @@ def check_for_duplicate_or_missing_packet(node_data):
                                      }
         return False
     if new_packet_serial_number != old_packet_serial_number:
-        if new_packet_serial_number != (old_packet_serial_number + 1) % 0xffff:
+        if new_packet_serial_number != radiohelper.increment_number_with_wrap(old_packet_serial_number):
             logger.warning(f'Data packet missing from node 0x{node_id:02x}')
             oleddisplay.write_message_to_queue(f'*Data missing from node 0x{node_id:02x}*')
         last_packet_info[node_id] = {'pkt_serial': new_packet_serial_number,

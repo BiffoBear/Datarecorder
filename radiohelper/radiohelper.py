@@ -11,7 +11,7 @@ def increment_number_with_wrap(number: int, wrap_at=0x10000):
     serial_number -- An number to be incremented
 
     Keyword Arguments:
-    wrap_at -- Used to take the modulo of the incremented serial number (default 0x10000)
+    wrap_at -- Used to take the modulo of the incremented number (default 0x10000)
     """
     try:
         return (number + 1) % wrap_at

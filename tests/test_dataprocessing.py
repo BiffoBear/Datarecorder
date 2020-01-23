@@ -12,7 +12,6 @@ from datarecorder import radiodata, dataprocessing
 from tests import unittest_helper
 
 
-# @skip
 class TestDataPrep(TestCase):
 
     def test_struct_is_unpacked_correctly(self):
