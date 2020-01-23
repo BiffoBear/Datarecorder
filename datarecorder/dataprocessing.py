@@ -81,7 +81,7 @@ def process_radio_data():
     global radio_q
     received_data = {'timestamp': datetime.utcnow(), 'radio_data': radio_q.get()}
     try:
-        unpacked_data = unpack_data_packet(radiohelper.radio_data_format, received_data)
+        unpacked_data = unpack_data_packet(radiohelper.RADIO_DATA_FORMAT, received_data)
         logger.debug(f'Data packet = {unpacked_data}')
         expanded_data = expand_radio_data_into_dict(unpacked_data)
         if not check_for_duplicate_or_missing_packet(expanded_data['node']):

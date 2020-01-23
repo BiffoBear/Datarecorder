@@ -50,7 +50,7 @@ class TestCrcChecking(TestCase):
 
     def test_radio_data_returns_correct_data_if_crc_is_good(self):
         self.assertEqual(radiohelper.confirm_and_strip_crc(RX_DATA_GOOD_CRC),
-                         struct.pack(radiohelper.radio_data_format, *DUMMY_DATA))
+                         struct.pack(radiohelper.RADIO_DATA_FORMAT, *DUMMY_DATA))
 
 
 class TestDecodeData(TestCase):
@@ -61,10 +61,10 @@ class TestDecodeData(TestCase):
         self.assertEqual(radiohelper.crc16(bytes(crc_test_data, encoding='UTF-8')), valid_crc)
 
     def test_data_format_string_is_valid(self):
-        self.assertEqual(radiohelper.radio_data_format, CURRENT_DATA_STRUCT_FORMAT)
-        self.assertLessEqual(radiohelper.set_packet_length, radiohelper.max_packet_length)
-        self.assertEqual(radiohelper.radio_data_format[0], '>')  # struct should be big-endian
-        self.assertEqual(radiohelper.radio_data_format[1:3], 'BB')  # first 2 bytes must be unsigned char
+        self.assertEqual(radiohelper.RADIO_DATA_FORMAT, CURRENT_DATA_STRUCT_FORMAT)
+        self.assertLessEqual(radiohelper.set_packet_length, radiohelper.MAX_PACKET_LENGTH)
+        self.assertEqual(radiohelper.RADIO_DATA_FORMAT[0], '>')  # struct should be big-endian
+        self.assertEqual(radiohelper.RADIO_DATA_FORMAT[1:3], 'BB')  # first 2 bytes must be unsigned char
         self.assertEqual(radiohelper.sensor_count, SENSOR_COUNT)
         self.assertEqual(radiohelper.sensor_offset, FIRST_SENSOR_OFFSET)
 

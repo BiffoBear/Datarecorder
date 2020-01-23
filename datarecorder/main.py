@@ -17,6 +17,7 @@ import RPi.GPIO as rpigpio
 import adafruit_rfm69
 from datarecorder import oleddisplay, dataprocessing, database
 from __config__ import DB_URL, RFM69_INTERRUPT_PIN, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
+from radiohelper.radiohelper import RFM69_ENCRYPTION_KEY
 
 logger = logging.getLogger(__name__)
 logger.setLevel(FILE_DEBUG_LEVEL)
@@ -58,7 +59,7 @@ def initialize_rfm69():
     spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
     try:
         rfm69 = adafruit_rfm69.RFM69(spi, cs, reset, 433)
-        rfm69.encryption_key = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
+        rfm69.encryption_key = RFM69_ENCRYPTION_KEY
         logger.info(f'RFM69 radio initialized successfully')
         oleddisplay.write_message_to_queue(f'Radio initialized OK')
         return rfm69

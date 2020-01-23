@@ -21,18 +21,19 @@ crc16(data) -- return a 16 bit CRC for a byte object
 import struct
 try:
     # Logging and __config__.py not used on microcontrollers so handle the error
-    from __confug__ import FILE_DEBUG_LEVEL
+    from __config__ import FILE_DEBUG_LEVEL
     import logging
     logger = logging.getLogger(__name__)
     logger.setLevel(FILE_DEBUG_LEVEL)
 except ModuleNotFoundError:
     pass
 
-radio_data_format = '>BBHHBBBfBfBfBfBfBfBfBfBfBf'
-max_packet_length = 58  # Leaves two bytes for the CRC16 as RFM69 max packet size is 60 bytes
-set_packet_length = struct.calcsize(radio_data_format)
-sensor_count = radio_data_format.count('f')
-sensor_offset = radio_data_format.find('Bf') - 1  # lists are zero indexed
+RFM69_ENCRYPTION_KEY = b'\x16UT\xb6\x92FHaE\xb5B\xde\xbclYs'
+RADIO_DATA_FORMAT = '>BBHHBBBfBfBfBfBfBfBfBfBfBf'
+MAX_PACKET_LENGTH = 58  # Leaves two bytes for the CRC16 as RFM69 max packet size is 60 bytes
+set_packet_length = struct.calcsize(RADIO_DATA_FORMAT)
+sensor_count = RADIO_DATA_FORMAT.count('f')
+sensor_offset = RADIO_DATA_FORMAT.find('Bf') - 1  # lists are zero indexed
 
 
 def _try_to_log(log_message):

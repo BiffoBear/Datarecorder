@@ -17,7 +17,7 @@ class TestDataPrep(TestCase):
 
     def test_struct_is_unpacked_correctly(self):
         with self.assertLogs() as cm:
-            decoded_data = dataprocessing.unpack_data_packet(radiohelper.radio_data_format,
+            decoded_data = dataprocessing.unpack_data_packet(radiohelper.RADIO_DATA_FORMAT,
                                                              {'timestamp': unittest_helper.global_test_time,
                                                               'radio_data': unittest_helper.rx_data_CRC_good
                                                               })
@@ -127,7 +127,7 @@ class TestReadRadioAndWriteDataToDataBase(TestCase):
         dataprocessing.last_packet_info = {0x02: {'pkt_serial': 0x1000, 'timestamp': None}}
         with self.assertLogs() as cm:
             dataprocessing.check_for_duplicate_or_missing_packet({'node_id': 0x02, 'pkt_serial': 0x1001})
-        self.assertIn('Rx from node 0x02, packet serial 0x1001', cm.output[1])
+        self.assertIn('Rx from node 0x02, packet serial 0x1001', cm.output[-1])
 
     def test_bad_data_packet_logs_a_warning_and_continues_without_writing_to_db(self):
         unittest_helper.initialize_database(db_in_memory=True)
