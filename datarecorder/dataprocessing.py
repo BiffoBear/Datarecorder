@@ -88,6 +88,7 @@ def process_radio_data():
             database.write_sensor_reading_to_db(expanded_data['sensors'])
     except ValueError:
         logger.warning('Bad data packet detected')
+        oleddisplay.write_message_to_queue('*Bad data packet Rx*')
     radio_q.task_done()
 
 

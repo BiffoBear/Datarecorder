@@ -32,3 +32,14 @@ class TestIntegrationWithDataProcessing(TestCase):
         dataprocessing.check_for_duplicate_or_missing_packet(node_data)
         calls = [call('*Data missing from node 0x01*'), call('Rx 0x01 sn 0x0002')]
         mock_write_message_to_queue.assert_has_calls(calls)
+
+    @patch('datarecorder.dataprocessing.unpack_data_packet')
+    @patch('datarecorder.dataprocessing.radio_q')
+    def test_message_sent_when_bad_packet_received(self, mock_radio_q,
+                                                   mock_unpack_data_packet,
+                                                   mock_write_message_to_queue,
+                                                   ):
+        mock_radio_q.get.return_value = None
+        mock_unpack_data_packet.side_effect = [ValueError]
+        dataprocessing.process_radio_data()
+        mock_write_message_to_queue.assert_called_once_with('*Bad data packet Rx*')
