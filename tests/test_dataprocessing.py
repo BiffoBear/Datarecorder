@@ -8,7 +8,8 @@ Created on Tue Dec  3 10:36:28 2019
 from unittest import TestCase
 import threading
 import datetime
-from datarecorder import radiodata, dataprocessing
+from datarecorder import dataprocessing
+from radiohelper import radiohelper
 from tests import unittest_helper
 
 
@@ -16,7 +17,7 @@ class TestDataPrep(TestCase):
 
     def test_struct_is_unpacked_correctly(self):
         with self.assertLogs() as cm:
-            decoded_data = dataprocessing.unpack_data_packet(radiodata.radio_data_format,
+            decoded_data = dataprocessing.unpack_data_packet(radiohelper.radio_data_format,
                                                              {'timestamp': unittest_helper.global_test_time,
                                                               'radio_data': unittest_helper.rx_data_CRC_good
                                                               })
@@ -44,7 +45,7 @@ class TestDataPrep(TestCase):
         self.assertEqual(data_returned['sensors']['timestamp'], unittest_helper.global_test_time)
         sensor_data = data_returned['sensors']['sensor_readings']
         self.assertIsInstance(data_returned, dict)
-        self.assertEqual(len(sensor_data), radiodata.sensor_count - 1)  # One sensor is 0xff, thus ignored
+        self.assertEqual(len(sensor_data), radiohelper.sensor_count - 1)  # One sensor is 0xff, thus ignored
 
 
 class CheckForRepeatPacket(TestCase):
