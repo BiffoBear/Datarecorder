@@ -10,7 +10,7 @@ import logging
 import queue
 from datetime import datetime
 import struct
-from datarecorder import radiodata, oleddisplay, database
+from datarecorder import oleddisplay, database
 from radiohelper import radiohelper
 from __config__ import FILE_DEBUG_LEVEL
 
@@ -26,7 +26,7 @@ def unpack_data_packet(format_string, data_packet):
     """Unpacks data using the supplied format string and returns it in a dict with the timestamp."""
     logger.debug(f'unpack_data_packet called')
     data_packet['radio_data'] = struct.unpack(format_string,
-                                              radiodata.confirm_and_strip_crc(data_packet['radio_data']))
+                                              radiohelper.confirm_and_strip_crc(data_packet['radio_data']))
     return data_packet
 
 
@@ -40,8 +40,8 @@ def expand_radio_data_into_dict(data):
                             'unused_1': readings[4],
                             'unused_2': readings[5],
                             }, 'sensors': {'timestamp': data['timestamp']}}
-    zipped_sensor_readings = list(zip(readings[radiodata.sensor_offset::2],
-                                      readings[radiodata.sensor_offset + 1::2]))
+    zipped_sensor_readings = list(zip(readings[radiohelper.sensor_offset::2],
+                                      readings[radiohelper.sensor_offset + 1::2]))
     munged_data['sensors']['sensor_readings'] = [x for x in zipped_sensor_readings if x[0] != 0xff]
     return munged_data
 
@@ -81,7 +81,7 @@ def process_radio_data():
     global radio_q
     received_data = {'timestamp': datetime.utcnow(), 'radio_data': radio_q.get()}
     try:
-        unpacked_data = unpack_data_packet(radiodata.radio_data_format, received_data)
+        unpacked_data = unpack_data_packet(radiohelper.radio_data_format, received_data)
         logger.debug(f'Data packet = {unpacked_data}')
         expanded_data = expand_radio_data_into_dict(unpacked_data)
         if not check_for_duplicate_or_missing_packet(expanded_data['node']):
