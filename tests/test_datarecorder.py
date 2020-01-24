@@ -5,10 +5,8 @@ Created on Fri Dec 13 20:12:30 2019
 
 @author: pi
 """
-import pathlib
 from unittest import TestCase
 from unittest.mock import Mock, patch, call
-import logging
 # noinspection PyPackageRequirements
 import board
 # noinspection PyPep8Naming
@@ -16,6 +14,7 @@ import RPi.GPIO as rpigpio
 from datarecorder import main
 from datarecorder import dataprocessing
 from __config__ import RFM69_INTERRUPT_PIN, DB_URL, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
+from radiohelper.radiohelper import RFM69_ENCRYPTION_KEY
 
 
 class TestInterruptSetup(TestCase):
@@ -47,12 +46,6 @@ class TestInterruptSetup(TestCase):
 
 class TestRadioSetup(TestCase):
 
-    def test_radio_initialization(self):
-        with patch('adafruit_rfm69.RFM69'):
-            with self.assertLogs(level='DEBUG') as cm:
-                main.initialize_rfm69()
-        self.assertIn('RFM69 radio initialized successfully', cm.output[0])
-
     def test_correct_gpio_pins_are_set_for_radio(self):
         with patch('adafruit_rfm69.RFM69'):
             with patch('digitalio.DigitalInOut') as mock_digi_io:
@@ -65,13 +58,22 @@ class TestRadioSetup(TestCase):
                 main.initialize_rfm69()
         mock_spi.assert_called_once_with(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 
+    @patch('busio.SPI')
+    @patch('digitalio.DigitalInOut')
+    @patch('adafruit_rfm69.RFM69')
+    def test_radio_initialization(self, mock_rfm69, mock_digitalinout, mock_SPI):
+        mock_digitalinout.side_effect = ['cs', 'reset']
+        mock_SPI.return_value = 'spi'
+        returned_radio = mock_rfm69.return_value = Mock()
+        main.initialize_rfm69()
+        mock_rfm69.assert_called_once_with('spi', 'cs', 'reset', 433)
+        self.assertEqual(RFM69_ENCRYPTION_KEY, returned_radio.encryption_key)
+
     def test_rfm69_fails_to_initialize_logged_as_critical_and_raised(self):
         with patch('adafruit_rfm69.RFM69') as mock_rfm69:
             mock_rfm69.side_effect = RuntimeError
-            with self.assertLogs(level='CRITICAL') as cm:
-                with self.assertRaises(RuntimeError):
-                    main.initialize_rfm69()
-        self.assertIn('RFM69 radio failed to initialize with RuntimeError', cm.output[0])
+            with self.assertRaises(RuntimeError):
+                main.initialize_rfm69()
 
 
 class TestInitializeDataBase(TestCase):
@@ -134,20 +136,3 @@ class TestStartUpFunc(TestCase):
         mock_init_rfm69.assert_called_once()
         mock_init_irq.assert_called_once_with(6)
         mock_init_display_thread.assert_called_once()
-
-
-class TestLoggingSetup(TestCase):
-
-    def test_log_file_exists_and_is_written_to(self):
-        logging_file = pathlib.Path('/tmp/datarecorder.log')
-        try:
-            logging_file.unlink()
-        except:
-            pass
-        main.initialize_logging(FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL)
-        logger = logging.getLogger(__name__)
-        logger.warning('test logging')
-        self.assertTrue(logging_file.is_file())
-        with open('/tmp/datarecorder.log') as f:
-            self.assertIn('test logging', f.read())
-

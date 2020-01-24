@@ -33,7 +33,7 @@ def rfm69_callback(rfm69_irq):
 
 
 def initialize_gpio_interrupt(rfm69_g0):
-    logger.debug('initialize_gpio_interrupt')
+    logger.debug('initialize_gpio_interrupt called')
     rpigpio.setmode(rpigpio.BCM)
     rpigpio.setup(rfm69_g0, rpigpio.IN, pull_up_down=rpigpio.PUD_DOWN)
     rpigpio.remove_event_detect(rfm69_g0)
@@ -54,6 +54,7 @@ def initialize_logging(file_logging_level, console_logging_level):
 
 
 def initialize_rfm69():
+    logger.debug('initialize_rfm69 called')
     cs = digitalio.DigitalInOut(board.CE1)
     reset = digitalio.DigitalInOut(board.D25)
     spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
@@ -69,14 +70,17 @@ def initialize_rfm69():
 
 
 def initialize_database(url_db):
+    logger.debug('initialize_database called')
     database.initialize_database(url_db)
 
 
 def initialize_processing_thread():
+    logger.debug('initialize_processing_thread called')
     dataprocessing.init_data_processing_thread()
 
 
 def start_up(db_url=None, pi_irq_pin=None, logging_levels=(FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL)):
+    logger.debug('start_up called')
     initialize_logging(*logging_levels)
     initialize_database(db_url)
     initialize_processing_thread()
@@ -88,8 +92,8 @@ def start_up(db_url=None, pi_irq_pin=None, logging_levels=(FILE_DEBUG_LEVEL, CON
     return rfm69
 
 
-def shut_down(pi_irq_pin=24):
-    logger.info('shutdown_called')
+def shut_down(pi_irq_pin=RFM69_INTERRUPT_PIN):
+    logger.info('shut_down_called')
     rpigpio.remove_event_detect(pi_irq_pin)
     dataprocessing.radio_q.join()
     oleddisplay.shutdown()
