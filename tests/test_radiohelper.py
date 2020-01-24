@@ -60,7 +60,7 @@ class TestDecodeData(TestCase):
 
     def test_confirm_crc16_func_is_correct(self):
         crc_test_data = '123456789'
-        valid_crc = 0x29b1  # CRC cacluated from https://crccalc.com
+        valid_crc = 0x29b1  # CRC calculated from https://crccalc.com
         self.assertEqual(radiohelper.crc16(bytes(crc_test_data, encoding='UTF-8')), valid_crc)
 
     def test_data_format_string_is_valid(self):
