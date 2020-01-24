@@ -46,22 +46,14 @@ class TestDataBaseInitialization(TestCase):
 
     def test_database_initalized(self):
         database.engine.dispose()
-        with self.assertLogs(level='DEBUG') as cm:
-            database.initialize_database('sqlite://')
-        self.assertIn('initialize_database called', cm.output[0])
+        database.initialize_database('sqlite://')
         self.assertNotEqual(database.engine, None)
-        database.engine.dispose()
-        with self.assertLogs(level='INFO') as cm:
-            database.initialize_database('sqlite://')
-        self.assertIn('Database initialized', cm.output[1])
         database.engine.dispose()
 
     def test_failure_to_initialize_database_raises_critical_error(self):
         database.engine.dispose()
         with self.assertRaises(sqlalchemy.exc.ArgumentError):
-            with self.assertLogs(level='CRITICAL') as cm:
-                database.initialize_database('')
-            self.assertIn('Database initialization failed', cm.output[-1])
+            database.initialize_database('')
 
 
 class TestWriteDataToDataBase(TestCase):
@@ -75,9 +67,7 @@ class TestWriteDataToDataBase(TestCase):
     def test_write_sensor_data_to_database(self):
         test_time = unittest_helper.global_test_time
         test_data = {'timestamp': test_time, 'sensor_readings': [(0x01, 1.2345), (0x02, 2.3456)]}
-        with self.assertLogs() as cm:
-            database.write_sensor_reading_to_db(test_data)
-        self.assertIn('write_sensor_reading_to_db called', cm.output[0])
+        database.write_sensor_reading_to_db(test_data)
         s = database.session()
         t = database.SensorData
         q = s.query(t).all()

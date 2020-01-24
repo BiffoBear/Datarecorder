@@ -5,7 +5,9 @@ from unittest import TestCase, skip
 from unittest.mock import Mock, patch
 import pathlib
 import logging
-from datarecorder import main
+import sqlalchemy
+from tests import unittest_helper
+from datarecorder import main, database
 from __config__ import FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 
 
@@ -91,3 +93,31 @@ class TestMainLoggingCalls(TestCase):
         with self.assertLogs(level='INFO') as lm:
             main.shut_down(0)
         self.assertIn('shut_down_called', lm.output[0])
+
+
+class TestDatabase(TestCase):
+
+    def test_write_sensor_reading_to_db(self):
+        unittest_helper.initialize_database()
+        test_time = unittest_helper.global_test_time
+        test_data = {'timestamp': test_time, 'sensor_readings': [(0x01, 1.2345), (0x02, 2.3456)]}
+        with self.assertLogs() as cm:
+            database.write_sensor_reading_to_db(test_data)
+        self.assertIn('write_sensor_reading_to_db called', cm.output[0])
+        database.engine.dispose()
+
+    def test_initialize_database(self):
+        with self.assertLogs(level='DEBUG') as cm:
+            database.initialize_database('sqlite://')
+        self.assertIn('initialize_database called', cm.output[0])
+        database.engine.dispose()
+        with self.assertLogs(level='INFO') as cm:
+            database.initialize_database('sqlite://')
+        self.assertIn('Database initialized', cm.output[1])
+        database.engine.dispose()
+        with self.assertRaises(sqlalchemy.exc.ArgumentError):
+            with self.assertLogs(level='CRITICAL') as cm:
+                database.initialize_database('')
+        self.assertIn('Database initialization failed:', cm.output[-1])
+        database.engine.dispose()
+
