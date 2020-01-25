@@ -37,7 +37,7 @@ def initialize_oled(i2c_bus, reset_pin=None):
     except ValueError:
         logger.error('OLED display failed to initialize. Check that wiring is correct')
     except AttributeError:
-        logger.error('OLED display failed to initialize. No I2C bus')
+        logger.error('OLED display failed to initialize. No I2C bus found')
     return None
 
 
@@ -49,6 +49,7 @@ def setup_hardware_oled():
 
 
 def setup_display_dict():
+    logger.debug('setup_display_dict called')
     oled = setup_hardware_oled()
     image = Image.new('1', (DISPLAY_WIDTH, DISPLAY_HEIGHT))
     draw = ImageDraw.Draw(image)
@@ -65,7 +66,7 @@ def clear_display(display):
 def write_text_to_display(display=None, coords=(0, 0), text=''):
     logger.debug('write_text_to_display called')
     display['draw'].text(coords, text, font=display['font'], fill=255)
-    return display
+    return display  # TODO: return None as func doesn't change display
 
 
 def show_display(display=None):
@@ -100,34 +101,28 @@ def read_message_queue_write_to_display(lines=None, display=None):
         text = message_queue.get()
         lines = add_screen_line(lines=lines, text=text)
         if display['oled'] is not None:
-            print(lines[-1])
+            print(lines[-1])  # TODO: Remove print
             display = draw_lines(lines=lines, display=display)
     except queue.Empty:
-        print(f'Empty queue')
+        logger.error('Display thread called with empty queue')
     finally:
         message_queue.task_done()
     return lines, display
 
 
 def write_message_to_queue(message_text=''):
+    logger.debug('write_message_to_queue called')
     try:
         message_queue.put_nowait(message_text)
     except queue.Full:
         pass
 
 
-def shutdown():
-    logger.info(f'shutdown called')
+def shut_down():
+    logger.info(f'shut_down called')
     message_queue.join()
     clear_display(global_display)
     show_display(global_display)
-
-
-def loop_read_message_queue():
-    logger.debug(f'loop_read_message_queue called')
-    global global_lines, global_display
-    while True:
-        global_lines, global_display = read_message_queue_write_to_display(lines=global_lines, display=global_display)
 
 
 def init_display_thread():
@@ -138,3 +133,10 @@ def init_display_thread():
     message_thread.daemon = True
     message_thread.start()
     return message_thread
+
+
+def loop_read_message_queue():
+    logger.debug(f'loop_read_message_queue called')
+    global global_lines, global_display
+    while True:
+        global_lines, global_display = read_message_queue_write_to_display(lines=global_lines, display=global_display)

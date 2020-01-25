@@ -27,9 +27,7 @@ class TestDisplayHardwareSetup(TestCase):
     @patch('busio.I2C')
     def test_initialize_i2c_logs_warning_and_returns_none_if_setup_fails(self, mock_busio_i2c):
         mock_busio_i2c.side_effect = ValueError
-        with self.assertLogs() as cm:
-            returned_result = oleddisplay.initialize_i2c()
-        self.assertIn('I2C bus failed to initialize. Check that I2C is enabled', cm.output[0])
+        returned_result = oleddisplay.initialize_i2c()
         self.assertEqual(returned_result, None)
 
     @patch('adafruit_ssd1306.SSD1306_I2C')
@@ -46,18 +44,9 @@ class TestDisplayHardwareSetup(TestCase):
         self.assertEqual('adafruit_ssd1306.SSD1306_I2C object', returned_result)
 
     @patch('adafruit_ssd1306.SSD1306_I2C')
-    def test_initialize_oled_logs_oled_initialization(self, _):
-        with self.assertLogs(level='INFO') as cm:
-            oleddisplay.initialize_oled('dummy i2c', reset_pin='dummy reset')
-        self.assertIn('OLED display initialized successfully', cm.output[0])
-
-    @patch('adafruit_ssd1306.SSD1306_I2C')
     def test_initialize_oled_logs_warning_and_returns_none_if_setup_fails(self, mock_oled):
         mock_oled.side_effect = [ValueError, AttributeError]
-        with self.assertLogs() as cm:
-            returned_result = oleddisplay.initialize_oled('dummy i2c', reset_pin='dummy reset')
-        self.assertIn('OLED display failed to initialize. Check that wiring is correct',
-                      cm.output[0])
+        returned_result = oleddisplay.initialize_oled('dummy i2c', reset_pin='dummy reset')
         self.assertEqual(returned_result, None)
         returned_result = oleddisplay.initialize_oled('dummy i2c', reset_pin='dummy reset')
         self.assertEqual(returned_result, None)
@@ -249,7 +238,7 @@ class TestInitAndThreadingCalls(TestCase):
                                                                   mock_clear_display,
                                                                   mock_show_display,
                                                                   ):
-        oleddisplay.shutdown()
+        oleddisplay.shut_down()
         mock_message_queue.join.assert_called_once()
         mock_clear_display.assert_called_once_with(oleddisplay.global_display)
         mock_show_display.assert_called_once_with(oleddisplay.global_display)
