@@ -44,7 +44,7 @@ class TestDisplayHardwareSetup(TestCase):
         self.assertEqual('adafruit_ssd1306.SSD1306_I2C object', returned_result)
 
     @patch('adafruit_ssd1306.SSD1306_I2C')
-    def test_initialize_oled_logs_warning_and_returns_none_if_setup_fails(self, mock_oled):
+    def test_initialize_oled_returns_none_if_setup_fails(self, mock_oled):
         mock_oled.side_effect = [ValueError, AttributeError]
         returned_result = oleddisplay.initialize_oled('dummy i2c', reset_pin='dummy reset')
         self.assertEqual(returned_result, None)
@@ -53,7 +53,7 @@ class TestDisplayHardwareSetup(TestCase):
 
     @patch('datarecorder.oleddisplay.initialize_i2c')
     @patch('datarecorder.oleddisplay.initialize_oled')
-    def test_setup_hardware_returns_result_of_inititalize_oled(self, mock_initialize_oled, _):
+    def test_setup_hardware_returns_result_of_initialize_oled(self, mock_initialize_oled, _):
         mock_initialize_oled.return_value = 'dummy oled'
         returned_result = oleddisplay.setup_hardware_oled()
         self.assertEqual('dummy oled', returned_result)
@@ -74,11 +74,11 @@ class TestTextImageWriting(TestCase):
         self.assertIsInstance(returned_result['font'], PIL.ImageFont.ImageFont)
         self.assertIsInstance(returned_result['lines'], deque)
 
-    def test_clear_display_returns_display(self, mock_setup_hardware_oled):
-        mock_setup_hardware_oled.return_value = 'dummy oled'
-        display = oleddisplay.setup_display_dict()
-        returned_result = oleddisplay.clear_display(display)
-        self.assertEqual(returned_result, display)
+    def test_clear_display_returns_display_and_calls_pil_image_draw_with_correct_values(self, _1):
+        mock_display = {'draw': Mock()}
+        returned_result = oleddisplay.clear_display(mock_display)
+        self.assertEqual(returned_result, mock_display)
+        mock_display['draw'].rectangle.assert_called_once_with((0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT), fill=0, outline=0)
 
     def test_write_text_to_display_returns_display(self, mock_setup_hardware_oled):
         mock_setup_hardware_oled.return_value = 'dummy oled'
@@ -96,14 +96,16 @@ class TestTextDeliveryAndLayout(TestCase):
 
     def test_screen_queue_fifo(self, _1, _2, _3, _4):
         lines = deque([])
-        x = oleddisplay.add_screen_line(lines=lines, text='0 Line')
-        self.assertEqual(x, deque(['0 Line']))
-        y = oleddisplay.add_screen_line(lines=x, text='1 Line')
-        self.assertEqual(y, deque(['0 Line', '1 Line']))
+        returned_result_1 = oleddisplay.add_screen_line(lines=lines, text='0 Line')
+        self.assertEqual(returned_result_1, deque(['0 Line']))
+        returned_result_2 = oleddisplay.add_screen_line(lines=returned_result_1, text='1 Line')
+        self.assertEqual(returned_result_2, deque(['0 Line', '1 Line']))
         lines = deque([])
-        for z in range(6):
-            lines = oleddisplay.add_screen_line(lines=lines, text=f'{z} Line')
-        self.assertEqual(deque(['1 Line', '2 Line', '3 Line', '4 Line', '5 Line']), lines)
+    #
+    # def test_
+    #     for z in range(6):
+    #         returned_result = oleddisplay.add_screen_line(lines=lines, text=f'{z} Line')
+    #     self.assertEqual(deque(['1 Line', '2 Line', '3 Line', '4 Line', '5 Line']), returned_result)
 
     def test_lines_are_drawn_at_correct_coordinates(self, mock_write_text_to_display, _2, mock_clear_display, _4):
         display = None

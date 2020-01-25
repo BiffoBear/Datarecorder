@@ -30,7 +30,7 @@ def initialize_i2c():
 def initialize_oled(i2c_bus, reset_pin=None):
     logger.debug('initialize_oled called')
     try:
-        oled = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c_bus, addr=0x3d, reset=reset_pin)
+        oled = adafruit_ssd1306.SSD1306_I2C(DISPLAY_WIDTH, DISPLAY_HEIGHT, i2c_bus, addr=0x3d, reset=reset_pin)
         logger.info('OLED display initialized successfully')
         return oled
     except ValueError:
