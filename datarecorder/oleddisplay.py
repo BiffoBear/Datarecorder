@@ -81,33 +81,32 @@ def add_screen_line(display=None, text=''):
     lines.append(text)
     if len(lines) == 6:
         lines.popleft()
-    display['lines'] = lines
     return display
 
 
-def draw_lines(lines=None, display=None):
+def draw_lines(display=None):
     logger.debug('draw_lines called')
     line_coords = ((1, 1), (1, 13), (1, 25), (1, 37), (1, 49))
     display = clear_display(display)
-    for line, coord in zip(lines, line_coords):
+    for line, coord in zip(display['lines'], line_coords):
         display = write_text_to_display(display=display, coords=coord, text=line)
     show_display(display)
     return display
 
 
-def read_message_queue_write_to_display(lines=None, display=None):
+def read_message_queue_write_to_display(display=None):
     logger.debug('read_message_queue_write_to_display called')
     global message_queue
     try:
         text = message_queue.get()
-        lines = add_screen_line(lines=lines, text=text)
+        display = add_screen_line(display=display, text=text)
         if display['oled'] is not None:
-            display = draw_lines(lines=lines, display=display)
+            display = draw_lines(display=display)
     except queue.Empty:
         logger.error('Display thread called with empty queue')
     finally:
         message_queue.task_done()
-    return lines, display
+    return display
 
 
 def write_message_to_queue(message_text=''):

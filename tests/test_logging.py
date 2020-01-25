@@ -249,31 +249,30 @@ class TestOledDisplay(TestCase):
         self.assertIn('show_display called', cm.output[0])
 
     def test_add_screen_line(self):
-        dummy_lines = deque([])
+        dummy_display = {'lines': deque([])}
         with self.assertLogs(level='DEBUG') as cm:
-            oleddisplay.add_screen_line(lines=dummy_lines, text='')
+            oleddisplay.add_screen_line(display=dummy_display, text='')
         self.assertIn('add_screen_line called', cm.output[0])
 
     @patch('datarecorder.oleddisplay.clear_display')
     @patch('datarecorder.oleddisplay.write_text_to_display')
     @patch('datarecorder.oleddisplay.show_display')
     def test_draw_lines(self, _1, _2, _3):
-        dummy_lines = deque([])
+        dummy_display = {'lines': deque([])}
         with self.assertLogs(level='DEBUG') as cm:
-            oleddisplay.draw_lines(lines=dummy_lines, display=None)
+            oleddisplay.draw_lines(display=dummy_display)
         self.assertIn('draw_lines called', cm.output[0])
 
     @patch('datarecorder.oleddisplay.message_queue')
     @patch('datarecorder.oleddisplay.clear_display')
     def test_read_message_queue_write_to_display(self, _1, mock_message_queue):
         mock_message_queue.get.side_effect = [None, queue.Empty]
-        dummy_display = {'oled': Mock()}
-        dummy_lines = deque([])
+        dummy_display = {'oled': Mock(), 'lines': deque([])}
         with self.assertLogs(level='DEBUG') as cm:
-            oleddisplay.read_message_queue_write_to_display(lines=dummy_lines, display=dummy_display)
+            oleddisplay.read_message_queue_write_to_display(display=dummy_display)
         self.assertIn('read_message_queue_write_to_display called', cm.output[0])
         with self.assertLogs(level='ERROR') as cm:
-            oleddisplay.read_message_queue_write_to_display(lines=dummy_lines, display=dummy_display)
+            oleddisplay.read_message_queue_write_to_display(display=dummy_display)
         self.assertIn('Display thread called with empty queue', cm.output[0])
 
     def test_write_message_to_queue(self):
