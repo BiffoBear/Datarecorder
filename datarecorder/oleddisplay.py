@@ -66,14 +66,13 @@ def clear_display(display):
 def write_text_to_display(display=None, coords=(0, 0), text=''):
     logger.debug('write_text_to_display called')
     display['draw'].text(coords, text, font=display['font'], fill=255)
-    return display  # TODO: return None as func doesn't change display
+    return display
 
 
 def show_display(display=None):
     logger.debug('show_display called')
     display['oled'].image(display['image'])
     display['oled'].show()
-    return display
 
 
 def add_screen_line(lines=None, text=''):
@@ -89,8 +88,8 @@ def draw_lines(lines=None, display=None):
     line_coords = ((1, 1), (1, 13), (1, 25), (1, 37), (1, 49))
     display = clear_display(display)
     for line, coord in zip(lines, line_coords):
-        write_text_to_display(display=display, coords=coord, text=line)
-    display = show_display(display)
+        display = write_text_to_display(display=display, coords=coord, text=line)
+    show_display(display)
     return display
 
 
@@ -101,7 +100,6 @@ def read_message_queue_write_to_display(lines=None, display=None):
         text = message_queue.get()
         lines = add_screen_line(lines=lines, text=text)
         if display['oled'] is not None:
-            print(lines[-1])  # TODO: Remove print
             display = draw_lines(lines=lines, display=display)
     except queue.Empty:
         logger.error('Display thread called with empty queue')
