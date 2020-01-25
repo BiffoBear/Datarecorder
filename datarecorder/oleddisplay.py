@@ -15,7 +15,6 @@ from __config__ import DISPLAY_WIDTH, DISPLAY_HEIGHT
 logger = logging.getLogger(__name__)
 
 message_queue = queue.Queue()
-global_lines = deque([])
 global_display = None
 
 
@@ -54,7 +53,8 @@ def setup_display_dict():
     image = Image.new('1', (DISPLAY_WIDTH, DISPLAY_HEIGHT))
     draw = ImageDraw.Draw(image)
     font = ImageFont.load_default()
-    return {'oled': oled, 'image': image, 'draw': draw, 'font': font, }
+    lines = deque([])
+    return {'oled': oled, 'image': image, 'draw': draw, 'font': font, 'lines': lines}
 
 
 def clear_display(display):
@@ -137,4 +137,4 @@ def loop_read_message_queue():
     logger.debug(f'loop_read_message_queue called')
     global global_lines, global_display
     while True:
-        global_lines, global_display = read_message_queue_write_to_display(lines=global_lines, display=global_display)
+        global_display = read_message_queue_write_to_display(display=global_display)

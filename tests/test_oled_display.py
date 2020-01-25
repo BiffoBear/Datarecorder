@@ -67,10 +67,12 @@ class TestTextImageWriting(TestCase):
         mock_setup_hardware_oled.return_value = 'dummy oled'
         returned_result = oleddisplay.setup_display_dict()
         self.assertIsInstance(returned_result, dict)
+        self.assertEqual(list(returned_result.keys()), ['oled', 'image', 'draw', 'font', 'lines'])
         self.assertEqual(returned_result['oled'], 'dummy oled')
         self.assertIsInstance(returned_result['image'], PIL.Image.Image)
         self.assertIsInstance(returned_result['draw'], PIL.ImageDraw.ImageDraw)
         self.assertIsInstance(returned_result['font'], PIL.ImageFont.ImageFont)
+        self.assertIsInstance(returned_result['lines'], deque)
 
     def test_clear_display_returns_display(self, mock_setup_hardware_oled):
         mock_setup_hardware_oled.return_value = 'dummy oled'
@@ -116,12 +118,6 @@ class TestTextDeliveryAndLayout(TestCase):
                  call(display=None, coords=(1, 49), text='4 Line'),
                  ]
         mock_write_text_to_display.assert_has_calls(calls)
-
-    # def test_draw_lines_returns_display(self, _1, mock_show_display, _3, _4):
-    #     mock_show_display.side_effect = ['Display']
-    #     lines = deque(['Test Line'])
-    #     returned_data = oleddisplay.draw_lines(display=None, lines=lines)
-    #     self.assertEqual('Display', returned_data)
 
     def test_draw_lines_calls_clear_display(self, _1, _2, mock_clear_display, _4):
         test_display = oleddisplay.setup_display_dict()
