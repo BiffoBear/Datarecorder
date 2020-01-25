@@ -80,12 +80,12 @@ class TestTextImageWriting(TestCase):
         self.assertEqual(returned_result, mock_display)
         mock_display['draw'].rectangle.assert_called_once_with((0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT), fill=0, outline=0)
 
-    def test_write_text_to_display_returns_display(self, mock_setup_hardware_oled):
-        mock_setup_hardware_oled.return_value = 'dummy oled'
-        display = oleddisplay.setup_display_dict()
+    def test_write_text_to_display_returns_display_and_is_called_with_correct_args(self, _1):
+        mock_display = {'draw': Mock(), 'font': Mock()}
         coord = (1, 1)
-        data_returned = oleddisplay.write_text_to_display(display=display, coords=coord, text='Hello World')
-        self.assertEqual(data_returned, display)
+        data_returned = oleddisplay.write_text_to_display(display=mock_display, coords=coord, text='Hello World')
+        self.assertEqual(data_returned, mock_display)
+        mock_display['draw'].text.assert_called_once_with((1, 1), 'Hello World', fill=255, font=mock_display['font'])
 
 
 @patch('datarecorder.oleddisplay.setup_hardware_oled')
