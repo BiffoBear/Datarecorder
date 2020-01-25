@@ -59,10 +59,9 @@ class TestDisplayHardwareSetup(TestCase):
         self.assertEqual('dummy oled', returned_result)
 
 
-@patch('datarecorder.oleddisplay.setup_hardware_oled')
 class TestTextImageWriting(TestCase):
 
-    # noinspection PyUnresolvedReferences
+    @patch('datarecorder.oleddisplay.setup_hardware_oled')
     def test_setup_display_dict_returns_dictionary_object(self, mock_setup_hardware_oled):
         mock_setup_hardware_oled.return_value = 'dummy oled'
         returned_result = oleddisplay.setup_display_dict()
@@ -74,13 +73,13 @@ class TestTextImageWriting(TestCase):
         self.assertIsInstance(returned_result['font'], PIL.ImageFont.ImageFont)
         self.assertIsInstance(returned_result['lines'], deque)
 
-    def test_clear_display_returns_display_and_calls_pil_image_draw_with_correct_values(self, _1):
+    def test_clear_display_returns_display_and_calls_pil_image_draw_with_correct_values(self):
         mock_display = {'draw': Mock()}
         returned_result = oleddisplay.clear_display(mock_display)
         self.assertEqual(returned_result, mock_display)
         mock_display['draw'].rectangle.assert_called_once_with((0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT), fill=0, outline=0)
 
-    def test_write_text_to_display_returns_display_and_is_called_with_correct_args(self, _1):
+    def test_write_text_to_display_returns_display_and_is_called_with_correct_args(self):
         mock_display = {'draw': Mock(), 'font': Mock()}
         coord = (1, 1)
         data_returned = oleddisplay.write_text_to_display(display=mock_display, coords=coord, text='Hello World')
