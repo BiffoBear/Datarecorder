@@ -75,12 +75,14 @@ def show_display(display=None):
     display['oled'].show()
 
 
-def add_screen_line(lines=None, text=''):
+def add_screen_line(display=None, text=''):
     logger.debug('add_screen_line called')
+    lines = display['lines']
     lines.append(text)
     if len(lines) == 6:
         lines.popleft()
-    return lines
+    display['lines'] = lines
+    return display
 
 
 def draw_lines(lines=None, display=None):

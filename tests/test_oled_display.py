@@ -86,7 +86,7 @@ class TestTextImageWriting(TestCase):
         self.assertEqual(data_returned, mock_display)
         mock_display['draw'].text.assert_called_once_with((1, 1), 'Hello World', fill=255, font=mock_display['font'])
 
-    def test_show_display_calls_image_and_show_then_returns_None(self):
+    def test_show_display_calls_image_and_show_then_returns_none(self):
         mock_display = {'oled': Mock(), 'image': Mock()}
         data_returned = oleddisplay.show_display(mock_display)
         self.assertIsNone(data_returned)
@@ -100,18 +100,17 @@ class TestTextImageWriting(TestCase):
 @patch('datarecorder.oleddisplay.write_text_to_display')
 class TestTextDeliveryAndLayout(TestCase):
 
-    def test_screen_queue_fifo(self, _1, _2, _3, _4):
-        lines = deque([])
-        returned_result_1 = oleddisplay.add_screen_line(lines=lines, text='0 Line')
-        self.assertEqual(returned_result_1, deque(['0 Line']))
-        returned_result_2 = oleddisplay.add_screen_line(lines=returned_result_1, text='1 Line')
-        self.assertEqual(returned_result_2, deque(['0 Line', '1 Line']))
-        lines = deque([])
-    #
-    # def test_
-    #     for z in range(6):
-    #         returned_result = oleddisplay.add_screen_line(lines=lines, text=f'{z} Line')
-    #     self.assertEqual(deque(['1 Line', '2 Line', '3 Line', '4 Line', '5 Line']), returned_result)
+    def test_add_screen_line_maintains_max_5_item_fifo_queue(self, _1, _2, _3, _4):
+        dummy_display = {'lines': deque([])}
+        expected_result = deque([])
+        for x in ['line 0', 'line 1', 'line 2', 'line 3', 'line 4']:
+            expected_result.append(x)
+            returned_result = oleddisplay.add_screen_line(display=dummy_display, text=x)
+            self.assertEqual(expected_result, returned_result['lines'])
+        expected_result = deque(['line 1', 'line 2', 'line 3', 'line 4', 'line 5'])
+        returned_result = oleddisplay.add_screen_line(display=dummy_display, text='line 5')
+        self.assertEqual(expected_result, returned_result['lines'])
+        self.assertEqual(5, len(returned_result['lines']))
 
     def test_lines_are_drawn_at_correct_coordinates(self, mock_write_text_to_display, _2, mock_clear_display, _4):
         display = None
