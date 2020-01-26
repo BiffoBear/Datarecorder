@@ -8,19 +8,20 @@ Created on Thu Dec 12 13:21:10 2019
 import logging
 import os
 
-TESTING = True
 RFM69_INTERRUPT_PIN = 24
 DB_URL = 'postgresql://pi:blueberry@localhost:5432/housedata'
 
 try:
-    testing = os.environ['TESTING']
-except TypeError:
+    testing = int(os.environ['TESTING'])
+except KeyError:
     testing = False
 
 if testing:
+    TESTING = True
     FILE_DEBUG_LEVEL = logging.DEBUG
     CONSOLE_DEBUG_LEVEL = logging.DEBUG
 else:
+    TESTING = False
     FILE_DEBUG_LEVEL = logging.INFO
     CONSOLE_DEBUG_LEVEL = logging.INFO
 
