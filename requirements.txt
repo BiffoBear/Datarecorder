@@ -1,4 +1,4 @@
-PIL
+pillow==7.0.0
 Adafruit-Blinka==3.4.1
 adafruit-circuitpython-busdevice==4.1.1
 adafruit-circuitpython-framebuf==1.2.2
