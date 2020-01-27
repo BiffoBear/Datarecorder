@@ -12,7 +12,7 @@ import board
 # noinspection PyPep8Naming
 import RPi.GPIO as rpigpio
 from datarecorder import main
-from datarecorder import dataprocessing
+from datarecorder import _dataprocessing
 from __config__ import RFM69_INTERRUPT_PIN, DB_URL, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 from radiohelper.radiohelper import RFM69_ENCRYPTION_KEY
 
@@ -88,29 +88,29 @@ class TestIrqCallbackFunc(TestCase):
 
     def test_payload_not_ready_does_not_write_to_queue(self):
         main.radio = Mock()
-        dataprocessing.radio_q = Mock()
+        _dataprocessing.radio_q = Mock()
         main.radio.payload_ready = False
         main.rfm69_callback(None)
         main.radio.receive.assert_not_called()
-        dataprocessing.radio_q.put.assert_not_called()
+        _dataprocessing.radio_q.put.assert_not_called()
 
     def test_empty_buffer_does_not_write_to_queue(self):
         main.radio = Mock()
-        dataprocessing.radio_q = Mock()
+        _dataprocessing.radio_q = Mock()
         main.radio.payload_ready = True
         main.radio.receive.return_value = None
         main.rfm69_callback(None)
         main.radio.receive.assert_called()
-        dataprocessing.radio_q.put.assert_not_called()
+        _dataprocessing.radio_q.put.assert_not_called()
 
     def test_data_in_buffer_written_to_queue(self):
         main.radio = Mock()
-        dataprocessing.radio_q = Mock()
+        _dataprocessing.radio_q = Mock()
         main.radio.payload_ready = True
         main.radio.receive.return_value = 'Hello World!'
         main.rfm69_callback(None)
         main.radio.receive.assert_called()
-        dataprocessing.radio_q.put.assert_called_once_with('Hello World!')
+        _dataprocessing.radio_q.put.assert_called_once_with('Hello World!')
 
 
 @patch('datarecorder._oleddisplay.init_display_thread')

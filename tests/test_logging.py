@@ -10,7 +10,7 @@ from collections import deque
 import sqlalchemy
 from tests import unittest_helper
 from radiohelper import radiohelper
-from datarecorder import main, database, dataprocessing, _oleddisplay
+from datarecorder import main, database, _dataprocessing, _oleddisplay
 from __config__ import FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 
 
@@ -68,7 +68,7 @@ class TestMainLoggingCalls(TestCase):
             main.initialize_database('dummy URL')
         self.assertIn('initialize_database called', lm.output[0])
 
-    @patch('datarecorder.dataprocessing.init_data_processing_thread')
+    @patch('datarecorder._dataprocessing.init_data_processing_thread')
     def test_initialize_processing_thread(self, _1):
         with self.assertLogs(level='DEBUG') as lm:
             main.initialize_processing_thread()
@@ -90,7 +90,7 @@ class TestMainLoggingCalls(TestCase):
         self.assertIn('Listening for radio data…', lm.output[-1])
 
     @patch('RPi.GPIO.remove_event_detect')
-    @patch('datarecorder.dataprocessing.radio_q.join')
+    @patch('datarecorder._dataprocessing.radio_q.join')
     @patch('datarecorder._oleddisplay.shut_down')
     def test_shutdown(self, _1, _2, _3):
         with self.assertLogs(level='INFO') as lm:
@@ -130,8 +130,8 @@ class TestDataProcessing(TestCase):
     @patch('struct.unpack')
     def test_unpack_data_packet(self, _1):
         with self.assertLogs(level='DEBUG') as cm:
-            dataprocessing.unpack_data_packet(radiohelper.RADIO_DATA_FORMAT,
-                                              {'timestamp': unittest_helper.global_test_time,
+            _dataprocessing.unpack_data_packet(radiohelper.RADIO_DATA_FORMAT,
+                                               {'timestamp': unittest_helper.global_test_time,
                                                'radio_data': unittest_helper.rx_data_CRC_good
                                                })
         self.assertIn('unpack_data_packet called', cm.output[0])
@@ -140,36 +140,36 @@ class TestDataProcessing(TestCase):
         test_data = {'timestamp': unittest_helper.global_test_time,
                      'radio_data': unittest_helper.dummy_data}
         with self.assertLogs(level='DEBUG') as cm:
-            dataprocessing.expand_radio_data_into_dict(test_data)
+            _dataprocessing.expand_radio_data_into_dict(test_data)
         self.assertIn('expand_radio_data_into_dict called', cm.output[0])
 
     def test_check_for_duplicate_or_missing_packet(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1011}
-        dataprocessing.last_packet_info = {0x01: {'pkt_serial': 0x1010, 'timestamp': None}}
+        _dataprocessing.last_packet_info = {0x01: {'pkt_serial': 0x1010, 'timestamp': None}}
         with self.assertLogs(level='DEBUG') as cm:
-            dataprocessing.check_for_duplicate_or_missing_packet(test_data)
+            _dataprocessing.check_for_duplicate_or_missing_packet(test_data)
         self.assertIn('check_for_duplicate_packet called', cm.output[0])
         self.assertIn('Rx from node 0x01, packet serial 0x1011', cm.output[-2])
 
     def test_check_for_duplicate_or_missing_packet_logs_a_warning_for_a_missing_packet(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1012}
-        dataprocessing.last_packet_info = {0x01: {'pkt_serial': 0x0101, 'timestamp': None}}
+        _dataprocessing.last_packet_info = {0x01: {'pkt_serial': 0x0101, 'timestamp': None}}
         with self.assertLogs(level='WARNING') as cm:
-            dataprocessing.check_for_duplicate_or_missing_packet(test_data)
+            _dataprocessing.check_for_duplicate_or_missing_packet(test_data)
         self.assertIn('Data packet missing from node 0x01', cm.output[-2])
 
     def test_check_for_duplicate_or_missing_packet_logs_first_data_from_node(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
-        dataprocessing.last_packet_info = {0x02: {'pkt_serial': 0xffff, 'timestamp': None}}
+        _dataprocessing.last_packet_info = {0x02: {'pkt_serial': 0xffff, 'timestamp': None}}
         with self.assertLogs(level='INFO') as cm:
-            dataprocessing.check_for_duplicate_or_missing_packet(test_data)
+            _dataprocessing.check_for_duplicate_or_missing_packet(test_data)
         self.assertIn('First data packet from node 0x01', cm.output[-2])
         self.assertIn('Rx from node 0x01, packet serial 0x1010', cm.output[-1])
 
-    @patch('datarecorder.dataprocessing.check_for_duplicate_or_missing_packet')
-    @patch('datarecorder.dataprocessing.expand_radio_data_into_dict')
-    @patch('datarecorder.dataprocessing.unpack_data_packet')
-    @patch('datarecorder.dataprocessing.radio_q')
+    @patch('datarecorder._dataprocessing.check_for_duplicate_or_missing_packet')
+    @patch('datarecorder._dataprocessing.expand_radio_data_into_dict')
+    @patch('datarecorder._dataprocessing.unpack_data_packet')
+    @patch('datarecorder._dataprocessing.radio_q')
     def test_process_radio_data(self, mock_radio_q, mock_unpack_data_packet,
                                 mock_expand_radio_data_into_dict, mock_check_for_duplicate_or_missing_packet,
                                 ):
@@ -178,18 +178,18 @@ class TestDataProcessing(TestCase):
         mock_expand_radio_data_into_dict.return_value = {'node': None, 'sensors': None}
         mock_check_for_duplicate_or_missing_packet.return_value = True
         with self.assertLogs(level='DEBUG') as cm:
-            dataprocessing.process_radio_data()
+            _dataprocessing.process_radio_data()
         self.assertIn('process_radio_data called', cm.output[0])
         self.assertIn('Data packet = Dummy data', cm.output[1])
         with self.assertLogs(level='WARNING') as cm:
-            dataprocessing.process_radio_data()
+            _dataprocessing.process_radio_data()
         self.assertIn('Bad data packet detected', cm.output[1])
 
     @patch('threading.Thread')
     def test_init_data_processing_thread(self, mock_thread):
         mock_thread.return_value = Mock()
         with self.assertLogs(level='DEBUG') as cm:
-            dataprocessing.init_data_processing_thread()
+            _dataprocessing.init_data_processing_thread()
         self.assertIn('init_data_processing_thread called', cm.output[0])
 
 

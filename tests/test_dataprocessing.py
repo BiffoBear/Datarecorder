@@ -8,7 +8,7 @@ Created on Tue Dec  3 10:36:28 2019
 from unittest import TestCase
 import threading
 import datetime
-from datarecorder import dataprocessing
+from datarecorder import _dataprocessing
 from radiohelper import radiohelper
 from tests import unittest_helper
 
@@ -16,8 +16,8 @@ from tests import unittest_helper
 class TestDataPrep(TestCase):
 
     def test_struct_is_unpacked_correctly(self):
-        decoded_data = dataprocessing.unpack_data_packet(radiohelper.RADIO_DATA_FORMAT,
-                                                         {'timestamp': unittest_helper.global_test_time,
+        decoded_data = _dataprocessing.unpack_data_packet(radiohelper.RADIO_DATA_FORMAT,
+                                                          {'timestamp': unittest_helper.global_test_time,
                                                           'radio_data': unittest_helper.rx_data_CRC_good
                                                           })
         self.assertEqual(len(decoded_data['radio_data']), len(unittest_helper.dummy_data))
@@ -28,7 +28,7 @@ class TestDataPrep(TestCase):
     def test_data_munged_correctly(self):
         test_data = {'timestamp': unittest_helper.global_test_time,
                      'radio_data': unittest_helper.dummy_data}
-        data_returned = dataprocessing.expand_radio_data_into_dict(test_data)
+        data_returned = _dataprocessing.expand_radio_data_into_dict(test_data)
         self.assertIsInstance(data_returned, dict)
         self.assertIsInstance(data_returned['node'], dict)
         node_data = data_returned['node']
@@ -48,37 +48,37 @@ class CheckForRepeatPacket(TestCase):
 
     def test_check_for_duplicate_packet_returns_true_and_dict_if_duplicate(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
-        dataprocessing.last_packet_info = {0x01: {'pkt_serial': 0x1010, 'timestamp': None}}
-        x = dataprocessing.check_for_duplicate_or_missing_packet(test_data)
+        _dataprocessing.last_packet_info = {0x01: {'pkt_serial': 0x1010, 'timestamp': None}}
+        x = _dataprocessing.check_for_duplicate_or_missing_packet(test_data)
         self.assertIsInstance(x, bool)
         self.assertTrue(x)
-        self.assertEqual(dataprocessing.last_packet_info[0x01]['pkt_serial'], 0x1010)
+        self.assertEqual(_dataprocessing.last_packet_info[0x01]['pkt_serial'], 0x1010)
 
     def test_check_for_duplicate_returns_false_and_updates_dict_if_not_duplicate(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
-        dataprocessing.last_packet_info = {0x01: {'pkt_serial': 0x1011, 'timestamp': None}}
-        x = dataprocessing.check_for_duplicate_or_missing_packet(test_data)
+        _dataprocessing.last_packet_info = {0x01: {'pkt_serial': 0x1011, 'timestamp': None}}
+        x = _dataprocessing.check_for_duplicate_or_missing_packet(test_data)
         self.assertIsInstance(x, bool)
         self.assertFalse(x)
-        self.assertEqual(dataprocessing.last_packet_info[0x01]['pkt_serial'], 0x1010)
+        self.assertEqual(_dataprocessing.last_packet_info[0x01]['pkt_serial'], 0x1010)
 
     def test_check_for_duplicate_handles_wrap_around_of_serial_numbers(self):
         test_data = {'node_id': 0x02, 'pkt_serial': 0x0001}
-        dataprocessing.last_packet_info = {0x02: {'pkt_serial': 0xfffe, 'timestamp': None}}
-        dataprocessing.check_for_duplicate_or_missing_packet(test_data)
-        self.assertEqual(dataprocessing.last_packet_info[0x02]['pkt_serial'], 0x0001)
+        _dataprocessing.last_packet_info = {0x02: {'pkt_serial': 0xfffe, 'timestamp': None}}
+        _dataprocessing.check_for_duplicate_or_missing_packet(test_data)
+        self.assertEqual(_dataprocessing.last_packet_info[0x02]['pkt_serial'], 0x0001)
         test_data = {'node_id': 0x01, 'pkt_serial': 0x0000}
-        dataprocessing.last_packet_info = {0x01: 0xfffe, }
-        dataprocessing.check_for_duplicate_or_missing_packet(test_data)
+        _dataprocessing.last_packet_info = {0x01: 0xfffe, }
+        _dataprocessing.check_for_duplicate_or_missing_packet(test_data)
 
     def test_new_node_added_to_dict(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
-        dataprocessing.last_packet_info = {0x02: {'pkt_serial': 0xffff, 'timestamp': None}}
-        x = dataprocessing.check_for_duplicate_or_missing_packet(test_data)
+        _dataprocessing.last_packet_info = {0x02: {'pkt_serial': 0xffff, 'timestamp': None}}
+        x = _dataprocessing.check_for_duplicate_or_missing_packet(test_data)
         self.assertIsInstance(x, bool)
         self.assertFalse(x)
-        self.assertEqual(dataprocessing.last_packet_info[0x01]['pkt_serial'], 0x1010)
-        self.assertIsInstance(dataprocessing.last_packet_info[0x01]['timestamp'], datetime.datetime)
+        self.assertEqual(_dataprocessing.last_packet_info[0x01]['pkt_serial'], 0x1010)
+        self.assertIsInstance(_dataprocessing.last_packet_info[0x01]['timestamp'], datetime.datetime)
 
 
 class TestReadRadioAndWriteDataToDataBase(TestCase):
@@ -88,12 +88,12 @@ class TestReadRadioAndWriteDataToDataBase(TestCase):
         initial = unittest_helper.count_all_records()
         test_data = [unittest_helper.rx_data_CRC_good,
                      unittest_helper.rx_data_CRC_good]
-        [dataprocessing.radio_q.put(x) for x in test_data]
-        dataprocessing.process_radio_data()
+        [_dataprocessing.radio_q.put(x) for x in test_data]
+        _dataprocessing.process_radio_data()
         final = unittest_helper.count_all_records()
         self.assertEqual(final, initial + 9)
         # shouldn't write twice with duplicate data packets
-        dataprocessing.process_radio_data()
+        _dataprocessing.process_radio_data()
         final = unittest_helper.count_all_records()
         self.assertEqual(final, initial + 9)
         unittest_helper.kill_database()
@@ -102,8 +102,8 @@ class TestReadRadioAndWriteDataToDataBase(TestCase):
         unittest_helper.initialize_database(db_in_memory=True)
         initial = unittest_helper.count_all_records()
         test_data = [b'bad_data', ]
-        [dataprocessing.radio_q.put(x) for x in test_data]
-        dataprocessing.process_radio_data()
+        [_dataprocessing.radio_q.put(x) for x in test_data]
+        _dataprocessing.process_radio_data()
         final = unittest_helper.count_all_records()
         self.assertEqual(final, initial)
 
@@ -111,7 +111,7 @@ class TestReadRadioAndWriteDataToDataBase(TestCase):
 class TestThreadingWithQueue(TestCase):
 
     def test_thread_spawned(self):
-        thread = dataprocessing.init_data_processing_thread()
+        thread = _dataprocessing.init_data_processing_thread()
         self.assertIsInstance(thread, threading.Thread)
         self.assertTrue(thread.daemon)
         self.assertTrue(thread.ident)

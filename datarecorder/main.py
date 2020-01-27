@@ -15,7 +15,7 @@ import digitalio
 # noinspection PyPep8Naming
 import RPi.GPIO as rpigpio
 import adafruit_rfm69
-from . import _oleddisplay, dataprocessing, database
+from . import _oleddisplay, _dataprocessing, database
 from __config__ import DB_URL, RFM69_INTERRUPT_PIN, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 from radiohelper.radiohelper import RFM69_ENCRYPTION_KEY
 
@@ -29,7 +29,7 @@ def rfm69_callback(rfm69_irq):
     if radio.payload_ready:
         packet = radio.receive(timeout=None)
         if packet is not None:
-            dataprocessing.radio_q.put(packet)
+            _dataprocessing.radio_q.put(packet)
 
 
 def initialize_gpio_interrupt(rfm69_g0):
@@ -76,7 +76,7 @@ def initialize_database(url_db):
 
 def initialize_processing_thread():
     logger.debug('initialize_processing_thread called')
-    dataprocessing.init_data_processing_thread()
+    _dataprocessing.init_data_processing_thread()
 
 
 def start_up(db_url=None, pi_irq_pin=None, logging_levels=(FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL)):
@@ -95,7 +95,7 @@ def start_up(db_url=None, pi_irq_pin=None, logging_levels=(FILE_DEBUG_LEVEL, CON
 def shut_down(pi_irq_pin=RFM69_INTERRUPT_PIN):
     logger.info('shut_down_called')
     rpigpio.remove_event_detect(pi_irq_pin)
-    dataprocessing.radio_q.join()
+    _dataprocessing.radio_q.join()
     _oleddisplay.shut_down()
     # tests.unittest_helper.kill_database()
 
