@@ -22,7 +22,7 @@ crc16(data) -- return a 16 bit CRC for a byte object
 
 import struct
 try:
-    # Logging and __config__.py not used on microcontrollers so handle the error
+    # Logging and __config__.py not used on micro-controllers so handle the error
     from __config__ import FILE_DEBUG_LEVEL
     import logging
     logger = logging.getLogger(__name__)
