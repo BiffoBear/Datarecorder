@@ -10,7 +10,7 @@ import logging
 import queue
 from datetime import datetime
 import struct
-from . import oleddisplay, database
+from . import _oleddisplay, database
 from radiohelper import radiohelper
 from __config__ import FILE_DEBUG_LEVEL
 
@@ -56,8 +56,8 @@ def check_for_duplicate_or_missing_packet(node_data):
     except TypeError:
         logger.info(f'First data packet from node 0x{node_id:02x}')
         logger.info(f'Rx from node 0x{node_id:02x}, packet serial 0x{new_packet_serial_number:04x}')
-        oleddisplay.write_message_to_queue(f'First data node 0x{node_id:02x}')
-        oleddisplay.write_message_to_queue(f'Rx 0x{node_id:02x} sn 0x{new_packet_serial_number:04x}')
+        _oleddisplay.write_message_to_queue(f'First data node 0x{node_id:02x}')
+        _oleddisplay.write_message_to_queue(f'Rx 0x{node_id:02x} sn 0x{new_packet_serial_number:04x}')
         last_packet_info[node_id] = {'pkt_serial': new_packet_serial_number,
                                      'timestamp': datetime.utcnow()
                                      }
@@ -65,12 +65,12 @@ def check_for_duplicate_or_missing_packet(node_data):
     if new_packet_serial_number != old_packet_serial_number:
         if new_packet_serial_number != radiohelper.increment_number_with_wrap(old_packet_serial_number):
             logger.warning(f'Data packet missing from node 0x{node_id:02x}')
-            oleddisplay.write_message_to_queue(f'*Data missing from node 0x{node_id:02x}*')
+            _oleddisplay.write_message_to_queue(f'*Data missing from node 0x{node_id:02x}*')
         last_packet_info[node_id] = {'pkt_serial': new_packet_serial_number,
                                      'timestamp': datetime.utcnow()
                                      }
         logger.info(f'Rx from node 0x{node_id:02x}, packet serial 0x{new_packet_serial_number:04x}')
-        oleddisplay.write_message_to_queue(f'Rx 0x{node_id:02x} sn 0x{new_packet_serial_number:04x}')
+        _oleddisplay.write_message_to_queue(f'Rx 0x{node_id:02x} sn 0x{new_packet_serial_number:04x}')
         return False
     return True
 
@@ -88,7 +88,7 @@ def process_radio_data():
             database.write_sensor_reading_to_db(expanded_data['sensors'])
     except ValueError:
         logger.warning('Bad data packet detected')
-        oleddisplay.write_message_to_queue('*Bad data packet Rx*')
+        _oleddisplay.write_message_to_queue('*Bad data packet Rx*')
     radio_q.task_done()
 
 

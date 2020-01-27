@@ -15,7 +15,7 @@ import digitalio
 # noinspection PyPep8Naming
 import RPi.GPIO as rpigpio
 import adafruit_rfm69
-from . import oleddisplay, dataprocessing, database
+from . import _oleddisplay, dataprocessing, database
 from __config__ import DB_URL, RFM69_INTERRUPT_PIN, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 from radiohelper.radiohelper import RFM69_ENCRYPTION_KEY
 
@@ -62,7 +62,7 @@ def initialize_rfm69():
         rfm69 = adafruit_rfm69.RFM69(spi, cs, reset, 433)
         rfm69.encryption_key = RFM69_ENCRYPTION_KEY
         logger.info(f'RFM69 radio initialized successfully')
-        oleddisplay.write_message_to_queue(f'Radio initialized OK')
+        _oleddisplay.write_message_to_queue(f'Radio initialized OK')
         return rfm69
     except RuntimeError as error:
         logger.critical(f'RFM69 radio failed to initialize with RuntimeError')
@@ -86,7 +86,7 @@ def start_up(db_url=None, pi_irq_pin=None, logging_levels=(FILE_DEBUG_LEVEL, CON
     initialize_processing_thread()
     rfm69 = initialize_rfm69()
     initialize_gpio_interrupt(pi_irq_pin)
-    oleddisplay.init_display_thread()
+    _oleddisplay.init_display_thread()
     rfm69.listen()
     logger.info('Listening for radio data…')
     return rfm69
@@ -96,7 +96,7 @@ def shut_down(pi_irq_pin=RFM69_INTERRUPT_PIN):
     logger.info('shut_down_called')
     rpigpio.remove_event_detect(pi_irq_pin)
     dataprocessing.radio_q.join()
-    oleddisplay.shut_down()
+    _oleddisplay.shut_down()
     # tests.unittest_helper.kill_database()
 
 

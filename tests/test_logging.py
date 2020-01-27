@@ -10,7 +10,7 @@ from collections import deque
 import sqlalchemy
 from tests import unittest_helper
 from radiohelper import radiohelper
-from datarecorder import main, database, dataprocessing, oleddisplay
+from datarecorder import main, database, dataprocessing, _oleddisplay
 from __config__ import FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 
 
@@ -74,7 +74,7 @@ class TestMainLoggingCalls(TestCase):
             main.initialize_processing_thread()
         self.assertIn('initialize_processing_thread called', lm.output[0])
 
-    @patch('datarecorder.oleddisplay.init_display_thread')
+    @patch('datarecorder._oleddisplay.init_display_thread')
     @patch('datarecorder.main.initialize_gpio_interrupt')
     @patch('datarecorder.main.initialize_processing_thread')
     @patch('datarecorder.main.initialize_database')
@@ -91,7 +91,7 @@ class TestMainLoggingCalls(TestCase):
 
     @patch('RPi.GPIO.remove_event_detect')
     @patch('datarecorder.dataprocessing.radio_q.join')
-    @patch('datarecorder.oleddisplay.shut_down')
+    @patch('datarecorder._oleddisplay.shut_down')
     def test_shutdown(self, _1, _2, _3):
         with self.assertLogs(level='INFO') as lm:
             main.shut_down(0)
@@ -193,105 +193,105 @@ class TestDataProcessing(TestCase):
         self.assertIn('init_data_processing_thread called', cm.output[0])
 
 
-class TestOledDisplay(TestCase):
+class Test_OledDisplay(TestCase):
 
     @patch('busio.I2C')
     def test_initialize_i2c(self, _1):
         with self.assertLogs(level='DEBUG') as cm:
-            oleddisplay.initialize_i2c()
+            _oleddisplay.initialize_i2c()
         self.assertIn('initialize_i2c called', cm.output[0])
 
     @patch('adafruit_ssd1306.SSD1306_I2C')
     def test_initialize_oled(self, mock_ssd1306):
         mock_ssd1306.side_effect = [None, ValueError, AttributeError]
         with self.assertLogs(level='DEBUG') as cm:
-            oleddisplay.initialize_oled(None, None)
+            _oleddisplay.initialize_oled(None, None)
         self.assertIn('initialize_oled called', cm.output[0])
         with self.assertLogs(level='ERROR') as cm:
-            oleddisplay.initialize_oled(None, None)
+            _oleddisplay.initialize_oled(None, None)
         self.assertIn('OLED display failed to initialize. Check that wiring is correct', cm.output[0])
         with self.assertLogs(level='ERROR') as cm:
-            oleddisplay.initialize_oled(None, None)
+            _oleddisplay.initialize_oled(None, None)
         self.assertIn('OLED display failed to initialize. No I2C bus found', cm.output[0])
 
-    @patch('datarecorder.oleddisplay.initialize_oled')
+    @patch('datarecorder._oleddisplay.initialize_oled')
     @patch('digitalio.DigitalInOut')
-    @patch('datarecorder.oleddisplay.initialize_i2c')
+    @patch('datarecorder._oleddisplay.initialize_i2c')
     def test_setup_hardware_oled(self, _1, _2, _3):
         with self.assertLogs(level='DEBUG') as cm:
-            oleddisplay.setup_hardware_oled()
+            _oleddisplay.setup_hardware_oled()
         self.assertIn('setup_hardware_oled called', cm.output[0])
 
     def test_setup_display_dict(self):
         with self.assertLogs(level='DEBUG') as cm:
-            oleddisplay.setup_display_dict()
+            _oleddisplay.setup_display_dict()
         self.assertIn('setup_display_dict called', cm.output[0])
 
     @patch('PIL.ImageDraw')
     def test_clear_display(self, mock_image_draw):
         dummy_display = {'draw': mock_image_draw()}
         with self.assertLogs(level='DEBUG') as cm:
-            oleddisplay.clear_display(dummy_display)
-        self.assertIn('oleddisplay:clear_display called', cm.output[0])
+            _oleddisplay.clear_display(dummy_display)
+        self.assertIn('_oleddisplay:clear_display called', cm.output[0])
 
     @patch('PIL.ImageDraw')
     def test_write_text_to_display(self, mock_image_draw):
         dummy_display = {'draw': mock_image_draw(), 'font': None}
         with self.assertLogs(level='DEBUG') as cm:
-            oleddisplay.write_text_to_display(display=dummy_display, coords=(0, 0), text='')
+            _oleddisplay.write_text_to_display(display=dummy_display, coords=(0, 0), text='')
         self.assertIn('write_text_to_display called', cm.output[0])
 
     @patch('PIL.ImageDraw')
     def test_show_display(self, mock_image_draw):
         dummy_display = {'draw': mock_image_draw(), 'oled': Mock(), 'image': Mock()}
         with self.assertLogs(level='DEBUG') as cm:
-            oleddisplay.show_display(dummy_display)
+            _oleddisplay.show_display(dummy_display)
         self.assertIn('show_display called', cm.output[0])
 
     def test_add_screen_line(self):
         dummy_display = {'lines': deque([])}
         with self.assertLogs(level='DEBUG') as cm:
-            oleddisplay.add_screen_line(display=dummy_display, text='')
+            _oleddisplay.add_screen_line(display=dummy_display, text='')
         self.assertIn('add_screen_line called', cm.output[0])
 
-    @patch('datarecorder.oleddisplay.clear_display')
-    @patch('datarecorder.oleddisplay.write_text_to_display')
-    @patch('datarecorder.oleddisplay.show_display')
+    @patch('datarecorder._oleddisplay.clear_display')
+    @patch('datarecorder._oleddisplay.write_text_to_display')
+    @patch('datarecorder._oleddisplay.show_display')
     def test_draw_lines(self, _1, _2, _3):
         dummy_display = {'lines': deque([])}
         with self.assertLogs(level='DEBUG') as cm:
-            oleddisplay.draw_lines(display=dummy_display)
+            _oleddisplay.draw_lines(display=dummy_display)
         self.assertIn('draw_lines called', cm.output[0])
 
-    @patch('datarecorder.oleddisplay.message_queue')
-    @patch('datarecorder.oleddisplay.clear_display')
+    @patch('datarecorder._oleddisplay.message_queue')
+    @patch('datarecorder._oleddisplay.clear_display')
     def test_read_message_queue_write_to_display(self, _1, mock_message_queue):
         mock_message_queue.get.side_effect = [None, queue.Empty]
         dummy_display = {'oled': Mock(), 'lines': deque([])}
         with self.assertLogs(level='DEBUG') as cm:
-            oleddisplay.read_message_queue_write_to_display(display=dummy_display)
+            _oleddisplay.read_message_queue_write_to_display(display=dummy_display)
         self.assertIn('read_message_queue_write_to_display called', cm.output[0])
         with self.assertLogs(level='ERROR') as cm:
-            oleddisplay.read_message_queue_write_to_display(display=dummy_display)
+            _oleddisplay.read_message_queue_write_to_display(display=dummy_display)
         self.assertIn('Display thread called with empty queue', cm.output[0])
 
     def test_write_message_to_queue(self):
         with self.assertLogs(level='DEBUG') as cm:
-            oleddisplay.write_message_to_queue(message_text='dummy message')
+            _oleddisplay.write_message_to_queue(message_text='dummy message')
         self.assertIn('write_message_to_queue called', cm.output[0])
 
-    @patch('datarecorder.oleddisplay.show_display')
-    @patch('datarecorder.oleddisplay.clear_display')
-    @patch('datarecorder.oleddisplay.message_queue')
+    @patch('datarecorder._oleddisplay.show_display')
+    @patch('datarecorder._oleddisplay.clear_display')
+    @patch('datarecorder._oleddisplay.message_queue')
     def test_shut_down(self, _1, _2, _3):
         with self.assertLogs(level='INFO') as cm:
-            oleddisplay.shut_down()
+            _oleddisplay.shut_down()
         self.assertIn('shut_down called', cm.output[0])
 
     @patch('threading.Thread')
-    @patch('datarecorder.oleddisplay.setup_display_dict')
+    @patch('datarecorder._oleddisplay.setup_display_dict')
     def test_init_display_thread(self, _1, mock_thread):
         mock_thread.return_value = Mock()
         with self.assertLogs(level='DEBUG') as cm:
-            oleddisplay.init_display_thread()
+            _oleddisplay.init_display_thread()
         self.assertIn('init_display_thread called', cm.output[0])

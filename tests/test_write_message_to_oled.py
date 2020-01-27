@@ -6,7 +6,7 @@ from unittest.mock import patch, call
 from datarecorder import dataprocessing, main
 
 
-@patch('datarecorder.oleddisplay.write_message_to_queue')
+@patch('datarecorder._oleddisplay.write_message_to_queue')
 class TestIntegrationWithDataProcessing(TestCase):
 
     @patch('digitalio.DigitalInOut')
