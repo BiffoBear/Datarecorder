@@ -21,7 +21,7 @@ class TestLoggingSetup(TestCase):
         logging_file = pathlib.Path('/tmp/datarecorder.log')
         try:
             logging_file.unlink()
-        except:
+        except FileNotFoundError:
             pass
         main.initialize_logging(FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL)
         logger = logging.getLogger(__name__)
