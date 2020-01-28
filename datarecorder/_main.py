@@ -98,4 +98,3 @@ def shut_down(pi_irq_pin=RFM69_INTERRUPT_PIN):
     rpigpio.remove_event_detect(pi_irq_pin)
     _dataprocessing.radio_q.join()
     _oleddisplay.shut_down()
-    # tests.unittest_helper.kill_database()
