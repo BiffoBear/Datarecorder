@@ -44,7 +44,7 @@ class ConfirmDatabaseSetup(TestCase):
 
 class TestDataBaseInitialization(TestCase):
 
-    def test_database_initalized(self):
+    def test_database_initialized(self):
         database.engine.dispose()
         database.initialize_database('sqlite://')
         self.assertNotEqual(database.engine, None)

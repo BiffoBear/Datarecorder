@@ -117,6 +117,7 @@ def write_message_to_queue(message_text=''):
         pass
 
 
+# noinspection PyTypeChecker
 def shut_down():
     logger.info(f'shut_down called')
     message_queue.join()
@@ -136,6 +137,6 @@ def init_display_thread():
 
 def loop_read_message_queue():
     logger.debug(f'loop_read_message_queue called')
-    global global_lines, global_display
+    global global_display
     while True:
         global_display = read_message_queue_write_to_display(display=global_display)

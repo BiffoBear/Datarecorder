@@ -10,7 +10,8 @@ from collections import deque
 import sqlalchemy
 from tests import unittest_helper
 from radiohelper import radiohelper
-from datarecorder import _main, database, _dataprocessing, _oleddisplay
+# noinspection PyProtectedMember
+from datarecorder import main, database, _dataprocessing, _oleddisplay
 from __config__ import FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 
 
@@ -22,7 +23,7 @@ class TestLoggingSetup(TestCase):
             logging_file.unlink()
         except:
             pass
-        _main.initialize_logging(FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL)
+        main.initialize_logging(FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL)
         logger = logging.getLogger(__name__)
         logger.warning('test logging')
         self.assertTrue(logging_file.is_file())
@@ -45,48 +46,48 @@ class TestMainLoggingCalls(TestCase):
     @patch('RPi.GPIO.setup')
     def test_initialize_gpio_interrupt(self, _1, _2, _3, _4):
         with self.assertLogs(level='DEBUG') as lm:
-            _main.initialize_gpio_interrupt('dummy gpio_pin')
+            main.initialize_gpio_interrupt('dummy gpio_pin')
         self.assertIn('initialize_gpio_interrupt called', lm.output[0])
 
     @patch('adafruit_rfm69.RFM69')
-    def test_initialize_rfm69(self, mock_RFM69):
-        mock_RFM69.side_effect = [Mock(), Mock(), RuntimeError]
+    def test_initialize_rfm69(self, mock_rfm69):
+        mock_rfm69.side_effect = [Mock(), Mock(), RuntimeError]
         with self.assertLogs(level='DEBUG') as lm:
-            _main.initialize_rfm69()
+            main.initialize_rfm69()
         self.assertIn('initialize_rfm69 called', lm.output[0])
         with self.assertLogs(level='INFO') as lm:
-            _main.initialize_rfm69()
+            main.initialize_rfm69()
         self.assertIn('RFM69 radio initialized successfully', lm.output[-1])
         with self.assertLogs(level='CRITICAL') as lm:
             with self.assertRaises(RuntimeError):
-                _main.initialize_rfm69()
+                main.initialize_rfm69()
         self.assertIn('RFM69 radio failed to initialize with RuntimeError', lm.output[-1])
 
     @patch('datarecorder.database.initialize_database')
     def test_initialize_database(self, _1):
         with self.assertLogs(level='DEBUG') as lm:
-            _main.initialize_database('dummy URL')
+            main.initialize_database('dummy URL')
         self.assertIn('initialize_database called', lm.output[0])
 
     @patch('datarecorder._dataprocessing.init_data_processing_thread')
     def test_initialize_processing_thread(self, _1):
         with self.assertLogs(level='DEBUG') as lm:
-            _main.initialize_processing_thread()
+            main.initialize_processing_thread()
         self.assertIn('initialize_processing_thread called', lm.output[0])
 
     @patch('datarecorder._oleddisplay.init_display_thread')
-    @patch('datarecorder._main.initialize_gpio_interrupt')
-    @patch('datarecorder._main.initialize_processing_thread')
-    @patch('datarecorder._main.initialize_database')
-    @patch('datarecorder._main.initialize_logging')
-    @patch('datarecorder._main.initialize_rfm69')
+    @patch('datarecorder.main.initialize_gpio_interrupt')
+    @patch('datarecorder.main.initialize_processing_thread')
+    @patch('datarecorder.main.initialize_database')
+    @patch('datarecorder.main.initialize_logging')
+    @patch('datarecorder.main.initialize_rfm69')
     def test_start_up(self, mock_rfm, _2, _3, _4, _5, _6):
         mock_rfm.return_value = Mock()
         with self.assertLogs(level='DEBUG') as lm:
-            _main.start_up()
+            main.start_up()
         self.assertIn('start_up called', lm.output[0])
         with self.assertLogs(level='CRITICAL') as lm:
-            _main.start_up()
+            main.start_up()
         self.assertIn('Listening for radio data…', lm.output[-1])
 
     @patch('RPi.GPIO.remove_event_detect')
@@ -94,7 +95,7 @@ class TestMainLoggingCalls(TestCase):
     @patch('datarecorder._oleddisplay.shut_down')
     def test_shutdown(self, _1, _2, _3):
         with self.assertLogs(level='INFO') as lm:
-            _main.shut_down(0)
+            main.shut_down(0)
         self.assertIn('shut_down_called', lm.output[0])
 
 
@@ -132,8 +133,8 @@ class TestDataProcessing(TestCase):
         with self.assertLogs(level='DEBUG') as cm:
             _dataprocessing.unpack_data_packet(radiohelper.RADIO_DATA_FORMAT,
                                                {'timestamp': unittest_helper.global_test_time,
-                                               'radio_data': unittest_helper.rx_data_CRC_good
-                                               })
+                                                'radio_data': unittest_helper.rx_data_CRC_good,
+                                                })
         self.assertIn('unpack_data_packet called', cm.output[0])
 
     def test_expand_radio_data_into_dict(self):
@@ -193,7 +194,7 @@ class TestDataProcessing(TestCase):
         self.assertIn('init_data_processing_thread called', cm.output[0])
 
 
-class Test_OledDisplay(TestCase):
+class TestOledDisplay(TestCase):
 
     @patch('busio.I2C')
     def test_initialize_i2c(self, _1):

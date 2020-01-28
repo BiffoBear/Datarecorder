@@ -9,20 +9,20 @@ import logging
 import logging.handlers
 # noinspection PyPackageRequirements
 import board
-import time
 import busio
 import digitalio
 # noinspection PyPep8Naming
 import RPi.GPIO as rpigpio
 import adafruit_rfm69
 from . import _oleddisplay, _dataprocessing, database
-from __config__ import DB_URL, RFM69_INTERRUPT_PIN, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
+from __config__ import RFM69_INTERRUPT_PIN, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 from radiohelper.radiohelper import RFM69_ENCRYPTION_KEY
 
 logger = logging.getLogger(__name__)
 logger.setLevel(FILE_DEBUG_LEVEL)
 
 radio = None
+
 
 # noinspection PyUnusedLocal
 def rfm69_callback(rfm69_irq):

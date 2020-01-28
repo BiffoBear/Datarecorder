@@ -39,7 +39,7 @@ sensor_offset = RADIO_DATA_FORMAT.find('Bf') - 1  # lists are zero indexed
 
 
 def _try_to_log(log_message):
-    # Logging not used on microcontrollers so handle the error
+    # Logging not used on micro-controllers so handle the error
     try:
         logger.debug(log_message)
     except NameError:

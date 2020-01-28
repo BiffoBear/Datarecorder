@@ -7,6 +7,7 @@ from collections import deque
 import queue
 import PIL
 import board
+# noinspection PyProtectedMember
 from datarecorder import _oleddisplay
 from __config__ import DISPLAY_WIDTH, DISPLAY_HEIGHT
 

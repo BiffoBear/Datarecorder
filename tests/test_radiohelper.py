@@ -35,6 +35,7 @@ class TestIncrementNumber(TestCase):
     def test_increment_number_with_wrap_raises_typeerror_if_number_not_number(self):
         for incorrect_arg in ('x', []):
             with self.assertRaises(TypeError) as dm:
+                # noinspection PyTypeChecker
                 radiohelper.increment_number_with_wrap(incorrect_arg)
             self.assertIn('number and wrap_at must be numbers', dm.exception.args)
 

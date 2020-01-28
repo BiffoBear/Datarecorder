@@ -8,6 +8,7 @@ Created on Tue Dec  3 10:36:28 2019
 from unittest import TestCase
 import threading
 import datetime
+# noinspection PyProtectedMember
 from datarecorder import _dataprocessing
 from radiohelper import radiohelper
 from tests import unittest_helper
@@ -18,8 +19,8 @@ class TestDataPrep(TestCase):
     def test_struct_is_unpacked_correctly(self):
         decoded_data = _dataprocessing.unpack_data_packet(radiohelper.RADIO_DATA_FORMAT,
                                                           {'timestamp': unittest_helper.global_test_time,
-                                                          'radio_data': unittest_helper.rx_data_CRC_good
-                                                          })
+                                                           'radio_data': unittest_helper.rx_data_CRC_good
+                                                           })
         self.assertEqual(len(decoded_data['radio_data']), len(unittest_helper.dummy_data))
         self.assertEqual(decoded_data['timestamp'], unittest_helper.global_test_time)
         [self.assertAlmostEqual(x[0], x[1], places=2) for x in zip(decoded_data['radio_data'],
