@@ -53,11 +53,11 @@ class Nodes(Base):
     Location = Column(String)
 
 
-class Conversions(Base):
-
-    __tablename__ = 'Conversions'
-
-    ID = Column(Integer, primary_key=True)
+# class Conversions(Base):
+#
+#     __tablename__ = 'Conversions'
+#
+#     ID = Column(Integer, primary_key=True)
 
 
 def write_sensor_reading_to_db(data):

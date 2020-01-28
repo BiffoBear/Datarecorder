@@ -6,7 +6,7 @@ Created on Thu Dec  5 14:25:40 2019
 @author: martinstephens
 """
 from datetime import datetime
-from database import database_setup
+from database import database
 
 global_test_time = datetime(2019, 12, 10, 21, 45, 56)
 dummy_data = (0x0a, 0x0a, 0x0a0a, 0xf0f0, 0xaa, 0xbb,
@@ -25,17 +25,17 @@ def initialize_database(db_in_memory=True):
     else:
         db_url = 'postgresql://pi:blueberry@localhost:5432/housedata'
 #        db_url = 'sqlite:////Users/martinstephens/database.db'
-    database_setup.initialize_database(db_url)
+    database.initialize_database(db_url)
             
 
 def kill_database():
-    database_setup.Base.metadata.drop_all(database_setup.engine)
-    database_setup.engine.dispose()
+    database.Base.metadata.drop_all(database.engine)
+    database.engine.dispose()
 
 
 def count_all_records():
-    s = database_setup.session()
-    t = database_setup.SensorData
+    s = database.session()
+    t = database.SensorData
     r = s.query(t).count()
     s.close()   
     return r

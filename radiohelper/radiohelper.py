@@ -30,8 +30,8 @@ try:
 except ModuleNotFoundError:
     pass
 
-# RFM69_ENCRYPTION_KEY = b'\x16UT\xb6\x92FHaE\xb5B\xde\xbclYs'
-RFM69_ENCRYPTION_KEY = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
+RFM69_ENCRYPTION_KEY = b'\x16UT\xb6\x92FHaE\xb5B\xde\xbclYs'
+# RFM69_ENCRYPTION_KEY = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
 RADIO_DATA_FORMAT = '>BBHHBBBfBfBfBfBfBfBfBfBfBf'
 MAX_PACKET_LENGTH = 58  # Leaves two bytes for the CRC16 as RFM69 max packet size is 60 bytes
 set_packet_length = struct.calcsize(RADIO_DATA_FORMAT)

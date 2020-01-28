@@ -15,7 +15,7 @@ import digitalio
 import RPi.GPIO as rpigpio
 import adafruit_rfm69
 from . import _oleddisplay, _dataprocessing
-from database import database_setup
+from database import database
 from __config__ import RFM69_INTERRUPT_PIN, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 from radiohelper.radiohelper import RFM69_ENCRYPTION_KEY
 
@@ -73,7 +73,7 @@ def initialize_rfm69():
 
 def initialize_database(url_db):
     logger.debug('initialize_database called')
-    database_setup.initialize_database(url_db)
+    database.initialize_database(url_db)
 
 
 def initialize_processing_thread():
