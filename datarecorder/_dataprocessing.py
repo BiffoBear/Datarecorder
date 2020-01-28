@@ -11,7 +11,7 @@ import queue
 from datetime import datetime
 import struct
 from . import _oleddisplay
-from database import database
+from database import database_setup
 from radiohelper import radiohelper
 from __config__ import FILE_DEBUG_LEVEL
 
@@ -86,7 +86,7 @@ def process_radio_data():
         logger.debug(f'Data packet = {unpacked_data}')
         expanded_data = expand_radio_data_into_dict(unpacked_data)
         if not check_for_duplicate_or_missing_packet(expanded_data['node']):
-            database.write_sensor_reading_to_db(expanded_data['sensors'])
+            database_setup.write_sensor_reading_to_db(expanded_data['sensors'])
     except ValueError:
         logger.warning('Bad data packet detected')
         _oleddisplay.write_message_to_queue('*Bad data packet Rx*')

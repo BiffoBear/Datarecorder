@@ -12,7 +12,7 @@ from tests import unittest_helper
 from radiohelper import radiohelper
 # noinspection PyProtectedMember
 from datarecorder import main, _dataprocessing, _oleddisplay
-from database import database
+import database
 from __config__ import FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 
 
@@ -64,7 +64,7 @@ class TestMainLoggingCalls(TestCase):
                 main.initialize_rfm69()
         self.assertIn('RFM69 radio failed to initialize with RuntimeError', lm.output[-1])
 
-    @patch('database.database.initialize_database')
+    @patch('database.database_setup.initialize_database')
     def test_initialize_database(self, _1):
         with self.assertLogs(level='DEBUG') as lm:
             main.initialize_database('dummy URL')
@@ -107,24 +107,24 @@ class TestDatabase(TestCase):
         test_time = unittest_helper.global_test_time
         test_data = {'timestamp': test_time, 'sensor_readings': [(0x01, 1.2345), (0x02, 2.3456)]}
         with self.assertLogs() as cm:
-            database.write_sensor_reading_to_db(test_data)
+            database.database_setup.write_sensor_reading_to_db(test_data)
         self.assertIn('write_sensor_reading_to_db called', cm.output[0])
-        database.engine.dispose()
+        database.database_setup.engine.dispose()
 
     def test_initialize_database(self):
         with self.assertLogs(level='DEBUG') as cm:
-            database.initialize_database('sqlite://')
+            database.database_setup.initialize_database('sqlite://')
         self.assertIn('initialize_database called', cm.output[0])
-        database.engine.dispose()
+        database.database_setup.engine.dispose()
         with self.assertLogs(level='INFO') as cm:
-            database.initialize_database('sqlite://')
+            database.database_setup.initialize_database('sqlite://')
         self.assertIn('Database initialized', cm.output[1])
-        database.engine.dispose()
+        database.database_setup.engine.dispose()
         with self.assertRaises(sqlalchemy.exc.ArgumentError):
             with self.assertLogs(level='CRITICAL') as cm:
-                database.initialize_database('')
+                database.database_setup.initialize_database('')
         self.assertIn('Database initialization failed:', cm.output[-1])
-        database.engine.dispose()
+        database.database_setup.engine.dispose()
 
 
 class TestDataProcessing(TestCase):

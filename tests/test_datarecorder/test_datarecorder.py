@@ -79,7 +79,7 @@ class TestRadioSetup(TestCase):
 class TestInitializeDataBase(TestCase):
 
     def test_database_initialize_database_is_called(self):
-        with patch('database.database.initialize_database') as mock_db_init:
+        with patch('database.database_setup.initialize_database') as mock_db_init:
             main.initialize_database(DB_URL)
         mock_db_init.assert_called_once_with(DB_URL)
 

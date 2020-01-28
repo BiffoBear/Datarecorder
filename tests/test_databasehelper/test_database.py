@@ -9,7 +9,7 @@ Created on Sat Nov 30 07:17:26 2019
 from unittest import TestCase
 from sqlalchemy import inspect
 import sqlalchemy
-from database import database
+from database import database_setup
 from tests import unittest_helper
 
 
@@ -22,10 +22,10 @@ class ConfirmDatabaseSetup(TestCase):
                                             'Conversions': ['ID', ],
                                             }
         unittest_helper.initialize_database()
-        self.inspector = inspect(database.engine)
+        self.inspector = inspect(database_setup.engine)
 
     def tearDown(self):
-        database.engine.dispose()
+        database_setup.engine.dispose()
 
     def test_database_tables_exist(self):
         self.assertCountEqual(self.inspector.get_table_names(), self.required_tables_and_columns.keys())
@@ -40,15 +40,15 @@ class ConfirmDatabaseSetup(TestCase):
 class TestDataBaseInitialization(TestCase):
 
     def test_database_initialized(self):
-        database.engine.dispose()
-        database.initialize_database('sqlite://')
-        self.assertNotEqual(database.engine, None)
-        database.engine.dispose()
+        database_setup.engine.dispose()
+        database_setup.initialize_database('sqlite://')
+        self.assertNotEqual(database_setup.engine, None)
+        database_setup.engine.dispose()
 
     def test_failure_to_initialize_database_raises_critical_error(self):
-        database.engine.dispose()
+        database_setup.engine.dispose()
         with self.assertRaises(sqlalchemy.exc.ArgumentError):
-            database.initialize_database('')
+            database_setup.initialize_database('')
 
 
 class TestWriteDataToDataBase(TestCase):
@@ -57,14 +57,14 @@ class TestWriteDataToDataBase(TestCase):
         unittest_helper.initialize_database()
 
     def tearDown(self):
-        database.engine.dispose()
+        database_setup.engine.dispose()
 
     def test_write_sensor_data_to_database(self):
         test_time = unittest_helper.global_test_time
         test_data = {'timestamp': test_time, 'sensor_readings': [(0x01, 1.2345), (0x02, 2.3456)]}
-        database.write_sensor_reading_to_db(test_data)
-        s = database.session()
-        t = database.SensorData
+        database_setup.write_sensor_reading_to_db(test_data)
+        s = database_setup.session()
+        t = database_setup.SensorData
         q = s.query(t).all()
         database_records = [[t.Timestamp_UTC, t.Sensor_ID, t.Reading] for t in q]
         expected_result = [[test_time, x[0], x[1]] for x in test_data['sensor_readings']]
