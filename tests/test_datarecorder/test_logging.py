@@ -11,7 +11,8 @@ import sqlalchemy
 from tests import unittest_helper
 from radiohelper import radiohelper
 # noinspection PyProtectedMember
-from datarecorder import main, database, _dataprocessing, _oleddisplay
+from datarecorder import main, _dataprocessing, _oleddisplay
+from database import database
 from __config__ import FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 
 
@@ -63,7 +64,7 @@ class TestMainLoggingCalls(TestCase):
                 main.initialize_rfm69()
         self.assertIn('RFM69 radio failed to initialize with RuntimeError', lm.output[-1])
 
-    @patch('datarecorder.database.initialize_database')
+    @patch('database.database.initialize_database')
     def test_initialize_database(self, _1):
         with self.assertLogs(level='DEBUG') as lm:
             main.initialize_database('dummy URL')

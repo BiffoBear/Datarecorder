@@ -6,7 +6,7 @@ Created on Thu Dec  5 14:25:40 2019
 @author: martinstephens
 """
 from datetime import datetime
-from datarecorder import database
+from database import database
 
 global_test_time = datetime(2019, 12, 10, 21, 45, 56)
 dummy_data = (0x0a, 0x0a, 0x0a0a, 0xf0f0, 0xaa, 0xbb,

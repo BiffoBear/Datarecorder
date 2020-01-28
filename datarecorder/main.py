@@ -14,7 +14,8 @@ import digitalio
 # noinspection PyPep8Naming
 import RPi.GPIO as rpigpio
 import adafruit_rfm69
-from . import _oleddisplay, _dataprocessing, database
+from . import _oleddisplay, _dataprocessing
+from database import database
 from __config__ import RFM69_INTERRUPT_PIN, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 from radiohelper.radiohelper import RFM69_ENCRYPTION_KEY
 

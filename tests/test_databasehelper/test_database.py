@@ -9,7 +9,7 @@ Created on Sat Nov 30 07:17:26 2019
 from unittest import TestCase
 from sqlalchemy import inspect
 import sqlalchemy
-from datarecorder import database
+from database import database
 from tests import unittest_helper
 
 

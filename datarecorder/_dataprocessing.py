@@ -10,7 +10,8 @@ import logging
 import queue
 from datetime import datetime
 import struct
-from . import _oleddisplay, database
+from . import _oleddisplay
+from database import database
 from radiohelper import radiohelper
 from __config__ import FILE_DEBUG_LEVEL
 
