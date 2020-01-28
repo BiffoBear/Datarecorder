@@ -22,6 +22,7 @@ from radiohelper.radiohelper import RFM69_ENCRYPTION_KEY
 logger = logging.getLogger(__name__)
 logger.setLevel(FILE_DEBUG_LEVEL)
 
+radio = None
 
 # noinspection PyUnusedLocal
 def rfm69_callback(rfm69_irq):
@@ -98,16 +99,3 @@ def shut_down(pi_irq_pin=RFM69_INTERRUPT_PIN):
     _dataprocessing.radio_q.join()
     _oleddisplay.shut_down()
     # tests.unittest_helper.kill_database()
-
-
-if __name__ == '__main__':
-    radio = start_up(db_url=DB_URL, pi_irq_pin=RFM69_INTERRUPT_PIN)
-    finish_time = time.time() + 60
-    try:
-        # while time.time() < finish_time:
-        while True:
-            time.sleep(0.1)
-    except Exception as e:
-        raise e
-    finally:
-        shut_down()
