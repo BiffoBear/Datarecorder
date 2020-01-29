@@ -9,7 +9,9 @@ import logging
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
+
 from __config__ import FILE_DEBUG_LEVEL
 
 logger = logging.getLogger(__name__)
@@ -53,11 +55,19 @@ class Nodes(Base):
     Location = Column(String)
 
 
-# class Conversions(Base):
-#
-#     __tablename__ = 'Conversions'
-#
-#     ID = Column(Integer, primary_key=True)
+def initialize_database(db_url):
+    logger.debug(f'initialize_database called')
+    global Base, engine, session
+    try:
+        engine = create_engine(db_url)
+        session = sessionmaker()
+        session.configure(bind=engine)
+        Base.metadata.create_all(engine)
+    except Exception as e:
+        logger.critical(f'Database initialization failed: {e}')
+        raise e
+    else:
+        logger.info('Database initialized')
 
 
 def write_sensor_reading_to_db(data):
@@ -75,16 +85,64 @@ def write_sensor_reading_to_db(data):
         raise error
 
 
-def initialize_database(db_url):
-    logger.debug(f'initialize_database called')
-    global Base, engine, session
+def add_node(node_id=None, name=None, location=None):
+    """Adds a new node to the 'Nodes' table of the 'Sensor Readings' database.
+
+    Arguments:
+        node_id -- the unique ID of the new node, an integer in range 0 - 254
+        name -- the unique, human readable, name of the node, a str object
+        location -- the description of the node's location, a str object
+
+    Returns:
+        None
+    """
     try:
-        engine = create_engine(db_url)
-        session = sessionmaker()
-        session.configure(bind=engine)
-        Base.metadata.create_all(engine)
-    except Exception as e:
-        logger.critical(f'Database initialization failed: {e}')
-        raise e
-    else:
-        logger.info('Database initialized')
+        assert type(node_id) == int
+    except AssertionError as e:
+        raise TypeError('Node not created, node ID must be an integer') from e
+    try:
+        assert 0 <= node_id <= 254
+    except AssertionError as e:
+        raise ValueError('Node not created, node ID must be in range 0 - 254') from e
+    try:
+        assert name is not None
+        assert name != ''
+    except AssertionError as e:
+        raise TypeError('Node not created -- name must be string') from e
+
+    s = session()
+    try:
+        s.add(Nodes(ID=node_id, Name=name, Location=location))
+        s.commit()
+    except IntegrityError as e:
+        raise ValueError('Node not created, node ID and name must be unique') from e
+
+
+def node_id_exists(x):
+    pass
+
+
+def add_sensor(sensor_id=None, node_id=None, name=None, unit=None):
+    try:
+        assert node_id_exists(node_id)
+    except AssertionError as e:
+        raise ValueError('Sensor not created -- node_id must already exist in the database') from e
+    try:
+        assert type(sensor_id) == int
+    except AssertionError as e:
+        raise TypeError('Sensor not created, sensor ID must be an integer') from e
+    try:
+        assert 0 <= sensor_id <= 254
+    except AssertionError as e:
+        raise ValueError('Sensor not created, sensor ID must be in range 0 - 254') from e
+    try:
+        assert name is not None
+        assert name != ''
+    except AssertionError as e:
+        raise TypeError('Sensor not created -- name must be string') from e
+    s = session()
+    try:
+        s.add(Sensors(ID=sensor_id, Node_ID=node_id, Name=name, Unit=unit))
+        s.commit()
+    except IntegrityError as e:
+        raise ValueError('Sensor not created, Sensor ID and name must be unique') from e
