@@ -185,15 +185,16 @@ def add_sensor(sensor_id=None, node_id=None, name=None, quantity=None):
         raise ValueError('Sensor not created, Sensor ID and name must be unique') from e
 
 
+def get_all_ids(table=None):
+    db_session = session()
+    table_to_query = {'Nodes': Nodes, 'Sensors': Sensors}[table]
+    query = db_session.query(table_to_query).all()
+    return (x.ID for x in query)
+
+
 def get_all_node_ids():
-    s = session()
-    t = Nodes
-    q = s.query(t).all()
-    return (x.ID for x in q)
+    return get_all_ids(table='Nodes')
 
 
 def get_all_sensor_ids():
-    s = session()
-    t = Sensors
-    q = s.query(t).all()
-    return (x.ID for x in q)
+    return get_all_ids(table='Sensors')

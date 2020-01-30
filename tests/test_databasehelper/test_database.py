@@ -271,7 +271,7 @@ class TestReadFromDatabaseFunctions(TestCase):
         self.assertFalse(database._sensor_id_exists(sensor_id=2))
 
     @patch('database.database._node_id_exists')
-    def test_get_all_sensor_ids_returns_all_sensor_ids(self, mock_node_id_exists):
+    def test_get_all_sensor_ids_returns_a_generator_with_all_sensor_ids(self, mock_node_id_exists):
         mock_node_id_exists.return_value = True
         test_data = [[0x01, 0x01, 'Sensor 1', 'Mass'],
                      [0x02, 0x01, 'Sensor 2', 'Mass'],
@@ -281,11 +281,7 @@ class TestReadFromDatabaseFunctions(TestCase):
         returned_result = database.get_all_sensor_ids()
         self.assertListEqual([x[0] for x in test_data], [y for y in returned_result])
 
-    def test_get_all_sensor_ids_returns_and_empty_list_if_no_sensors(self):
-        returned_result = database.get_all_sensor_ids()
-        self.assertListEqual([], [y for y in returned_result])
-
-    def test_get_all_node_ids_returns_all_node_ids(self):
+    def test_get_all_node_ids_returns_a_generator_with_all_node_ids(self):
         test_data = [[0x01, 'Node 1', 'Dummy location'],
                      [0x02, 'Node 2', 'Dummy lacation'],
                      ]
@@ -293,6 +289,23 @@ class TestReadFromDatabaseFunctions(TestCase):
         returned_result = database.get_all_node_ids()
         self.assertListEqual([x[0] for x in test_data], [y for y in returned_result])
 
-    def test_get_all_node_ids_returns_and_empty_list_if_no_nodes(self):
-        returned_result = database.get_all_node_ids()
+    @patch('database.database._node_id_exists')
+    def test_get_all_ids_returns_a_generator_with_correct_values(self, mock_node_id_exists):
+        mock_node_id_exists.return_value = True
+        test_data_nodes = [[0x01, 'Node 1', 'Dummy location'],
+                     [0x02, 'Node 2', 'Dummy lacation'],
+                     ]
+        [database.add_node(node_id=x[0], name=x[1], location=x[2]) for x in test_data_nodes]
+        test_data_sensors = [[0x01, 0x01, 'Sensor 1', 'Mass'],
+                     [0x02, 0x01, 'Sensor 2', 'Mass'],
+                     [0x03, 0x01, 'Sensor 3', 'Mass'],
+                     ]
+        [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data_sensors]
+        returned_result = database.get_all_ids(table='Nodes')
+        self.assertListEqual([x[0] for x in test_data_nodes], [y for y in returned_result])
+        returned_result = database.get_all_ids(table='Sensors')
+        self.assertListEqual([x[0] for x in test_data_sensors], [y for y in returned_result])
+
+    def test_get_all_ids_returns_an_empty_generator_if_no_records(self):
+        returned_result = database.get_all_ids(table='Nodes')
         self.assertListEqual([], [y for y in returned_result])
