@@ -12,7 +12,7 @@ from sqlalchemy import Column, Integer, String, Float, DateTime
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
-from __config__ import FILE_DEBUG_LEVEL
+from __config__ import FILE_DEBUG_LEVEL, SI_UNITS
 
 logger = logging.getLogger(__name__)
 logger.setLevel(FILE_DEBUG_LEVEL)
@@ -43,7 +43,7 @@ class Sensors(Base):
     ID = Column(Integer, primary_key=True)
     Node_ID = Column(Integer)
     Name = Column(String, unique=True)
-    Unit = Column(String)
+    Quantity = Column(String)
 
 
 class Nodes(Base):
@@ -122,7 +122,7 @@ def node_id_exists(x):
     pass
 
 
-def add_sensor(sensor_id=None, node_id=None, name=None, unit=None):
+def add_sensor(sensor_id=None, node_id=None, name=None, quantity=None):
     try:
         assert node_id_exists(node_id)
     except AssertionError as e:
@@ -140,9 +140,13 @@ def add_sensor(sensor_id=None, node_id=None, name=None, unit=None):
         assert name != ''
     except AssertionError as e:
         raise TypeError('Sensor not created -- name must be string') from e
+    try:
+        SI_UNITS[quantity]
+    except KeyError:
+        raise ValueError('Sensor not created -- unknown quantity supplied')
     s = session()
     try:
-        s.add(Sensors(ID=sensor_id, Node_ID=node_id, Name=name, Unit=unit))
+        s.add(Sensors(ID=sensor_id, Node_ID=node_id, Name=name, Quantity=quantity))
         s.commit()
     except IntegrityError as e:
         raise ValueError('Sensor not created, Sensor ID and name must be unique') from e

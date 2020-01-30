@@ -18,7 +18,7 @@ class ConfirmDatabaseSetup(TestCase):
 
     def setUp(self):
         self.required_tables_and_columns = {'Sensor Readings': ['ID', 'Timestamp_UTC', 'Sensor_ID', 'Reading', ],
-                                            'Sensors': ['ID', 'Node_ID', 'Unit', 'Name', ],
+                                            'Sensors': ['ID', 'Node_ID', 'Quantity', 'Name', ],
                                             'Nodes': ['ID', 'Name', 'Location', ],
                                             }
         unittest_helper.initialize_database()
@@ -151,7 +151,7 @@ def get_all_sensors():
     s = database.session()
     t = database.Sensors
     q = s.query(t).all()
-    return [[x.ID, x.Node_ID, x.Name, x.Unit] for x in q]
+    return [[x.ID, x.Node_ID, x.Name, x.Quantity] for x in q]
 
 
 @patch('database.database.node_id_exists')
@@ -165,20 +165,20 @@ class TestAddSensorToDatabase(TestCase):
 
     def test_add_sensor_adds_unique_data_that_it_is_called_with(self, mock_node_id_exists):
         mock_node_id_exists.return_value = True
-        test_data = [[0x01, 0x01, 'Dummy Sensor', 'Dummy Unit'],
-                     [0x02, 0x01, 'Another Sensor', 'Dummy Unit'],
+        test_data = [[0x01, 0x01, 'Dummy Sensor', 'Mass'],
+                     [0x02, 0x01, 'Another Sensor', 'Mass'],
                      ]
-        [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], unit=x[3]) for x in test_data]
+        [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
         database_records = get_all_sensors()
         self.assertEqual(database_records, test_data)
 
     def test_add_sensor_raises_valueerror_for_repeat_id(self, mock_node_id_exists):
         mock_node_id_exists.return_value = True
-        test_data = [[0x01, 0x01, 'Dummy Sensor', 'Dummy Unit'],
-                     [0x01, 0x01, 'Another Sensor', 'Dummy Unit'],
+        test_data = [[0x01, 0x01, 'Dummy Sensor', 'Mass'],
+                     [0x01, 0x01, 'Another Sensor', 'Mass'],
                      ]
         with self.assertRaises(ValueError) as dm:
-            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], unit=x[3]) for x in test_data]
+            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
         database_records = get_all_sensors()
         expected_result = [test_data[0]]
         self.assertEqual(database_records, expected_result)
@@ -186,32 +186,32 @@ class TestAddSensorToDatabase(TestCase):
 
     def test_max_sensor_id_is_0xfe(self, mock_node_id_exists):
         mock_node_id_exists.return_value = True
-        test_data = [[0xff, 0x01, 'Dummy Sensor', 'Dummy Unit']]
+        test_data = [[0xff, 0x01, 'Dummy Sensor', 'Mass']]
         with self.assertRaises(ValueError) as dm:
-            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], unit=x[3]) for x in test_data]
+            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
         self.assertIn('Sensor not created, sensor ID must be in range 0 - 254', dm.exception.args)
 
     def test_min_sensor_id_is_0x00(self, mock_node_id_exists):
         mock_node_id_exists.return_value = True
-        test_data = [[-1, 0x01, 'Dummy Sensor', 'Dummy Unit']]
+        test_data = [[-1, 0x01, 'Dummy Sensor', 'Mass']]
         with self.assertRaises(ValueError) as dm:
-            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], unit=x[3]) for x in test_data]
+            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
         self.assertIn('Sensor not created, sensor ID must be in range 0 - 254', dm.exception.args)
 
     def test_sensor_id_not_int_raises_typeerror(self, mock_node_id_exists):
         mock_node_id_exists.return_value = True
-        test_data = [[None, 0x01, 'Dummy Sensor', 'Dummy Unit']]
+        test_data = [[None, 0x01, 'Dummy Sensor', 'Mass']]
         with self.assertRaises(TypeError) as dm:
-            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], unit=x[3]) for x in test_data]
+            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
         self.assertIn('Sensor not created, sensor ID must be an integer', dm.exception.args)
 
     def test_add_sensor_raises_valueerror_for_repeat_names(self, mock_node_id_exists):
         mock_node_id_exists.return_value = True
-        test_data = [[0x01, 0x01, 'Dummy Sensor', 'Dummy Unit'],
-                     [0x02, 0x01, 'Dummy Sensor', 'Dummy Unit'],
+        test_data = [[0x01, 0x01, 'Dummy Sensor', 'Mass'],
+                     [0x02, 0x01, 'Dummy Sensor', 'Mass'],
                      ]
         with self.assertRaises(ValueError) as dm:
-            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], unit=x[3]) for x in test_data]
+            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
         database_records = get_all_sensors()
         expected_result = [test_data[0]]
         self.assertEqual(database_records, expected_result)
@@ -219,21 +219,30 @@ class TestAddSensorToDatabase(TestCase):
 
     def test_add_sensor_raises_typeerror_for_name_is_none(self, mock_node_id_exists):
         mock_node_id_exists.return_value = True
-        test_data = [[0x01, 0x01, None, 'Dummy Unit']]
+        test_data = [[0x01, 0x01, None, 'Mass']]
         with self.assertRaises(TypeError) as dm:
-            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], unit=x[3]) for x in test_data]
+            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
         self.assertIn('Sensor not created -- name must be string', dm.exception.args)
 
     def test_add_sensor_raises_valueerror_for_name_is_empty_string(self, mock_node_id_exists):
         mock_node_id_exists.return_value = True
-        test_data = [[0x01, 0x01, '', 'Dummy Unit']]
+        test_data = [[0x01, 0x01, '', 'Mass']]
         with self.assertRaises(TypeError) as dm:
-            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], unit=x[3]) for x in test_data]
+            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
         self.assertIn('Sensor not created -- name must be string', dm.exception.args)
 
     def test_add_sensor_raises_valueerror_if_node_id_does_not_exist(self, mock_node_id_exists):
         mock_node_id_exists.return_value = False
-        test_data = [[0x01, 0x01, 'Dummy Name', 'Dummy Unit']]
+        test_data = [[0x01, 0x01, 'Dummy Name', 'Mass']]
         with self.assertRaises(ValueError) as dm:
-            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], unit=x[3]) for x in test_data]
+            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
         self.assertIn('Sensor not created -- node_id must already exist in the database', dm.exception.args)
+
+    def test_add_sensor_only_raises_value_error_when_quantity_not_in_dict(self, mock_node_id_exists):
+        mock_node_id_exists.return_value = True
+        test_data = [[0x01, 0x01, 'Dummy Name', 'Temperature']]
+        [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
+        test_data = [[0x02, 0x01, 'Other Name', 'Incorrect quantity']]
+        with self.assertRaises(ValueError) as dm:
+            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
+        self.assertIn('Sensor not created -- unknown quantity supplied', dm.exception.args)

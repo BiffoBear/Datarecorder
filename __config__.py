@@ -27,3 +27,20 @@ else:
 
 DISPLAY_WIDTH = 128
 DISPLAY_HEIGHT = 64
+
+SI_UNITS = {'Length': {'unit': 'meter', 'symbol': 'm'},
+            'Volume': {'unit': 'cubic meter', 'symbol': 'm3'},
+            'Mass': {'unit': 'kilogram', 'symbol': 'kg'},
+            'Force': {'unit': 'newton', 'symbol': 'N'},
+            'Pressure': {'unit': 'pascal', 'symbol': 'Pa'},
+            'Temperature': {'unit': 'kelvin', 'symbol': 'K'},
+            'Time': {'unit': 'second', 'symbol': 's'},
+            'Potential': {'unit': 'volt', 'symbol': 'V'},
+            'Current': {'unit': 'ampere', 'symbol': 'A'},
+            'Power': {'unit': 'watt', 'symbol': 'W'},
+            'Resistance': {'unit': 'ohm', 'symbol': 'Ω'},
+            'Frequency': {'unit': 'hertz', 'symbol': 'Hz'},
+            'Energy': {'unit': 'joule', 'symbol': 'J'},
+            'Luminosity': {'unit': 'candle', 'symbol': 'cd'},
+            'Illuminance': {'unit': 'lux', 'symbol': 'lx'},
+            }
