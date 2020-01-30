@@ -11,6 +11,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.exc import NoResultFound
 
 from __config__ import FILE_DEBUG_LEVEL, SI_UNITS
 
@@ -88,6 +89,8 @@ def write_sensor_reading_to_db(data):
 def add_node(node_id=None, name=None, location=None):
     """Adds a new node to the 'Nodes' table of the 'Sensor Readings' database.
 
+    Checks that args are valid before writing the record to the database.
+
     Arguments:
         node_id -- the unique ID of the new node, an integer in range 0 - 254
         name -- the unique, human readable, name of the node, a str object
@@ -118,13 +121,43 @@ def add_node(node_id=None, name=None, location=None):
         raise ValueError('Node not created, node ID and name must be unique') from e
 
 
-def node_id_exists(x):
-    pass
+def _node_id_exists(node_id=None):
+    s = session()
+    t = Nodes
+    try:
+        s.query(t).filter(t.ID == node_id).one()
+    except NoResultFound:
+        return False
+    return True
+
+
+def _sensor_id_exists(sensor_id=None):
+    s = session()
+    t = Sensors
+    try:
+        s.query(t).filter(t.ID == sensor_id).one()
+    except NoResultFound:
+        return False
+    return True
 
 
 def add_sensor(sensor_id=None, node_id=None, name=None, quantity=None):
+    """Adds a new sensor to the 'Sensors' table of the 'Sensor Readings' database.
+
+    Checks that args are valid before writing the record to the database.
+
+    Arguments:
+        sensor_id -- the unique ID of the new sensor, an integer in range 0 - 254
+        node_id -- the node that the sensor is attached to (node must already exist)
+        name -- the unique, human readable, name of the node, a str object
+        quantity -- the SI quantity that the sensor measures. Checked against SI_UNITS dict
+
+    Returns:
+        None
+    """
+
     try:
-        assert node_id_exists(node_id)
+        assert _node_id_exists(node_id)
     except AssertionError as e:
         raise ValueError('Sensor not created -- node_id must already exist in the database') from e
     try:
@@ -150,3 +183,17 @@ def add_sensor(sensor_id=None, node_id=None, name=None, quantity=None):
         s.commit()
     except IntegrityError as e:
         raise ValueError('Sensor not created, Sensor ID and name must be unique') from e
+
+
+def get_all_node_ids():
+    s = session()
+    t = Nodes
+    q = s.query(t).all()
+    return (x.ID for x in q)
+
+
+def get_all_sensor_ids():
+    s = session()
+    t = Sensors
+    q = s.query(t).all()
+    return (x.ID for x in q)

@@ -154,7 +154,7 @@ def get_all_sensors():
     return [[x.ID, x.Node_ID, x.Name, x.Quantity] for x in q]
 
 
-@patch('database.database.node_id_exists')
+@patch('database.database._node_id_exists')
 class TestAddSensorToDatabase(TestCase):
 
     def setUp(self):
@@ -246,3 +246,53 @@ class TestAddSensorToDatabase(TestCase):
         with self.assertRaises(ValueError) as dm:
             [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
         self.assertIn('Sensor not created -- unknown quantity supplied', dm.exception.args)
+
+
+class TestReadFromDatabaseFunctions(TestCase):
+
+    def setUp(self):
+        unittest_helper.initialize_database()
+
+    def tearDown(self):
+        database.engine.dispose()
+
+    def test_node_id_exists_returns_true_if_node_exists_false_if_not(self):
+        test_data = [[0x01, 'Test node name', 'Dummy location']]
+        [database.add_node(node_id=x[0], name=x[1], location=x[2]) for x in test_data]
+        self.assertTrue(database._node_id_exists(node_id=1))
+        self.assertFalse(database._node_id_exists(node_id=2))
+
+    @patch('database.database._node_id_exists')
+    def test_sensor_id_exists_returns_true_if_sensor_exists_false_if_not(self, mock_node_id_exists):
+        mock_node_id_exists.return_value = True
+        test_data = [[0x01, 0x01, 'Dummy Sensor', 'Mass']]
+        [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
+        self.assertTrue(database._sensor_id_exists(sensor_id=1))
+        self.assertFalse(database._sensor_id_exists(sensor_id=2))
+
+    @patch('database.database._node_id_exists')
+    def test_get_all_sensor_ids_returns_all_sensor_ids(self, mock_node_id_exists):
+        mock_node_id_exists.return_value = True
+        test_data = [[0x01, 0x01, 'Sensor 1', 'Mass'],
+                     [0x02, 0x01, 'Sensor 2', 'Mass'],
+                     [0x03, 0x01, 'Sensor 3', 'Mass'],
+                     ]
+        [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
+        returned_result = database.get_all_sensor_ids()
+        self.assertListEqual([x[0] for x in test_data], [y for y in returned_result])
+
+    def test_get_all_sensor_ids_returns_and_empty_list_if_no_sensors(self):
+        returned_result = database.get_all_sensor_ids()
+        self.assertListEqual([], [y for y in returned_result])
+
+    def test_get_all_node_ids_returns_all_node_ids(self):
+        test_data = [[0x01, 'Node 1', 'Dummy location'],
+                     [0x02, 'Node 2', 'Dummy lacation'],
+                     ]
+        [database.add_node(node_id=x[0], name=x[1], location=x[2]) for x in test_data]
+        returned_result = database.get_all_node_ids()
+        self.assertListEqual([x[0] for x in test_data], [y for y in returned_result])
+
+    def test_get_all_node_ids_returns_and_empty_list_if_no_nodes(self):
+        returned_result = database.get_all_node_ids()
+        self.assertListEqual([], [y for y in returned_result])
