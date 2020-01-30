@@ -8,9 +8,9 @@ Created on Sat Nov 30 07:17:01 2019
 import logging
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship, backref
 from sqlalchemy.orm.exc import NoResultFound
 
 from __config__ import FILE_DEBUG_LEVEL, SI_UNITS
@@ -37,16 +37,6 @@ class SensorData(Base):
     Reading = Column(Float)
 
 
-class Sensors(Base):
-
-    __tablename__ = 'Sensors'
-
-    ID = Column(Integer, primary_key=True)
-    Node_ID = Column(Integer)
-    Name = Column(String, unique=True)
-    Quantity = Column(String)
-
-
 class Nodes(Base):
 
     __tablename__ = 'Nodes'
@@ -54,6 +44,17 @@ class Nodes(Base):
     ID = Column(Integer, primary_key=True)
     Name = Column(String, unique=True)
     Location = Column(String)
+
+
+class Sensors(Base):
+
+    __tablename__ = 'Sensors'
+
+    ID = Column(Integer, primary_key=True)
+    Node_ID = Column(Integer, ForeignKey('Nodes.ID'))
+    Name = Column(String, unique=True)
+    Quantity = Column(String)
+    node = relationship(Nodes, backref=backref('node_sensors', uselist=True))
 
 
 def initialize_database(db_url):
@@ -185,7 +186,7 @@ def add_sensor(sensor_id=None, node_id=None, name=None, quantity=None):
         raise ValueError('Sensor not created, Sensor ID and name must be unique') from e
 
 
-def get_all_ids(table=None):
+def _get_all_ids(table=None):
     db_session = session()
     table_to_query = {'Nodes': Nodes, 'Sensors': Sensors}[table]
     query = db_session.query(table_to_query).all()
@@ -193,8 +194,69 @@ def get_all_ids(table=None):
 
 
 def get_all_node_ids():
-    return get_all_ids(table='Nodes')
+    """Returns a generator with all the node IDs."""
+    return _get_all_ids(table='Nodes')
 
 
 def get_all_sensor_ids():
-    return get_all_ids(table='Sensors')
+    """Returns a generator with all the sensor IDs."""
+    return _get_all_ids(table='Sensors')
+
+
+def _get_node_or_sensor(search_term=None, table=None):
+    try:
+        assert type(search_term) == int
+    except AssertionError as e:
+        raise TypeError(f'node must be an integer (not {type(search_term)})') from e
+    table_to_query = {'node': Nodes, 'sensor': Sensors}[table]
+    db_session = session()
+    try:
+        query = db_session.query(table_to_query).filter(table_to_query.ID == search_term).one()
+    except NoResultFound as e:
+        raise NoResultFound(f'node ID 0x{search_term:02x} not found in the database') from e
+    return query
+
+
+def get_all_sensor_ids_for_a_node(node=None):
+    """Returns a generator with all the sensor IDs attached to a node.
+
+    Arguments:
+        node -- the node ID to find sensors for, an integer.
+    """
+    try:
+        assert type(node) == int
+    except AssertionError as e:
+        raise TypeError(f'node must be an integer (not {type(node)})') from e
+    db_session = session()
+    try:
+        query = db_session.query(Nodes).filter(Nodes.ID == node).one()
+    except NoResultFound as e:
+        raise NoResultFound(f'node ID 0x{node:02x} not found in the database') from e
+    return (x.ID for x in query.node_sensors)
+
+
+def get_node_data(node=None):
+    """Returns all the data for a given node ID.
+
+    Arguments:
+        node -- node ID whose data is to be returned
+    Returns:
+        {'Node_ID': node_data.ID, 'Name': node_data.Name, 'Location': node_data.Location}
+        """
+    node_data = _get_node_or_sensor(search_term=node, table='node')
+    return {'Node_ID': node_data.ID, 'Name': node_data.Name, 'Location': node_data.Location}
+
+
+def get_sensor_data(sensor=None):
+    """Returns all the data for a given sensor ID
+
+    Arguments:
+        sensor -- sensor ID whose data is to be returned
+    Returns:
+        {'Sensor_ID': sensor_data.ID, 'Node_ID': sensor_data.Node_ID,
+            'Name': sensor_data.Name, 'Quantity': sensor_data.Quantity}
+    """
+    sensor_data = _get_node_or_sensor(search_term=sensor, table='sensor')
+    return {'Sensor_ID': sensor_data.ID, 'Node_ID': sensor_data.Node_ID,
+            'Name': sensor_data.Name, 'Quantity': sensor_data.Quantity,
+            }

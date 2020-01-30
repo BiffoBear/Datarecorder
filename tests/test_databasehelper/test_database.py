@@ -10,6 +10,7 @@ from unittest import TestCase
 from unittest.mock import patch
 from sqlalchemy import inspect
 import sqlalchemy
+from sqlalchemy.orm.exc import NoResultFound
 from database import database
 from tests import unittest_helper
 
@@ -301,11 +302,91 @@ class TestReadFromDatabaseFunctions(TestCase):
                      [0x03, 0x01, 'Sensor 3', 'Mass'],
                      ]
         [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data_sensors]
-        returned_result = database.get_all_ids(table='Nodes')
+        returned_result = database._get_all_ids(table='Nodes')
         self.assertListEqual([x[0] for x in test_data_nodes], [y for y in returned_result])
-        returned_result = database.get_all_ids(table='Sensors')
+        returned_result = database._get_all_ids(table='Sensors')
         self.assertListEqual([x[0] for x in test_data_sensors], [y for y in returned_result])
 
     def test_get_all_ids_returns_an_empty_generator_if_no_records(self):
-        returned_result = database.get_all_ids(table='Nodes')
+        returned_result = database._get_all_ids(table='Nodes')
         self.assertListEqual([], [y for y in returned_result])
+
+    @patch('database.database._node_id_exists')
+    def test_get_sensors_for_a_node(self, mock_node_id_exists):
+        mock_node_id_exists.return_value = True
+        test_data_nodes = [[0x01, 'Node 1', 'Dummy location'],
+                     [0x02, 'Node 2', 'Dummy lacation'],
+                     ]
+        [database.add_node(node_id=x[0], name=x[1], location=x[2]) for x in test_data_nodes]
+        test_data_sensors = [[0x01, 0x01, 'Sensor 1', 'Mass'],
+                     [0x02, 0x01, 'Sensor 2', 'Mass'],
+                     [0x03, 0x01, 'Sensor 3', 'Mass'],
+                     [0x04, 0x02, 'Sensor 4', 'Mass'],
+                     ]
+        [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data_sensors]
+        returned_result = database.get_all_sensor_ids_for_a_node(node=1)
+        self.assertListEqual([x[0] for x in test_data_sensors[0:3]], [y for y in returned_result])
+
+    def test_get_sensors_for_a_node_returns_empty_list_if_no_sensors_on_node(self):
+        test_data = [[0x01, 'Node 1', 'Dummy location']]
+        [database.add_node(node_id=x[0], name=x[1], location=x[2]) for x in test_data]
+        returned_result = database.get_all_sensor_ids_for_a_node(node=1)
+        self.assertListEqual([], [y for y in returned_result])
+
+    def test_get_sensors_for_a_node_raises_noresultfound_exception_if_node_does_not_exist(self):
+        with self.assertRaises(NoResultFound) as dm:
+            database.get_all_sensor_ids_for_a_node(node=1)
+        self.assertIn('node ID 0x01 not found in the database', dm.exception.args)
+
+    def test_get_sensors_for_a_node_raises_typeerror_if_not_called_with_int(self):
+        with self.assertRaises(TypeError) as dm:
+            database.get_all_sensor_ids_for_a_node(node='a')
+        self.assertIn("node must be an integer (not <class 'str'>)", dm.exception.args)
+
+    def test_get_node_or_sensor_returns_all_data_for_the_query(self):
+        test_data = [[0x01, 'Node 1', 'Dummy location'],
+                     [0x02, 'Node 2', 'Other location'],
+                     ]
+        [database.add_node(node_id=x[0], name=x[1], location=x[2]) for x in test_data]
+        test_data = [[0x01, 0x01, 'Sensor 1', 'Mass'],
+                     [0x02, 0x01, 'Sensor 2', 'Mass'],
+                     [0x03, 0x01, 'Sensor 3', 'Mass'],
+                     ]
+        [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
+        returned_result = database._get_node_or_sensor(search_term=1, table='sensor')
+        self.assertListEqual(test_data[0], [returned_result.ID, returned_result.Node_ID,
+                                            returned_result.Name, returned_result.Quantity
+                                            ])
+
+    def test_get_node_or_sensor_raises_typeerror_if_not_called_with_int(self):
+        with self.assertRaises(TypeError) as dm:
+            database._get_node_or_sensor(search_term='a', table='node')
+        self.assertIn("node must be an integer (not <class 'str'>)", dm.exception.args)
+
+    def test_get_node_or_sensor_raises_noresultfound_exception_if_record_does_not_exist(self):
+        with self.assertRaises(NoResultFound) as dm:
+            database._get_node_or_sensor(search_term=1, table='sensor')
+        self.assertIn('node ID 0x01 not found in the database', dm.exception.args)
+
+    def test_get_node_data_returns_a_dict(self):
+        test_data = [[0x01, 'Node 1', 'Dummy location'],
+                     [0x02, 'Node 2', 'Other location'],
+                     ]
+        [database.add_node(node_id=x[0], name=x[1], location=x[2]) for x in test_data]
+        expected_result = {'Node_ID': test_data[0][0], 'Name': test_data[0][1], 'Location': test_data[0][2]}
+        returned_result = database.get_node_data(node=1)
+        self.assertDictEqual(expected_result, returned_result)
+
+    @patch('database.database._node_id_exists')
+    def test_get_sensor_data_returns_a_dict(self, mock_node_id_exists):
+        mock_node_id_exists.return_value = True
+        test_data = [[0x01, 0x01, 'Sensor 1', 'Mass'],
+                     [0x02, 0x01, 'Sensor 2', 'Mass'],
+                     [0x03, 0x01, 'Sensor 3', 'Mass'],
+                     ]
+        [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
+        expected_result = {'Sensor_ID': test_data[0][0], 'Node_ID': test_data[0][1],
+                           'Name': test_data[0][2], 'Quantity': test_data[0][3],
+                           }
+        returned_result = database.get_sensor_data(sensor=1)
+        self.assertDictEqual(expected_result, returned_result)
