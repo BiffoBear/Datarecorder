@@ -87,6 +87,24 @@ def write_sensor_reading_to_db(data):
         raise error
 
 
+def _check_id_and_name_are_valid(id_to_check=None, name_to_check=None, record_type=None):
+    try:
+        assert type(id_to_check) == int
+    except AssertionError as e:
+        raise TypeError(f'Record not created, {record_type} ID must be an integer') from e
+    try:
+        assert 0 <= id_to_check <= 254
+    except AssertionError as e:
+        raise ValueError(f'Record not created, {record_type} ID must be in range 0 - 254 (0x00 - 0xfe)') from e
+    try:
+        assert type(name_to_check) == str
+        assert name_to_check != ''
+        assert name_to_check[0].isalpha()
+    except AssertionError as e:
+        raise TypeError(f'Record not created, {record_type} name must be a string beginning with a letter') from e
+    return True
+
+
 def add_node(node_id=None, name=None, location=None):
     """Adds a new node to the 'Nodes' table of the 'Sensor Readings' database.
 
@@ -100,26 +118,13 @@ def add_node(node_id=None, name=None, location=None):
     Returns:
         None
     """
-    try:
-        assert type(node_id) == int
-    except AssertionError as e:
-        raise TypeError('Node not created, node ID must be an integer') from e
-    try:
-        assert 0 <= node_id <= 254
-    except AssertionError as e:
-        raise ValueError('Node not created, node ID must be in range 0 - 254') from e
-    try:
-        assert name is not None
-        assert name != ''
-    except AssertionError as e:
-        raise TypeError('Node not created -- name must be string') from e
-
+    assert _check_id_and_name_are_valid(id_to_check=node_id, name_to_check=name, record_type='node')
     s = session()
     try:
         s.add(Nodes(ID=node_id, Name=name, Location=location))
         s.commit()
     except IntegrityError as e:
-        raise ValueError('Node not created, node ID and name must be unique') from e
+        raise ValueError('Record not created, node ID and name must be unique') from e
 
 
 def _node_id_exists(node_id=None):
@@ -156,58 +161,46 @@ def add_sensor(sensor_id=None, node_id=None, name=None, quantity=None):
     Returns:
         None
     """
-
+    assert _check_id_and_name_are_valid(id_to_check=sensor_id, name_to_check=name, record_type='sensor')
     try:
         assert _node_id_exists(node_id)
     except AssertionError as e:
-        raise ValueError('Sensor not created -- node_id must already exist in the database') from e
-    try:
-        assert type(sensor_id) == int
-    except AssertionError as e:
-        raise TypeError('Sensor not created, sensor ID must be an integer') from e
-    try:
-        assert 0 <= sensor_id <= 254
-    except AssertionError as e:
-        raise ValueError('Sensor not created, sensor ID must be in range 0 - 254') from e
-    try:
-        assert name is not None
-        assert name != ''
-    except AssertionError as e:
-        raise TypeError('Sensor not created -- name must be string') from e
+        raise ValueError(f'Record not created -- node with id {node_id} (0x{node_id:02x}) must already exist in the '
+                         f'database')
     try:
         SI_UNITS[quantity]
     except KeyError:
-        raise ValueError('Sensor not created -- unknown quantity supplied')
+        raise ValueError('Sensor not created -- unknown sensor data quantity supplied')
     s = session()
     try:
         s.add(Sensors(ID=sensor_id, Node_ID=node_id, Name=name, Quantity=quantity))
         s.commit()
     except IntegrityError as e:
-        raise ValueError('Sensor not created, Sensor ID and name must be unique') from e
+        raise ValueError('Record not created, Sensor ID and name must be unique') from e
 
 
 def _get_all_ids(table=None):
     db_session = session()
-    table_to_query = {'Nodes': Nodes, 'Sensors': Sensors}[table]
+    table_to_query = {'node': Nodes, 'sensor': Sensors}[table]
     query = db_session.query(table_to_query).all()
     return (x.ID for x in query)
 
 
 def get_all_node_ids():
     """Returns a generator with all the node IDs."""
-    return _get_all_ids(table='Nodes')
+    return _get_all_ids(table='node')
 
 
 def get_all_sensor_ids():
     """Returns a generator with all the sensor IDs."""
-    return _get_all_ids(table='Sensors')
+    return _get_all_ids(table='sensor')
 
 
 def _get_node_or_sensor(search_term=None, table=None):
     try:
         assert type(search_term) == int
     except AssertionError as e:
-        raise TypeError(f'node must be an integer (not {type(search_term)})') from e
+        raise TypeError(f'{table} must be an integer (not {type(search_term)})') from e
     table_to_query = {'node': Nodes, 'sensor': Sensors}[table]
     db_session = session()
     try:
@@ -239,7 +232,7 @@ def get_node_data(node=None):
     """Returns all the data for a given node ID.
 
     Arguments:
-        node -- node ID whose data is to be returned
+        node -- node ID whose data is to be returned, an integer
     Returns:
         {'Node_ID': node_data.ID, 'Name': node_data.Name, 'Location': node_data.Location}
         """
@@ -251,7 +244,7 @@ def get_sensor_data(sensor=None):
     """Returns all the data for a given sensor ID
 
     Arguments:
-        sensor -- sensor ID whose data is to be returned
+        sensor -- sensor ID whose data is to be returned, an integer
     Returns:
         {'Sensor_ID': sensor_data.ID, 'Node_ID': sensor_data.Node_ID,
             'Name': sensor_data.Name, 'Quantity': sensor_data.Quantity}

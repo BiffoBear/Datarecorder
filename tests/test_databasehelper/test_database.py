@@ -87,7 +87,61 @@ class TestAddNodeToDataBase(TestCase):
     def tearDown(self):
         database.engine.dispose()
 
-    def test_add_node_adds_unique_data_that_it_is_called_with(self):
+    def test_check_id_and_name_is_valid_raises_typeerror_if_id_not_int(self):
+        node_error_message = 'Record not created, node ID must be an integer'
+        sensor_error_message = 'Record not created, sensor ID must be an integer'
+        test_data = ({'id': 'a', 'name': 'A Name', 'type': 'node', 'error': node_error_message},
+                     {'id': 'a', 'name': 'A Name', 'type': 'sensor', 'error': sensor_error_message},
+                     {'id': None, 'name': 'A Name', 'type': 'sensor', 'error': sensor_error_message},
+                     )
+        for data in test_data:
+            with self.assertRaises(TypeError) as dm:
+                database._check_id_and_name_are_valid(id_to_check=data['id'],
+                                                      name_to_check=data['name'],
+                                                      record_type=data['type'],
+                                                      )
+            self.assertIn(data['error'], dm.exception.args)
+
+    def test_check_id_and_name_is_valid_raises_valueerror_if_id_not_in_range(self):
+        node_error_message = 'Record not created, node ID must be in range 0 - 254 (0x00 - 0xfe)'
+        sensor_error_message = 'Record not created, sensor ID must be in range 0 - 254 (0x00 - 0xfe)'
+        test_data = ({'id': 0xff, 'name': 'A Name', 'type': 'node', 'error': node_error_message},
+                     {'id': 0xff, 'name': 'A Name', 'type': 'sensor', 'error': sensor_error_message},
+                     {'id': -1, 'name': 'A Name', 'type': 'sensor', 'error': sensor_error_message},
+                     )
+        for data in test_data:
+            with self.assertRaises(ValueError) as dm:
+                database._check_id_and_name_are_valid(id_to_check=data['id'],
+                                                      name_to_check=data['name'],
+                                                      record_type=data['type'],
+                                                      )
+            self.assertIn(data['error'], dm.exception.args)
+
+    def test_check_id_and_name_is_valid_raises_typeerror_if_name_not_string_starting_with_a_letter(self):
+        node_error_message = 'Record not created, node name must be a string beginning with a letter'
+        sensor_error_message = 'Record not created, sensor name must be a string beginning with a letter'
+        test_data = ({'id': 0x05, 'name': 2, 'type': 'node', 'error': node_error_message},
+                     {'id': 0x05, 'name': None, 'type': 'sensor', 'error': sensor_error_message},
+                     {'id': 0x05, 'name': '', 'type': 'sensor', 'error': sensor_error_message},
+                     {'id': 0x05, 'name': ' ', 'type': 'sensor', 'error': sensor_error_message},
+                     {'id': 0x05, 'name': '.', 'type': 'sensor', 'error': sensor_error_message},
+                     {'id': 0x05, 'name': '2', 'type': 'sensor', 'error': sensor_error_message},
+                     )
+        for data in test_data:
+            with self.assertRaises(TypeError) as dm:
+                database._check_id_and_name_are_valid(id_to_check=data['id'],
+                                                      name_to_check=data['name'],
+                                                      record_type=data['type'],
+                                                      )
+            self.assertIn(data['error'], dm.exception.args)
+
+    def test_check_id_and_name_is_valid_returns_true_if_data_is_valid(self):
+        self.assertTrue(database._check_id_and_name_are_valid(id_to_check=0x03,
+                                                              name_to_check='Valid Name',
+                                                              record_type='sensor',
+                                                              ))
+
+    def test_add_node_adds_unique_valid_data_that_it_is_called_with(self):
         test_data = [[0x01, 'Test node name', 'Dummy location'],
                      [0x02, 'Other node name', 'Dummy location'],
                      ]
@@ -104,25 +158,7 @@ class TestAddNodeToDataBase(TestCase):
         database_records = get_all_nodes()
         expected_result = [test_data[0]]
         self.assertEqual(database_records, expected_result)
-        self.assertIn('Node not created, node ID and name must be unique', dm.exception.args)
-
-    def test_max_node_id_is_0xfe(self):
-        test_data = [[0xff, 'Test node name', 'Dummy location'], ]
-        with self.assertRaises(ValueError) as dm:
-            [database.add_node(node_id=x[0], name=x[1], location=x[2]) for x in test_data]
-        self.assertIn('Node not created, node ID must be in range 0 - 254', dm.exception.args)
-
-    def test_min_node_id_is_0x00(self):
-        test_data = [[-1, 'Test node name', 'Dummy location'], ]
-        with self.assertRaises(ValueError) as dm:
-            [database.add_node(node_id=x[0], name=x[1], location=x[2]) for x in test_data]
-        self.assertIn('Node not created, node ID must be in range 0 - 254', dm.exception.args)
-
-    def test_node_id_not_int_raises_typeerror(self):
-        test_data = [[None, 'Test node name', 'Dummy location'], ]
-        with self.assertRaises(TypeError) as dm:
-            [database.add_node(node_id=x[0], name=x[1], location=x[2]) for x in test_data]
-        self.assertIn('Node not created, node ID must be an integer', dm.exception.args)
+        self.assertIn('Record not created, node ID and name must be unique', dm.exception.args)
 
     def test_add_node_raises_valueerror_for_repeat_names(self):
         test_data = [[0x01, 'Test node name', 'Dummy location'],
@@ -133,19 +169,7 @@ class TestAddNodeToDataBase(TestCase):
         database_records = get_all_nodes()
         expected_result = [test_data[0]]
         self.assertEqual(database_records, expected_result)
-        self.assertIn('Node not created, node ID and name must be unique', dm.exception.args)
-
-    def test_add_node_raises_typeerror_for_name_is_none(self):
-        test_data = [[0x01, None, 'Dummy location']]
-        with self.assertRaises(TypeError) as dm:
-            [database.add_node(node_id=x[0], name=x[1], location=x[2]) for x in test_data]
-        self.assertIn('Node not created -- name must be string', dm.exception.args)
-
-    def test_add_node_raises_valueerror_for_name_is_empty_string(self):
-        test_data = [[0x01, '', 'Dummy location']]
-        with self.assertRaises(TypeError) as dm:
-            [database.add_node(node_id=x[0], name=x[1], location=x[2]) for x in test_data]
-        self.assertIn('Node not created -- name must be string', dm.exception.args)
+        self.assertIn('Record not created, node ID and name must be unique', dm.exception.args)
 
 
 def get_all_sensors():
@@ -183,28 +207,7 @@ class TestAddSensorToDatabase(TestCase):
         database_records = get_all_sensors()
         expected_result = [test_data[0]]
         self.assertEqual(database_records, expected_result)
-        self.assertIn('Sensor not created, Sensor ID and name must be unique', dm.exception.args)
-
-    def test_max_sensor_id_is_0xfe(self, mock_node_id_exists):
-        mock_node_id_exists.return_value = True
-        test_data = [[0xff, 0x01, 'Dummy Sensor', 'Mass']]
-        with self.assertRaises(ValueError) as dm:
-            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
-        self.assertIn('Sensor not created, sensor ID must be in range 0 - 254', dm.exception.args)
-
-    def test_min_sensor_id_is_0x00(self, mock_node_id_exists):
-        mock_node_id_exists.return_value = True
-        test_data = [[-1, 0x01, 'Dummy Sensor', 'Mass']]
-        with self.assertRaises(ValueError) as dm:
-            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
-        self.assertIn('Sensor not created, sensor ID must be in range 0 - 254', dm.exception.args)
-
-    def test_sensor_id_not_int_raises_typeerror(self, mock_node_id_exists):
-        mock_node_id_exists.return_value = True
-        test_data = [[None, 0x01, 'Dummy Sensor', 'Mass']]
-        with self.assertRaises(TypeError) as dm:
-            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
-        self.assertIn('Sensor not created, sensor ID must be an integer', dm.exception.args)
+        self.assertIn('Record not created, Sensor ID and name must be unique', dm.exception.args)
 
     def test_add_sensor_raises_valueerror_for_repeat_names(self, mock_node_id_exists):
         mock_node_id_exists.return_value = True
@@ -216,28 +219,15 @@ class TestAddSensorToDatabase(TestCase):
         database_records = get_all_sensors()
         expected_result = [test_data[0]]
         self.assertEqual(database_records, expected_result)
-        self.assertIn('Sensor not created, Sensor ID and name must be unique', dm.exception.args)
-
-    def test_add_sensor_raises_typeerror_for_name_is_none(self, mock_node_id_exists):
-        mock_node_id_exists.return_value = True
-        test_data = [[0x01, 0x01, None, 'Mass']]
-        with self.assertRaises(TypeError) as dm:
-            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
-        self.assertIn('Sensor not created -- name must be string', dm.exception.args)
-
-    def test_add_sensor_raises_valueerror_for_name_is_empty_string(self, mock_node_id_exists):
-        mock_node_id_exists.return_value = True
-        test_data = [[0x01, 0x01, '', 'Mass']]
-        with self.assertRaises(TypeError) as dm:
-            [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
-        self.assertIn('Sensor not created -- name must be string', dm.exception.args)
+        self.assertIn('Record not created, Sensor ID and name must be unique', dm.exception.args)
 
     def test_add_sensor_raises_valueerror_if_node_id_does_not_exist(self, mock_node_id_exists):
         mock_node_id_exists.return_value = False
         test_data = [[0x01, 0x01, 'Dummy Name', 'Mass']]
         with self.assertRaises(ValueError) as dm:
             [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
-        self.assertIn('Sensor not created -- node_id must already exist in the database', dm.exception.args)
+        self.assertIn('Record not created -- node with id 1 (0x01) must already exist in the database',
+                      dm.exception.args)
 
     def test_add_sensor_only_raises_value_error_when_quantity_not_in_dict(self, mock_node_id_exists):
         mock_node_id_exists.return_value = True
@@ -246,7 +236,7 @@ class TestAddSensorToDatabase(TestCase):
         test_data = [[0x02, 0x01, 'Other Name', 'Incorrect quantity']]
         with self.assertRaises(ValueError) as dm:
             [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data]
-        self.assertIn('Sensor not created -- unknown quantity supplied', dm.exception.args)
+        self.assertIn('Sensor not created -- unknown sensor data quantity supplied', dm.exception.args)
 
 
 class TestReadFromDatabaseFunctions(TestCase):
@@ -302,13 +292,13 @@ class TestReadFromDatabaseFunctions(TestCase):
                      [0x03, 0x01, 'Sensor 3', 'Mass'],
                      ]
         [database.add_sensor(sensor_id=x[0], node_id=x[1], name=x[2], quantity=x[3]) for x in test_data_sensors]
-        returned_result = database._get_all_ids(table='Nodes')
+        returned_result = database._get_all_ids(table='node')
         self.assertListEqual([x[0] for x in test_data_nodes], [y for y in returned_result])
-        returned_result = database._get_all_ids(table='Sensors')
+        returned_result = database._get_all_ids(table='sensor')
         self.assertListEqual([x[0] for x in test_data_sensors], [y for y in returned_result])
 
     def test_get_all_ids_returns_an_empty_generator_if_no_records(self):
-        returned_result = database._get_all_ids(table='Nodes')
+        returned_result = database._get_all_ids(table='node')
         self.assertListEqual([], [y for y in returned_result])
 
     @patch('database.database._node_id_exists')
@@ -362,6 +352,9 @@ class TestReadFromDatabaseFunctions(TestCase):
         with self.assertRaises(TypeError) as dm:
             database._get_node_or_sensor(search_term='a', table='node')
         self.assertIn("node must be an integer (not <class 'str'>)", dm.exception.args)
+        with self.assertRaises(TypeError) as dm:
+            database._get_node_or_sensor(search_term='a', table='sensor')
+        self.assertIn("sensor must be an integer (not <class 'str'>)", dm.exception.args)
 
     def test_get_node_or_sensor_raises_noresultfound_exception_if_record_does_not_exist(self):
         with self.assertRaises(NoResultFound) as dm:
