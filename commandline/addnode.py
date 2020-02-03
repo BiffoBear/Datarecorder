@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+from sqlalchemy.orm.exc import NoResultFound
 from database import database
 
 
@@ -26,9 +27,14 @@ def list_nodes():
     text_to_print = _layout_existing_things(thing_name='node', existing_things=nodes_to_list)
     print(text_to_print)
 
+
 def show_node_details(node_id=None):
-    # TODO: Dummy for testing argparse setup. Implement later
-    pass
+    try:
+        node_details = database.get_node_data(node_id)
+        text_to_print = _layout_thing_details(thing_name='node', thing_id=node_id, thing_data=node_details)
+    except NoResultFound as e:
+        text_to_print = e.args[0].capitalize()
+    print(text_to_print)
 
 
 def add_node(node_id=None, name=None, location=None):

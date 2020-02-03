@@ -234,7 +234,7 @@ def get_node_data(node=None):
     Arguments:
         node -- node ID whose data is to be returned, an integer
     Returns:
-        {'Node_ID': node_data.ID, 'Name': node_data.Name, 'Location': node_data.Location}
+        dict {'Node_ID': node_data.ID, 'Name': node_data.Name, 'Location': node_data.Location}
         """
     node_data = _get_node_or_sensor(search_term=node, table='node')
     return {'Node_ID': node_data.ID, 'Name': node_data.Name, 'Location': node_data.Location}
