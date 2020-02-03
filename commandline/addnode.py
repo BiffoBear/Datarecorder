@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+from database import database
 
 
 def setup_node_argparse():
@@ -21,9 +22,9 @@ def setup_node_argparse():
 
 
 def list_nodes():
-    # TODO: Dummy for testing argparse setup. Implement later
-    pass
-
+    nodes_to_list = database.get_all_node_ids()
+    text_to_print = _layout_existing_things(thing_name='node', existing_things=nodes_to_list)
+    print(text_to_print)
 
 def show_node_details(node_id=None):
     # TODO: Dummy for testing argparse setup. Implement later
@@ -35,20 +36,20 @@ def add_node(node_id=None, name=None, location=None):
     pass
 
 
-def high_lite_existing_things(thing, existing_things):
+def _high_lite_existing_things(thing, existing_things):
     if thing in existing_things:
         return f'\x1b[1m{thing:02x} \x1b[0m'  # Bold text
     return f'\x1b[90m{thing:02x} \x1b[0m'  # Dim text
 
 
-def layout_existing_things(thing_name='Your name here', existing_things=[]):
+def _layout_existing_things(thing_name=None, existing_things=None):
     if not existing_things:
         return f'No existing {thing_name}s in database'
     print_items = [f'\x1b[1mExisting {thing_name.title()}s\x1b[0m\n']
     for i in range(255):
         if i % 16 == 0:
             print_items.append('\n')
-        print_items.append(high_lite_existing_things(i, existing_things))
+        print_items.append(_high_lite_existing_things(i, existing_things))
     print_items.append('\n\n')
     string_to_print = ''.join(print_items)
     return string_to_print
@@ -60,7 +61,7 @@ def _convert_value_to_string(value):
     return value
 
 
-def layout_thing_details(thing_name=None, thing_id=None, thing_data=None):
+def _layout_thing_details(thing_name=None, thing_id=None, thing_data=None):
     print_items = [f'Details for {thing_name} ID {thing_id}:\n\n']
     for key, value in thing_data.items():
         print_items.append(f'{key} -- {_convert_value_to_string(value)}\n')
