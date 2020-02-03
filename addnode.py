@@ -17,12 +17,11 @@ Returns:
 import argparse
 
 
-
 parser = argparse.ArgumentParser()
-subparsers = parser.add_subparsers(help='commands to display information about nodes')
+subparsers = parser.add_subparsers(help='commands to add nodes and display information about nodes')
 parser_list = subparsers.add_parser('list', help='list all nodes')
 parser_list.set_defaults(func=list_nodes)
-parser_get = subparsers.add_parser('get', help='get information for the given node')
+parser_get = subparsers.add_parser('get', help='display information for the node')
 parser_get.add_argument('id', type=int, help='id for the node to display, an integer in range 0-254')
 
 parser.parse_args(['list'])
