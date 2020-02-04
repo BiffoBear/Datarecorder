@@ -154,7 +154,24 @@ class TestHelperFunctions(TestCase):
         addnode.show_node_details(node_id=95)
         mock_print.assert_called_once_with('Error message 2')
 
-
+    @patch('builtins.print')
+    @patch('database.database.add_node', autospec=True)
+    def test_add_node_to_database(self, mock_add_node_to_database, mock_print):
+        addnode.add_node_to_database(node_id=34, name='Test name', location='Test location')
+        mock_add_node_to_database.assert_called_once_with(node_id=34,
+                                                          name='Test name',
+                                                          location='Test location',
+                                                          )
+        mock_print.assert_called_once_with('Node 34 created in database\n')
+        mock_print.reset_mock()
+        mock_add_node_to_database.side_effect = [ValueError('error message'),
+                                                 TypeError('other error message'),
+                                                 ]
+        addnode.add_node_to_database(node_id=34, name='Test name', location='Test location')
+        mock_print.assert_called_once_with('Unable to create node -- error message\n')
+        mock_print.reset_mock()
+        addnode.add_node_to_database(node_id=34, name='Test name', location='Test location')
+        mock_print.assert_called_once_with('Unable to create node -- other error message\n')
 
 
 class TestSetupArgparseForNodes(TestCase):
@@ -174,7 +191,7 @@ class TestSetupArgparseForNodes(TestCase):
                                                   help='id for the node to display, an integer in range 0-254'),
                  call().add_parser().set_defaults(func=addnode.show_node_details),
                  call().add_parser('add', help='display information for the node'),
-                 call().add_parser().set_defaults(func=addnode.add_node),
+                 call().add_parser().set_defaults(func=addnode.add_node_to_database),
                  call().add_parser().add_argument('id', type=int,
                                                   help='id for the node to add, an integer in range 0-254'),
                  call().add_parser().add_argument('name', help='name for the node to add'),
@@ -196,7 +213,7 @@ class TestSetupArgparseForNodes(TestCase):
         args.func(node_id=args.id)
         mock_show_node_details.assert_called_once_with(node_id=2)
 
-    @patch('commandline.addnode.add_node', autospec=True)
+    @patch('commandline.addnode.add_node_to_database', autospec=True)
     def test_parser_calls_add_node(self, mock_add_node):
         test_parser = addnode.setup_node_argparse()
         args = test_parser.parse_args(['add', '2', 'Node Name', 'Node location'])

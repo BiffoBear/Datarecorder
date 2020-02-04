@@ -117,6 +117,9 @@ def add_node(node_id=None, name=None, location=None):
 
     Returns:
         None
+
+    Exceptions:
+        ValueError if name and or node_id are not unique (i.e. exist in the database)
     """
     assert _check_id_and_name_are_valid(id_to_check=node_id, name_to_check=name, record_type='node')
     s = session()
