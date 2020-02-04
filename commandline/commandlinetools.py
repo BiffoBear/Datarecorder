@@ -45,6 +45,12 @@ def list_nodes():
     print(text_to_print)
 
 
+def list_sensors():
+    sensors_to_list = database.get_all_sensor_ids()
+    text_to_print = _layout_existing_things(thing_name='sensor', existing_things=sensors_to_list)
+    print(text_to_print)
+
+
 def show_node_details(node_id=None):
     try:
         node_details = database.get_node_data(node_id)
@@ -54,16 +60,33 @@ def show_node_details(node_id=None):
     print(text_to_print)
 
 
+def show_sensor_details(sensor_id=None):
+    try:
+        sensor_details = database.get_sensor_data(sensor_id)
+        text_to_print = _layout_thing_details(thing_name='sensor', thing_id=sensor_id, thing_data=sensor_details)
+    except NoResultFound as e:
+        text_to_print = e.args[0].capitalize()
+    print(text_to_print)
+
+
 def add_node_to_database(node_id=None, name=None, location=None):
     try:
-        database.add_node(node_id=34, name='Test name', location='Test location')
-        print(f'Node {node_id} created in database\n')
+        database.add_node(node_id=node_id, name=name, location=location)
+        print(f'Node ID 0x{node_id:02x} created in database\n')
     except ValueError as e:
-        print(f'Unable to create node -- {e.args[0]}\n')
+        print(f'Unable to create node ID 0x{node_id:02x} -- {e.args[0]}\n')
     except TypeError as e:
-        print(f'Unable to create node -- {e.args[0]}\n')
-    finally:
-        return
+        print(f'Unable to create node ID 0x{node_id:02x} -- {e.args[0]}\n')
+
+
+def add_sensor_to_database(sensor_id=None, node_id=None, name=None, quantity=None):
+    try:
+        database.add_sensor(sensor_id=sensor_id, node_id=node_id, name=name, quantity=quantity)
+        print(f'Sensor ID 0x{sensor_id:02x} created in database\n')
+    except ValueError as e:
+        print(f'Unable to create sensor ID 0x{sensor_id:02x} -- {e.args[0]}\n')
+    except TypeError as e:
+        print(f'Unable to create sensor ID 0x{sensor_id:02x} -- {e.args[0]}\n')
 
 
 def setup_node_argparse():
@@ -79,4 +102,22 @@ def setup_node_argparse():
     parser_add.add_argument('id', type=int, help='id for the node to add, an integer in range 0-254')
     parser_add.add_argument('name', help='name for the node to add')
     parser_add.add_argument('location', help='location for the node to add')
+    return parser
+
+
+def setup_sensor_argparse():
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(help='commands to add sensors and display information about sensors')
+    parser_list = subparsers.add_parser('list', help='list all existing sensors')
+    parser_list.set_defaults(func=list_sensors)
+    parser_get = subparsers.add_parser('show', help='display information for the sensor')
+    parser_get.add_argument('id', type=int, help='id for the sensor to display, an integer in range 0-254')
+    parser_get.set_defaults(func=show_sensor_details)
+    parser_add = subparsers.add_parser('add', help='display information for the sensor')
+    parser_add.set_defaults(func=add_sensor_to_database)
+    parser_add.add_argument('id', type=int, help='id for the sensor to add, an integer in range 0-254')
+    parser_add.add_argument('node', type = int,
+                            help='id for the node of sensor to add, an integer in range 0-254'),
+    parser_add.add_argument('name', help='name for the sensor to add')
+    parser_add.add_argument('quality', help='quality for the sensor to add')
     return parser
