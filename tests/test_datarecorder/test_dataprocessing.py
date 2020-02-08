@@ -86,26 +86,26 @@ class TestReadRadioAndWriteDataToDataBase(TestCase):
 
     def test_read_radio_process_data_write_to_db(self):
         unittest_helper.initialize_database(db_in_memory=True)
-        initial = unittest_helper.count_all_records()
+        initial = unittest_helper.count_all_sensor_reading_records()
         test_data = [unittest_helper.rx_data_CRC_good,
                      unittest_helper.rx_data_CRC_good]
         [_dataprocessing.radio_q.put(x) for x in test_data]
         _dataprocessing.process_radio_data()
-        final = unittest_helper.count_all_records()
+        final = unittest_helper.count_all_sensor_reading_records()
         self.assertEqual(final, initial + 9)
         # shouldn't write twice with duplicate data packets
         _dataprocessing.process_radio_data()
-        final = unittest_helper.count_all_records()
+        final = unittest_helper.count_all_sensor_reading_records()
         self.assertEqual(final, initial + 9)
         unittest_helper.kill_database()
 
     def test_bad_data_packet_logs_a_warning_and_continues_without_writing_to_db(self):
         unittest_helper.initialize_database(db_in_memory=True)
-        initial = unittest_helper.count_all_records()
+        initial = unittest_helper.count_all_sensor_reading_records()
         test_data = [b'bad_data', ]
         [_dataprocessing.radio_q.put(x) for x in test_data]
         _dataprocessing.process_radio_data()
-        final = unittest_helper.count_all_records()
+        final = unittest_helper.count_all_sensor_reading_records()
         self.assertEqual(final, initial)
 
 

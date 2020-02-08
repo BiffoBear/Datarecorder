@@ -39,54 +39,57 @@ def _layout_thing_details(thing_name=None, thing_id=None, thing_data=None):
     return ''.join(print_items)
 
 
-def list_nodes():
+def list_nodes(_):
     nodes_to_list = database.get_all_node_ids()
     text_to_print = _layout_existing_things(thing_name='node', existing_things=nodes_to_list)
     print(text_to_print)
 
 
-def list_sensors():
+def list_sensors(_):
     sensors_to_list = database.get_all_sensor_ids()
     text_to_print = _layout_existing_things(thing_name='sensor', existing_things=sensors_to_list)
     print(text_to_print)
 
 
-def show_node_details(node_id=None):
+def show_node_details(parsed_args=None):
     try:
-        node_details = database.get_node_data(node_id)
-        text_to_print = _layout_thing_details(thing_name='node', thing_id=node_id, thing_data=node_details)
+        node_details = database.get_node_data(parsed_args.id)
+        text_to_print = _layout_thing_details(thing_name='node', thing_id=parsed_args.id, thing_data=node_details)
     except NoResultFound as e:
         text_to_print = e.args[0].capitalize()
     print(text_to_print)
 
 
-def show_sensor_details(sensor_id=None):
+def show_sensor_details(parsed_args=None):
     try:
-        sensor_details = database.get_sensor_data(sensor_id)
-        text_to_print = _layout_thing_details(thing_name='sensor', thing_id=sensor_id, thing_data=sensor_details)
+        sensor_details = database.get_sensor_data(parsed_args.id)
+        text_to_print = _layout_thing_details(thing_name='sensor', thing_id=parsed_args.id, thing_data=sensor_details)
     except NoResultFound as e:
         text_to_print = e.args[0].capitalize()
     print(text_to_print)
 
 
-def add_node_to_database(node_id=None, name=None, location=None):
+def add_node_to_database(parsed_args):
     try:
-        database.add_node(node_id=node_id, name=name, location=location)
-        print(f'Node ID 0x{node_id:02x} created in database\n')
+        database.add_node(node_id=parsed_args.id, name=parsed_args.name, location=parsed_args.location)
+        print(f'Node ID 0x{parsed_args.id:02x} created in database\n')
     except ValueError as e:
-        print(f'Unable to create node ID 0x{node_id:02x} -- {e.args[0]}\n')
+        print(f'Unable to create node ID 0x{parsed_args.id:02x} -- {e.args[0]}\n')
     except TypeError as e:
-        print(f'Unable to create node ID 0x{node_id:02x} -- {e.args[0]}\n')
+        print(f'Unable to create node ID 0x{parsed_args.id:02x} -- {e.args[0]}\n')
 
 
-def add_sensor_to_database(sensor_id=None, node_id=None, name=None, quantity=None):
+def add_sensor_to_database(parsed_args):
     try:
-        database.add_sensor(sensor_id=sensor_id, node_id=node_id, name=name, quantity=quantity)
-        print(f'Sensor ID 0x{sensor_id:02x} created in database\n')
+        database.add_sensor(sensor_id=parsed_args.id,
+                            node_id=parsed_args.node,
+                            name=parsed_args.name,
+                            quantity=parsed_args.quantity)
+        print(f'Sensor ID 0x{parsed_args.id:02x} created in database\n')
     except ValueError as e:
-        print(f'Unable to create sensor ID 0x{sensor_id:02x} -- {e.args[0]}\n')
+        print(f'Unable to create sensor ID 0x{parsed_args.id:02x} -- {e.args[0]}\n')
     except TypeError as e:
-        print(f'Unable to create sensor ID 0x{sensor_id:02x} -- {e.args[0]}\n')
+        print(f'Unable to create sensor ID 0x{parsed_args.id:02x} -- {e.args[0]}\n')
 
 
 def setup_node_argparse():
@@ -119,5 +122,5 @@ def setup_sensor_argparse():
     parser_add.add_argument('node', type = int,
                             help='id for the node of sensor to add, an integer in range 0-254'),
     parser_add.add_argument('name', help='name for the sensor to add')
-    parser_add.add_argument('quality', help='quality for the sensor to add')
+    parser_add.add_argument('quantity', help='quantity for the sensor to add')
     return parser

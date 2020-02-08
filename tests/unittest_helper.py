@@ -33,9 +33,25 @@ def kill_database():
     database.engine.dispose()
 
 
-def count_all_records():
+def count_all_sensor_reading_records():
     s = database.session()
     t = database.SensorData
     r = s.query(t).count()
-    s.close()   
+    s.close()
+    return r
+
+
+def count_all_node_records():
+    s = database.session()
+    t = database.Nodes
+    r = s.query(t).count()
+    s.close()
+    return r
+
+
+def count_all_sensor_records():
+    s = database.session()
+    t = database.Sensors
+    r = s.query(t).count()
+    s.close()
     return r

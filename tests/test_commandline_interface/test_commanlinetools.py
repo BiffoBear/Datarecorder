@@ -2,6 +2,7 @@ from unittest import TestCase, skip
 from unittest.mock import Mock, patch, call
 from sqlalchemy.orm.exc import NoResultFound
 from commandline import commandlinetools
+from argparse import Namespace
 
 
 class TestListNodesAndSensors(TestCase):
@@ -101,23 +102,23 @@ class TestNodeHelperFunctions(TestCase):
     @patch('builtins.print')
     @patch('commandline.commandlinetools._layout_existing_things', autospec=True)
     @patch('database.database.get_all_node_ids', autospec=True)
-    def test_list_nodes(self, mock_get_all_nodes, mock_layout_existing_things, mock_print):
-        mock_get_all_nodes.return_value = [1, 2, 3]
+    def test_list_nodes(self, mock_get_all_node_ids, mock_layout_existing_things, mock_print):
+        mock_get_all_node_ids.return_value = [1, 2, 3]
         mock_layout_existing_things.return_value = 'Hello World'
-        commandlinetools.list_nodes()
-        mock_get_all_nodes.assert_called_once()
+        commandlinetools.list_nodes('dummy_args')
+        mock_get_all_node_ids.assert_called_once()
         mock_layout_existing_things.assert_called_once_with(thing_name='node',
                                                             existing_things=[1, 2, 3]
                                                             )
         mock_print.assert_called_once_with('Hello World')
 
-        mock_get_all_nodes.reset_mock()
+        mock_get_all_node_ids.reset_mock()
         mock_layout_existing_things.reset_mock()
         mock_print.reset_mock()
-        mock_get_all_nodes.return_value = [4, 5, 6]
+        mock_get_all_node_ids.return_value = [4, 5, 6]
         mock_layout_existing_things.return_value = 'Hello Mars'
-        commandlinetools.list_nodes()
-        mock_get_all_nodes.assert_called_once()
+        commandlinetools.list_nodes('dummy_args')
+        mock_get_all_node_ids.assert_called_once()
         mock_layout_existing_things.assert_called_once_with(thing_name='node',
                                                             existing_things=[4, 5, 6]
                                                             )
@@ -127,9 +128,12 @@ class TestNodeHelperFunctions(TestCase):
     @patch('commandline.commandlinetools._layout_thing_details', autospec=True)
     @patch('database.database.get_node_data', autospec=True)
     def test_show_node_details(self, mock_get_node_data, mock_layout_thing_details, mock_print):
+        test_args = Namespace(func=commandlinetools.show_node_details,
+                              id=100,
+                              )
         mock_get_node_data.return_value = {'a': 1}
         mock_layout_thing_details.return_value = 'Hello World'
-        commandlinetools.show_node_details(node_id=100)
+        commandlinetools.show_node_details(test_args)
         mock_get_node_data.assert_called_once_with(100)
         mock_layout_thing_details.assert_called_once_with(thing_name='node', thing_id=100, thing_data={'a': 1})
         mock_print.assert_called_once_with('Hello World')
@@ -139,31 +143,44 @@ class TestNodeHelperFunctions(TestCase):
         mock_print.reset_mock()
         mock_get_node_data.return_value = {'b': 2}
         mock_layout_thing_details.return_value = 'Hello Mars'
-        commandlinetools.show_node_details(node_id=95)
+        test_args = Namespace(func=commandlinetools.show_node_details,
+                              id=95,
+                              )
+        commandlinetools.show_node_details(test_args)
         mock_get_node_data.assert_called_once_with(95)
         mock_layout_thing_details.assert_called_once_with(thing_name='node', thing_id=95, thing_data={'b': 2})
         mock_print.assert_called_once_with('Hello Mars')
 
         mock_get_node_data.side_effect = NoResultFound('error message')
         mock_print.reset_mock()
-        commandlinetools.show_node_details(node_id=95)
+        commandlinetools.show_node_details(test_args)
         mock_print.assert_called_once_with('Error message')
 
         mock_get_node_data.side_effect = NoResultFound('error message 2')
         mock_print.reset_mock()
-        commandlinetools.show_node_details(node_id=95)
+        commandlinetools.show_node_details(test_args)
         mock_print.assert_called_once_with('Error message 2')
 
     @patch('builtins.print')
     @patch('database.database.add_node', autospec=True)
     def test_add_node_to_database(self, mock_add_node_to_database, mock_print):
-        commandlinetools.add_node_to_database(node_id=34, name='Test name', location='Test location')
+        test_args = Namespace(func=commandlinetools.add_node_to_database,
+                              id=34,
+                              location='Test location',
+                              name='Test name',
+                              )
+        commandlinetools.add_node_to_database(test_args)
         mock_add_node_to_database.assert_called_once_with(node_id=34,
                                                           name='Test name',
                                                           location='Test location',
                                                           )
         mock_print.assert_called_once_with('Node ID 0x22 created in database\n')
-        commandlinetools.add_node_to_database(node_id=35, name='Test name 2', location='Test location 2')
+        test_args = Namespace(func=commandlinetools.add_node_to_database,
+                              id=35,
+                              location='Test location 2',
+                              name='Test name 2',
+                              )
+        commandlinetools.add_node_to_database(test_args)
         mock_add_node_to_database.assert_called_with(node_id=35,
                                                      name='Test name 2',
                                                      location='Test location 2',
@@ -172,10 +189,10 @@ class TestNodeHelperFunctions(TestCase):
         mock_add_node_to_database.side_effect = [ValueError('error message'),
                                                  TypeError('other error message'),
                                                  ]
-        commandlinetools.add_node_to_database(node_id=34, name='Test name', location='Test location')
-        mock_print.assert_called_once_with('Unable to create node ID 0x22 -- error message\n')
+        commandlinetools.add_node_to_database(test_args)
+        mock_print.assert_called_once_with('Unable to create node ID 0x23 -- error message\n')
         mock_print.reset_mock()
-        commandlinetools.add_node_to_database(node_id=35, name='Test name', location='Test location')
+        commandlinetools.add_node_to_database(test_args)
         mock_print.assert_called_once_with('Unable to create node ID 0x23 -- other error message\n')
 
     @patch('builtins.print')
@@ -212,44 +229,40 @@ class TestNodeHelperFunctions(TestCase):
     @patch('builtins.print')
     @patch('database.database.add_sensor', autospec=True)
     def test_add_sensor_to_database(self, mock_add_sensor_to_database, mock_print):
-        commandlinetools.add_sensor_to_database(sensor_id=45,
-                                                node_id=34,
-                                                name='Test name',
-                                                quantity='Test test quantity',
-                                                )
-        mock_add_sensor_to_database.assert_called_once_with(sensor_id = 45,
-                                                            node_id=34,
+        test_args = Namespace(func=commandlinetools.add_sensor_to_database,
+                              id=34,
+                              node=23,
+                              name='Test name',
+                              quantity='Test Quantity'
+                              )
+        commandlinetools.add_sensor_to_database(test_args)
+        mock_add_sensor_to_database.assert_called_once_with(sensor_id=34,
+                                                            node_id=23,
                                                             name='Test name',
-                                                            quantity='Test test quantity',
+                                                            quantity='Test Quantity',
                                                             )
-        mock_print.assert_called_once_with('Sensor ID 0x2d created in database\n')
-        commandlinetools.add_sensor_to_database(sensor_id=46,
-                                                node_id=35,
-                                                name='Test name 2',
-                                                quantity='Test test quantity 2',
-                                                )
+        mock_print.assert_called_once_with('Sensor ID 0x22 created in database\n')
+        test_args = Namespace(func=commandlinetools.add_sensor_to_database,
+                              id=46,
+                              node=35,
+                              name='Test name 2',
+                              quantity='Test Quantity 2',
+                              )
+        commandlinetools.add_sensor_to_database(test_args)
         mock_add_sensor_to_database.assert_called_with(sensor_id=46,
                                                        node_id=35,
                                                        name='Test name 2',
-                                                       quantity='Test test quantity 2',
+                                                       quantity='Test Quantity 2',
                                                        )
         mock_print.reset_mock()
         mock_add_sensor_to_database.side_effect = [ValueError('error message'),
                                                    TypeError('other error message'),
                                                    ]
-        commandlinetools.add_sensor_to_database(sensor_id=46,
-                                                node_id=35,
-                                                name='Test name 2',
-                                                quantity='Test test quantity 2',
-                                                )
+        commandlinetools.add_sensor_to_database(test_args)
         mock_print.assert_called_once_with('Unable to create sensor ID 0x2e -- error message\n')
         mock_print.reset_mock()
-        commandlinetools.add_sensor_to_database(sensor_id=47,
-                                                node_id=35,
-                                                name='Test name 2',
-                                                quantity='Test test quantity 2',
-                                                )
-        mock_print.assert_called_once_with('Unable to create sensor ID 0x2f -- other error message\n')
+        commandlinetools.add_sensor_to_database(test_args)
+        mock_print.assert_called_once_with('Unable to create sensor ID 0x2e -- other error message\n')
 
 
 class TestSensorHelperFunctions(TestCase):
@@ -308,22 +321,22 @@ class TestSetupArgparseForNodes(TestCase):
     def test_parser_calls_list_node_function(self, mock_list_nodes):
         test_parser = commandlinetools.setup_node_argparse()
         args = test_parser.parse_args(['list'])
-        args.func()
-        mock_list_nodes.assert_called_once()
+        args.func(args)
+        mock_list_nodes.assert_called_once_with(args)
 
     @patch('commandline.commandlinetools.show_node_details', autospec=True)
     def test_parser_calls_show_node_details_function(self, mock_show_node_details):
         test_parser = commandlinetools.setup_node_argparse()
         args = test_parser.parse_args(['show', '2'])
-        args.func(node_id=args.id)
-        mock_show_node_details.assert_called_once_with(node_id=2)
+        args.func(args)
+        mock_show_node_details.assert_called_once_with(args)
 
     @patch('commandline.commandlinetools.add_node_to_database', autospec=True)
     def test_parser_calls_add_node(self, mock_add_node):
         test_parser = commandlinetools.setup_node_argparse()
         args = test_parser.parse_args(['add', '2', 'Node Name', 'Node location'])
-        args.func(node_id=args.id, name=args.name, location=args.location)
-        mock_add_node.assert_called_once_with(node_id=2, name='Node Name', location='Node location')
+        args.func(args)
+        mock_add_node.assert_called_once_with(args)
 
     @patch('argparse.ArgumentParser')
     def test_argparse_setup_for_sensors(self, mock_argparse):
@@ -346,6 +359,6 @@ class TestSetupArgparseForNodes(TestCase):
                  call().add_parser().add_argument('node', type=int,
                                                   help='id for the node of sensor to add, an integer in range 0-254'),
                  call().add_parser().add_argument('name', help='name for the sensor to add'),
-                 call().add_parser().add_argument('quality', help='quality for the sensor to add'),
+                 call().add_parser().add_argument('quantity', help='quantity for the sensor to add'),
                  ]
         mock_parser.add_subparsers.assert_has_calls(calls)
