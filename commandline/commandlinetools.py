@@ -4,6 +4,7 @@
 import argparse
 from sqlalchemy.orm.exc import NoResultFound
 from database import database
+from __config__ import DB_URL
 
 
 def _high_lite_existing_things(thing, existing_things):
@@ -100,11 +101,12 @@ def setup_node_argparse():
     parser_get = subparsers.add_parser('show', help='display information for the node')
     parser_get.add_argument('id', type=int, help='id for the node to display, an integer in range 0-254')
     parser_get.set_defaults(func=show_node_details)
-    parser_add = subparsers.add_parser('add', help='display information for the node')
+    parser_add = subparsers.add_parser('add', help='add a node to the database')
     parser_add.set_defaults(func=add_node_to_database)
     parser_add.add_argument('id', type=int, help='id for the node to add, an integer in range 0-254')
     parser_add.add_argument('name', help='name for the node to add')
     parser_add.add_argument('location', help='location for the node to add')
+    database.initialize_database(DB_URL)
     return parser
 
 
@@ -116,11 +118,12 @@ def setup_sensor_argparse():
     parser_get = subparsers.add_parser('show', help='display information for the sensor')
     parser_get.add_argument('id', type=int, help='id for the sensor to display, an integer in range 0-254')
     parser_get.set_defaults(func=show_sensor_details)
-    parser_add = subparsers.add_parser('add', help='display information for the sensor')
+    parser_add = subparsers.add_parser('add', help='add a sensor to the database')
     parser_add.set_defaults(func=add_sensor_to_database)
     parser_add.add_argument('id', type=int, help='id for the sensor to add, an integer in range 0-254')
     parser_add.add_argument('node', type = int,
                             help='id for the node of sensor to add, an integer in range 0-254'),
     parser_add.add_argument('name', help='name for the sensor to add')
     parser_add.add_argument('quantity', help='quantity for the sensor to add')
+    database.initialize_database(DB_URL)
     return parser
