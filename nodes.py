@@ -13,9 +13,6 @@ usage: nodes.py [-h] {list,show,add} ...
     optional arguments:
       -h, --help       show this help message and exit
 
-Returns:
-    Writes the result of the operation to stdout
-
 usage: nodes.py list [-h]
 
     optional arguments:
@@ -38,6 +35,9 @@ usage: nodes.py add [-h] id name location
 
     optional arguments:
       -h, --help  show this help message and exit
+
+Returns:
+    Writes the result of the operation to stdout
 """
 
 # Apparently unused imports are called by args.func(args)
