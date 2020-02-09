@@ -41,7 +41,10 @@ Returns:
 """
 
 # Apparently unused imports are called by args.func(args)
+from database.database import initialize_database
 from commandline import setup_node_argparse, list_nodes, add_node_to_database, show_node_details
+from __config__ import DB_URL
+initialize_database(DB_URL)
 parser = setup_node_argparse()
 args = parser.parse_args()
 args.func(args)

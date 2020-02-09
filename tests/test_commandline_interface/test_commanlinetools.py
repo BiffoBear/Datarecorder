@@ -300,9 +300,8 @@ class TestSensorHelperFunctions(TestCase):
 
 class TestSetupArgparseForNodes(TestCase):
 
-    @patch('database.database.initialize_database', autospec=True)
     @patch('argparse.ArgumentParser')
-    def test_argparse_setup_for_nodes(self, mock_argparse, mock_initialize_database):
+    def test_argparse_setup_for_nodes(self, mock_argparse):
         mock_argparse.return_value = Mock()
         mock_parser = commandlinetools.setup_node_argparse()
         mock_argparse.assert_called_once()
@@ -323,7 +322,6 @@ class TestSetupArgparseForNodes(TestCase):
                  call().add_parser().add_argument('location', help='location for the node to add'),
                  ]
         mock_parser.add_subparsers.assert_has_calls(calls)
-        mock_initialize_database.assert_called_once()
 
     @patch('commandline.commandlinetools.list_nodes', autospec=True)
     def test_parser_calls_list_node_function(self, mock_list_nodes):
@@ -346,9 +344,8 @@ class TestSetupArgparseForNodes(TestCase):
         args.func(args)
         mock_add_node.assert_called_once_with(args)
 
-    @patch('database.database.initialize_database', autospec=True)
     @patch('argparse.ArgumentParser')
-    def test_argparse_setup_for_sensors(self, mock_argparse, mock_initialize_database):
+    def test_argparse_setup_for_sensors(self, mock_argparse):
         mock_argparse.return_value = Mock()
         mock_parser = commandlinetools.setup_sensor_argparse()
         mock_argparse.assert_called_once()
@@ -371,4 +368,3 @@ class TestSetupArgparseForNodes(TestCase):
                  call().add_parser().add_argument('quantity', help='quantity for the sensor to add'),
                  ]
         mock_parser.add_subparsers.assert_has_calls(calls)
-        mock_initialize_database.assert_called_once()

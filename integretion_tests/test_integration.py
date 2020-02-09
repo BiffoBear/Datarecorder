@@ -8,7 +8,7 @@ from commandline.commandlinetools import setup_node_argparse, setup_sensor_argpa
 class IntegrationTesting(TestCase):
 
     def setUp(self):
-        unittest_helper.initialize_database()
+        unittest_helper.initialize_database(db_in_memory=True)
 
     def tearDown(self):
         database.engine.dispose()
@@ -103,4 +103,4 @@ class IntegrationTesting(TestCase):
         args.func(args)
         args = sensor_parser.parse_args(['list'])
         args.func(args)
-        mock_print.call_args.contains('[1mExisting Sensors[0m\n\n[90m00 [0m[1m01 [0m[90m02 [0m[90m03 [0m[90m04')
+        mock_print.call_args.contains('[1mExistimg Sensors[0m\n\n[90m00 [0m[1m01 [0m[90m02 [0m[90m03 [0m[90m04')

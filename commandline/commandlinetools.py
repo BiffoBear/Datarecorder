@@ -37,7 +37,9 @@ def _layout_thing_details(thing_name=None, thing_id=None, thing_data=None):
     for key, value in thing_data.items():
         print_items.append(f'{key} -- {_convert_value_to_string(value)}\n')
     print_items.append('\n')
-    return ''.join(print_items)
+    x = ''.join(print_items)
+    print(x)
+    return x
 
 
 def list_nodes(_):
@@ -106,7 +108,6 @@ def setup_node_argparse():
     parser_add.add_argument('id', type=int, help='id for the node to add, an integer in range 0-254')
     parser_add.add_argument('name', help='name for the node to add')
     parser_add.add_argument('location', help='location for the node to add')
-    database.initialize_database(DB_URL)
     return parser
 
 
@@ -125,5 +126,4 @@ def setup_sensor_argparse():
                             help='id for the node of sensor to add, an integer in range 0-254'),
     parser_add.add_argument('name', help='name for the sensor to add')
     parser_add.add_argument('quantity', help='quantity for the sensor to add')
-    database.initialize_database(DB_URL)
     return parser

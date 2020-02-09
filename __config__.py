@@ -21,7 +21,7 @@ if testing:
     FILE_DEBUG_LEVEL = logging.DEBUG
     CONSOLE_DEBUG_LEVEL = logging.DEBUG
 else:
-    TESTING = False
+    TESTING = True
     FILE_DEBUG_LEVEL = logging.INFO
     CONSOLE_DEBUG_LEVEL = logging.INFO
 
