@@ -4,7 +4,7 @@
 from setuptools import setup
 
 setup(name='datarecorder',
-      version='1.0',
+      version='1.01',
       description='House data recorder',
       url=None,
       author='Martin Stephens',

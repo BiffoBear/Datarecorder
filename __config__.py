@@ -43,4 +43,8 @@ SI_UNITS = {'Length': {'unit': 'meter', 'symbol': 'm'},
             'Energy': {'unit': 'joule', 'symbol': 'J'},
             'Luminosity': {'unit': 'candle', 'symbol': 'cd'},
             'Illuminance': {'unit': 'lux', 'symbol': 'lx'},
+            'Percentage': {'unit': 'percent', 'symbol': '%'},
+            'Velocity': {'unit': 'meters per second', 'symbol': 'm/s'},
+            'Acceleration': {'unit': 'meters per second squared', 'symbol': 'm/s^2'},
+            'Flow': {'unit': 'cubic meters per second', 'symbol': 'm3/s'},
             }
