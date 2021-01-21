@@ -9,8 +9,8 @@ from __config__ import DB_URL
 
 def _high_lite_existing_things(thing, existing_things):
     if thing in existing_things:
-        return f'\x1b[1m{thing:02x} \x1b[0m'  # Bold text
-    return f'\x1b[90m{thing:02x} \x1b[0m'  # Dim text
+        return f'\x1b[0;32m{thing:02x} \x1b[0m'  # Bold text
+    return f'{thing:02x} '  # Dim text
 
 
 def _layout_existing_things(thing_name=None, existing_things=None):
