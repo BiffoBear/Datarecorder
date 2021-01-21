@@ -22,8 +22,22 @@ class Radio:
         self._packet_id = 0
         self._timer = None
 
+    def _led_on(self):
+        self._status_led.value = True
+
+    def _led_off(self):
+        self._status_led.value = False
+
+    def _extract_data_from_dict(self, raw_dict):
+        list_of_lists = [[item['id'], float(item['value'])] for item in raw_dict]
+        flat_list = [item for elem in list_of_lists for item in elem]
+        return flat_list
+
+    def _pad_data(self, data):
+        return data + [(0xff, 0.0)] * (10 - len(data))
+
     def _crc16(self, data):
-        """Takes a bytes object and calcuates the CRC-16/CCITT-FALSE."""
+        """Takes a bytes object and calculates the CRC-16/CCITT-FALSE."""
         # Modified from a stackoverflow answer at https://stackoverflow.com/a/55850496/7969814
         crc = 0xFFFF
         for i in range(len(data)):
@@ -42,22 +56,28 @@ class Radio:
         data_packet += bytes([crc & 0xff])  # low byte
         return bytes(data_packet)
 
-    def _prepare_data(self, raw_data):
+    def _prepare_data(self, data):
         """Packs the list of data into the radio data format."""
-        packed_data = struct.pack(DATA_FORMAT, *raw_data)
-        prepped_data = self.append_crc(packed_data)
+        extracted_data = self._extract_data_from_dict(data)
+        padded_data = self._pad_data(extracted_data)
+        packet_header = [self._node_id, self._node_id, self._packet_id % 65536,
+                         0x0000, 0x00, 0x00]
+        data_packet = packet_header.extend(padded_data)
+        packed_data = struct.pack(DATA_FORMAT, *data_packet)
+        prepped_data = self._append_crc(packed_data)
         return prepped_data
+
+    def _send_cycle(self, packet):
+        self._led_on()
+        self._rfm69.send(packet)
+        self._led_off()
 
     def send(self, data):
         """Sends sensor data."""
         data_packet = self._prepare_data(data)
-        self._status_led.value = True
-        self._rfm69.send(data_packet)
-        self._status_led.value = False
+        self._send_cycle(data_packet)
         time.sleep(self._node_id / 10 + random.random() * 0.1)
-        self._status_led.value = True
-        self._rfm69.send(data_packet)
-        self._status_led.value = False
+        self._send_cycle(data_packet)
         self._packet_id += 1
 
     def timer_reset(self):
@@ -73,4 +93,3 @@ class Radio:
         if _remaining_time < 0:
             return 0
         return _remaining_time
-
