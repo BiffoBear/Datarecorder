@@ -102,7 +102,7 @@ class Radio:
         self._send_cycle(data_packet)
         time.sleep(self._node_id / 10 + random.random() * 0.1)
         self._send_cycle(data_packet)
-        print(f'Data packet {self._packet_id} sent from node {self._node_id}')
+        print(f'Data packet {self._packet_id:02x} sent from node {self._node_id:02x}')
         self._increment_counter_with_wrap()
 
     def timer_reset(self):
