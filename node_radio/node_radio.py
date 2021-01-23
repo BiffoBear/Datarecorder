@@ -12,7 +12,6 @@ DATA_FORMAT = '>BBHHBBBfBfBfBfBfBfBfBfBfBf'
 def _extract_data_from_dict(raw_dicts):
     """Takes sensor id and values from a dict."""
     list_of_lists = [[item['id'], float(item['value'])] for item in raw_dicts]
-    flat_list = [item for elem in list_of_lists for item in elem]
     return list_of_lists
 
 
