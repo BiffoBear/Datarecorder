@@ -8,7 +8,7 @@ import ulab
 DEBUGGING = True
 
 # def __init__(self, *, cs_pin=None, reset_pin=None, led_pin=None, node_id=None, send_freq=None):
-radio = node_radio
+radio = node_radio(cs_pin=board.D7, reset_pin=board.D5, led_pin=board.D13, node_id=0xfe, send_freq=15)
 
 # Setup reading pins
 voltage_pin = analogio.AnalogIn(board.A0)
