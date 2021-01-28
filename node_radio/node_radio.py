@@ -1,4 +1,18 @@
-# Version 1.0 2021-01-23
+# Version 1.1a 2021-01-23
+
+# 60 (0x3c) bytes are available, limited by the radio specs. The last two bytes are for the CRC leaving 58 for data.
+# STRUCT_FORMAT 7 status bytes, 10 sensor ID + float pairs and two bytes for error checking
+# Byte address    Code    Purpose
+# 0x00            B       Node ID of Tx node
+# 0x01            B       Tx node ID repeat (compared with byte 0x00 if CRC fails, gives confidence that ID is correct)
+# 0x02 - 03       H       Reserved for packet serial number
+# 0x04 - 05       H       Status bits
+# 0x05 - 06       BB      Reserved
+# 0x07 - 3a       Bf      Pairs of unsigned integer for sensor ID and 4 byte floats for sensor readings
+# 0x3b - 3c               Not used in struct, 16 bit CRC is appended for Tx and stripped after Rx and CRC check
+
+# sensor 0xff is sent as padding when no sensor exists and should not be recorded in the database.
+
 import struct
 import time
 import random
@@ -8,6 +22,7 @@ import adafruit_rfm69 as rfm_69
 
 ENCRYPTION_KEY = b'\x16UT\xb6\x92FHaE\xb5B\xde\xbclYs'
 DATA_FORMAT = '>BBHHBBBfBfBfBfBfBfBfBfBfBf'
+REGISTER_BITS = 16
 
 
 def _extract_data_from_dict(raw_dicts):
@@ -51,6 +66,42 @@ def _append_crc(data_packet):
     return bytes(data_packet)
 
 
+class StatusLed:
+    """Creates an instance of an LED and provides methods for on, off, invert and flash plus
+    ability to read status of LED."""
+
+    def __init__(self, led_pin):
+        self._led = digitalio.DigitalInOut(led_pin)
+        self._led.direction = digitalio.Direction.OUTPUT
+        self._led.value = False
+
+    def on(self):
+        """Turn on LED."""
+        self._led.value = True
+
+    def off(self):
+        """Turn off LED."""
+        self._led.value = False
+
+    def invert(self):
+        """Invert state of LED."""
+        self._led.value = not self._led.value
+
+    def flash(self, *, flashes=1, hertz=5):
+        """Flash the LED repeatedly."""
+        for flash in range(flashes * 2):
+            self.invert()
+            time.sleep(1 / (hertz * 2))
+
+    @property
+    def value(self):
+        return self._led.value
+
+    @value.setter
+    def value(self, value):
+        self._led.value = value
+
+
 class Radio:
     """Creates an instance of an RFM69 radio and provides methods to repeatedly
     send data via the radio."""
@@ -63,17 +114,16 @@ class Radio:
         self._rfm69.encryption_key = ENCRYPTION_KEY
         self._node_id = node_id
         self._send_period = send_period  # in seconds
-        self._status_led = digitalio.DigitalInOut(led_pin)
-        self._status_led.direction = digitalio.Direction.OUTPUT
-        self._status_led.value = False
-        self._packet_id = 0
+        self._status_led = StatusLed(led_pin)
+        self._packet_id = 0x0000
+        self._register = 0x0000
         self._timer = None
 
     def _led_on(self):
-        self._status_led.value = True
+        self._status_led.on()
 
     def _led_off(self):
-        self._status_led.value = False
+        self._status_led.off()
 
     def _increment_counter_with_wrap(self):
         """Increments a value and wraps to 0 when a maximum value is reached."""
@@ -86,7 +136,7 @@ class Radio:
         padded_data = _pad_data(extracted_data)
         flat_data = _flatten_list(padded_data)
         data_packet = [self._node_id, self._node_id, self._packet_id % 65536,
-                       0x0000, 0x00, 0x00]
+                       self._register, 0x00, 0x00]
         data_packet.extend(flat_data)
         packed_data = struct.pack(DATA_FORMAT, *data_packet)
         prepped_data = _append_crc(packed_data)
@@ -96,6 +146,15 @@ class Radio:
         self._led_on()
         self._rfm69.send(packet)
         self._led_off()
+
+    def update_register(self, *, bit=None, state=None):
+        """Set the index:th bit of self._register to 1 if state is True, else to 0."""
+        if 1 > bit > REGISTER_BITS:
+            raise ValueError('Register index out of range.')
+        mask = 1 << (bit - 1)
+        self._register &= ~mask  # Clear the bit indicated by the mask
+        if state:
+            self._register |= mask  # If x was True, set the bit indicated by the mask.
 
     def send_data(self, sensor_data):
         """Sends sensor data."""

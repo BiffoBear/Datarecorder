@@ -15,7 +15,6 @@ radio = node_radio.Radio(cs_pin=CS_PIN, reset_pin=RESET_PIN, led_pin=LED_PIN,
                          node_id=NODE_ID, send_period=SEND_PERIOD)
 
 # Setup node speciic sensors, etc.
-i2c = board.I2C()
 
 # Main loop
 radio.initial_sleep()
