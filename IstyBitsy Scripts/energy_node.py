@@ -1,15 +1,24 @@
+# Version 1.0 2021-01-29
+# Required for all nodes.
+from node_helper import node
+import board
+# Specific to this node.
 import time
 import math
-import node_radio
-import analogio
-import board
 import ulab
+import analogio
 
-DEBUGGING = True
+# Setup radio and status LED
+RESET_PIN = board.D7
+CS_PIN = board.D9
+LED_PIN = board.D13
+NODE_ID = 0x04
+SEND_PERIOD = 60  # seconds
 
-# def __init__(self, *, cs_pin=None, reset_pin=None, led_pin=None, node_id=None, send_freq=None):
-radio = node_radio(cs_pin=board.D7, reset_pin=board.D5, led_pin=board.D13, node_id=0xfe, send_freq=15)
+radio = node.Radio(cs_pin=CS_PIN, reset_pin=RESET_PIN, led_pin=LED_PIN,
+                   node_id=NODE_ID, send_period=SEND_PERIOD)
 
+# Setup node specific sensors, etc.
 # Setup reading pins
 voltage_pin = analogio.AnalogIn(board.A0)
 house_current_pin = analogio.AnalogIn(board.A1)
@@ -17,23 +26,21 @@ kitchen_current_pin = analogio.AnalogIn(board.A4)
 pool_current_pin = analogio.AnalogIn(board.A3)
 garden_current_pin = analogio.AnalogIn(board.A2)
 
-
 # Sensor reading settings
 VOLTAGE_COEFF = 223 * 3.3 / 2 ** 16
 VOLTAGE_0_THRESHOLD = 30
 CURRENT_COEFF = 30 * 3.3 / 2 ** 16
 CURRENT_0_THRESHOLD = 0.09
-
 sensors = [{'name': 'voltage', 'adc_pin': voltage_pin, 'calibration_coeff': VOLTAGE_COEFF,
             'zero_threshold': VOLTAGE_0_THRESHOLD, 'accumulated_readings': []},
-           {'name': 'house_current_pin', 'adc_pin': house_current_pin, 'calibration_coeff': CURRENT_COEFF, 'zero_threshold': CURRENT_0_THRESHOLD,
-            'accumulated_readings': [], 'value': 0.0},
-           {'name': 'kitchen_current_pin', 'adc_pin': kitchen_current_pin, 'calibration_coeff': CURRENT_COEFF, 'zero_threshold': CURRENT_0_THRESHOLD,
-            'accumulated_readings': [], 'value': 0.0},
-           {'name': 'pool_current_pin', 'adc_pin': pool_current_pin, 'calibration_coeff': CURRENT_COEFF, 'zero_threshold': CURRENT_0_THRESHOLD,
-            'accumulated_readings': [], 'value': 0.0},
-           {'name': 'garden_current_pin', 'adc_pin': garden_current_pin, 'calibration_coeff': CURRENT_COEFF, 'zero_threshold': CURRENT_0_THRESHOLD,
-            'accumulated_readings': [], 'value': 0.0},
+           {'name': 'house_current_pin', 'adc_pin': house_current_pin, 'calibration_coeff': CURRENT_COEFF,
+            'zero_threshold': CURRENT_0_THRESHOLD, 'accumulated_readings': [], 'value': 0.0},
+           {'name': 'kitchen_current_pin', 'adc_pin': kitchen_current_pin, 'calibration_coeff': CURRENT_COEFF,
+            'zero_threshold': CURRENT_0_THRESHOLD, 'accumulated_readings': [], 'value': 0.0},
+           {'name': 'pool_current_pin', 'adc_pin': pool_current_pin, 'calibration_coeff': CURRENT_COEFF,
+            'zero_threshold': CURRENT_0_THRESHOLD, 'accumulated_readings': [], 'value': 0.0},
+           {'name': 'garden_current_pin', 'adc_pin': garden_current_pin, 'calibration_coeff': CURRENT_COEFF,
+            'zero_threshold': CURRENT_0_THRESHOLD, 'accumulated_readings': [], 'value': 0.0},
            ]
 
 
@@ -63,7 +70,7 @@ def find_crossings(readings):
     return crossing_list
 
 
-print('Starting...')
+# Main loop
 radio.initial_sleep()
 while True:
     radio.timer_reset()
@@ -90,24 +97,8 @@ while True:
                 value = 0
             sensor['accumulated_readings'].append(value)
 
-            if DEBUGGING:
-                print('**********')
-                print(sensor['name'])
-                print(len(two_cycles))
-                print(f"max = {max(two_cycles)}")
-                print(f"min = {min(two_cycles)}")
-                print(f"Reading = {value}")
-
     for sensor in sensors:
         sensor['value'] = ulab.numerical.mean(sensor['accumulated_readings'])
-    if DEBUGGING:
-        print('==================')
-        print(f'Points {len(sensors[0]["accumulated_readings"])}')
-        for sensor in sensors:
-            print(f"{sensor['name']} - {sensor['value']}")
-        print('==================')
-        time.sleep(5)
-    else:
-        while not radio.timer_expired:
-            time.sleep(0.1)
-        radio.send(sensors)
+    while not radio.timer_expired:
+        time.sleep(0.1)
+    radio.send(sensors)

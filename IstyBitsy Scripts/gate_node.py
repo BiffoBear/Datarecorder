@@ -1,23 +1,42 @@
-import time
+# Version 1.0 2021-01-23
+# Required for all nodes.
+from node_helper import node
 import board
-from digitalio import DigitalInOut, Direction, Pull
-from node_radio import node_radio
+# Specific to this node.
+import time
+import digitalio
 
-# LED setup.
-led = node_radio.StatusLed(board.D13)
+# Setup radio and status LED
+RESET_PIN = board.D3
+CS_PIN = board.D2
+LED_PIN = board.D13
+NODE_ID = 0x05
+SEND_PERIOD = 60  # seconds
 
-# For Gemma M0, Trinket M0, Metro M0 Express, ItsyBitsy M0 Express, Itsy M4 Express, QT Py M0
-switch = DigitalInOut(board.D2)
-# switch = DigitalInOut(board.D5)  # For Feather M0 Express, Feather M4 Express
-# switch = DigitalInOut(board.D7)  # For Circuit Playground Express
-switch.direction = Direction.INPUT
-switch.pull = Pull.UP
+radio = node.Radio(cs_pin=CS_PIN, reset_pin=RESET_PIN, led_pin=LED_PIN,
+                         node_id=NODE_ID, send_period=SEND_PERIOD)
 
-switch_status = switch.value
-led.value = switch_status
+# Setup node specific sensors, etc.
+gate_closed = digitalio.DigitalInOut(board.D4)
+gate_closed.direction = digitalio.Direction.INPUT
+gate_closed.pull = digitalio.Pull.UP
+
+gate_closed_led = node.StatusLed(board.D12)
+
+
+def update_and_send_data(*, gate_closed=None):
+    gate_open = not gate_closed
+    radio.update_register(bit=1, state=gate_open)
+    radio.send_data([])
+
+
+# Main loop
+gate_closed_led.value = gate_closed.value
+if not gate_closed.value:
+    update_and_send_data(gate_closed=False)
 while True:
-    if switch.value is not switch_status:
-        switch_status = switch.value
-        led.value = switch.value
-        print(f'Send status gate open is {switch_status}')
-    time.sleep(1)
+    while gate_closed.value == gate_closed_led.value:
+        time.sleep(0.5)
+    gate_closed_state = gate_closed.value
+    update_and_send_data(gate_closed=gate_closed_state)
+    gate_closed_led.value = gate_closed_state
