@@ -9,7 +9,7 @@ import logging
 import os
 
 RFM69_INTERRUPT_PIN = 24
-DB_URL = 'postgresql://pi:blueberry@localhost:5432/housedata'
+DB_URL = 'postgresql://pi:redcurrantdata@localhost:5432/housedata'
 
 try:
     testing = int(os.environ['TESTING'])
