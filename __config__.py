@@ -22,7 +22,7 @@ if testing:
     CONSOLE_DEBUG_LEVEL = logging.DEBUG
 else:
     TESTING = False
-    FILE_DEBUG_LEVEL = logging.INFO
+    FILE_DEBUG_LEVEL = logging.WARNING
     CONSOLE_DEBUG_LEVEL = logging.INFO
 
 DISPLAY_WIDTH = 128

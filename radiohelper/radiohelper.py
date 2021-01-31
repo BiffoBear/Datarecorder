@@ -13,8 +13,8 @@ crc16(data) -- return a 16 bit CRC for a byte object
 # 0x00            B       Node ID of Tx node
 # 0x01            B       Tx node ID repeat (compared with byte 0x00 if CRC fails, gives confidence that ID is correct)
 # 0x02 - 03       H       Reserved for packet serial number
-# 0x04 - 06       H       Reserved for status bits
-# 0x07 - 08       BB      Reserved
+# 0x04 - 05       H       Status bits
+# 0x05 - 06       BB      Reserved
 # 0x07 - 3a       Bf      Pairs of unsigned integer for sensor ID and 4 byte floats for sensor readings
 # 0x3b - 3c               Not used in struct, 16 bit CRC is appended for Tx and stripped after Rx and CRC check
 
