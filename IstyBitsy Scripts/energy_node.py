@@ -10,9 +10,9 @@ import analogio
 
 # Setup radio and status LED
 RESET_PIN = board.D7
-CS_PIN = board.D9
-LED_PIN = board.D13
-NODE_ID = 0x04
+CS_PIN = board.D5
+LED_PIN = board.D10
+NODE_ID = 0x03
 SEND_PERIOD = 60  # seconds
 
 radio = node.Radio(cs_pin=CS_PIN, reset_pin=RESET_PIN, led_pin=LED_PIN,
@@ -32,15 +32,15 @@ VOLTAGE_0_THRESHOLD = 30
 CURRENT_COEFF = 30 * 3.3 / 2 ** 16
 CURRENT_0_THRESHOLD = 0.09
 sensors = [{'name': 'voltage', 'adc_pin': voltage_pin, 'calibration_coeff': VOLTAGE_COEFF,
-            'zero_threshold': VOLTAGE_0_THRESHOLD, 'accumulated_readings': []},
+            'zero_threshold': VOLTAGE_0_THRESHOLD, 'accumulated_readings': [], 'id': 0x0f, 'value': 0.0},
            {'name': 'house_current_pin', 'adc_pin': house_current_pin, 'calibration_coeff': CURRENT_COEFF,
-            'zero_threshold': CURRENT_0_THRESHOLD, 'accumulated_readings': [], 'value': 0.0},
+            'zero_threshold': CURRENT_0_THRESHOLD, 'accumulated_readings': [], 'id': 0x10, 'value': 0.0},
            {'name': 'kitchen_current_pin', 'adc_pin': kitchen_current_pin, 'calibration_coeff': CURRENT_COEFF,
-            'zero_threshold': CURRENT_0_THRESHOLD, 'accumulated_readings': [], 'value': 0.0},
+            'zero_threshold': CURRENT_0_THRESHOLD, 'accumulated_readings': [], 'id': 0x13,'value': 0.0},
            {'name': 'pool_current_pin', 'adc_pin': pool_current_pin, 'calibration_coeff': CURRENT_COEFF,
-            'zero_threshold': CURRENT_0_THRESHOLD, 'accumulated_readings': [], 'value': 0.0},
+            'zero_threshold': CURRENT_0_THRESHOLD, 'accumulated_readings': [], 'id': 0x12,'value': 0.0},
            {'name': 'garden_current_pin', 'adc_pin': garden_current_pin, 'calibration_coeff': CURRENT_COEFF,
-            'zero_threshold': CURRENT_0_THRESHOLD, 'accumulated_readings': [], 'value': 0.0},
+            'zero_threshold': CURRENT_0_THRESHOLD, 'accumulated_readings': [], 'id': 0x11,'value': 0.0},
            ]
 
 
@@ -101,4 +101,4 @@ while True:
         sensor['value'] = ulab.numerical.mean(sensor['accumulated_readings'])
     while not radio.timer_expired:
         time.sleep(0.1)
-    radio.send(sensors)
+    radio.send_data(sensors)
