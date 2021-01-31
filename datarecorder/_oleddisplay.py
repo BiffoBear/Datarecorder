@@ -121,8 +121,12 @@ def write_message_to_queue(message_text=''):
 def shut_down():
     logger.info(f'shut_down called')
     message_queue.join()
-    clear_display(global_display)
-    show_display(global_display)
+    try:
+        clear_display(global_display)
+        show_display(global_display)
+    except AttributeError:
+        pass
+    logger.warning('Data recorder shutdown')
 
 
 def init_display_thread():
