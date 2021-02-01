@@ -113,5 +113,6 @@ while True:
                 {'name': 'irrigation_pressure', 'id': 0x0b, 'value': irrigation_pressure.pressure},
                 {'name': 'fishpond_depth', 'id': 0x0c, 'value': fishpond.water_depth},
                 {'name': 'fishpond_level', 'id': 0x0d, 'value': fishpond.water_level_below_max},
+                {'name': 'Roof Temperature', 'id': 0x0e, 'value': mcp.temperature + 273.15},
                 ]
     radio.send_data(readings)
