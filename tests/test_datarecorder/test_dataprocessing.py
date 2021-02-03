@@ -9,8 +9,8 @@ from unittest import TestCase
 import threading
 import datetime
 # noinspection PyProtectedMember
-from datarecorder import _dataprocessing
-from radiohelper import radiohelper
+from Datarecorder.datarecorder import _dataprocessing
+from Datarecorder.radiohelper import radiohelper
 from tests import unittest_helper
 
 

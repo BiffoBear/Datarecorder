@@ -4,7 +4,7 @@
 from unittest import TestCase
 from unittest.mock import patch, call
 # noinspection PyProtectedMember
-from datarecorder import _dataprocessing, main
+from Datarecorder.datarecorder import _dataprocessing, main
 
 
 @patch('datarecorder._oleddisplay.write_message_to_queue')

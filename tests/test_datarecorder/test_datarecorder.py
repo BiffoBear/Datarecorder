@@ -12,9 +12,9 @@ import board
 # noinspection PyPep8Naming
 import RPi.GPIO as rpigpio
 # noinspection PyProtectedMember
-from datarecorder import main, _dataprocessing
+from Datarecorder.datarecorder import main, _dataprocessing
 from __config__ import RFM69_INTERRUPT_PIN, DB_URL, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
-from radiohelper.radiohelper import RFM69_ENCRYPTION_KEY
+from Datarecorder.radiohelper.radiohelper import RFM69_ENCRYPTION_KEY
 
 
 class TestInterruptSetup(TestCase):
