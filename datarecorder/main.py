@@ -12,17 +12,18 @@ import busio
 import digitalio
 import RPi.GPIO as rpigpio
 import adafruit_rfm69
-from . import _oleddisplay, _dataprocessing
 from database import database
 from __config__ import RFM69_INTERRUPT_PIN, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 from radiohelper.radiohelper import RFM69_ENCRYPTION_KEY
+from . import _oleddisplay, _dataprocessing
 
 logger = logging.getLogger(__name__)
 logger.setLevel(FILE_DEBUG_LEVEL)
 
-radio = None
+# Required for rfm69_callback function, not a constant.
+radio = None  # pylint: disable=invalid-name
 
-# rfm69_irq required to enable irq callback.
+# rfm69_irq required to enable irq callback on Raspberry Pi.
 def rfm69_callback(rfm69_irq):  # pylint: disable=unused-argument
     """Interrupt callback routine to put radio data into queue."""
     logger.debug('rfm69_callback called')
