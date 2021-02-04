@@ -145,40 +145,40 @@ class TestDataProcessing(TestCase):
             _dataprocessing.expand_radio_data_into_dict(test_data)
         self.assertIn('expand_radio_data_into_dict called', cm.output[0])
 
-    def test_check_for_duplicate_or_missing_packet(self):
+    def test_packet_missing_or_duplicate(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1011}
         _dataprocessing.last_packet_info = {0x01: {'pkt_serial': 0x1010, 'timestamp': None}}
         with self.assertLogs(level='DEBUG') as cm:
-            _dataprocessing.check_for_duplicate_or_missing_packet(test_data)
+            _dataprocessing.packet_missing_or_duplicate(test_data)
         self.assertIn('check_for_duplicate_packet called', cm.output[0])
         self.assertIn('Rx from node 0x01, packet serial 0x1011', cm.output[-2])
 
-    def test_check_for_duplicate_or_missing_packet_logs_a_warning_for_a_missing_packet(self):
+    def test_packet_missing_or_duplicate_logs_a_warning_for_a_missing_packet(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1012}
         _dataprocessing.last_packet_info = {0x01: {'pkt_serial': 0x0101, 'timestamp': None}}
         with self.assertLogs(level='WARNING') as cm:
-            _dataprocessing.check_for_duplicate_or_missing_packet(test_data)
+            _dataprocessing.packet_missing_or_duplicate(test_data)
         self.assertIn('Data packet missing from node 0x01', cm.output[-2])
 
-    def test_check_for_duplicate_or_missing_packet_logs_first_data_from_node(self):
+    def test_packet_missing_or_duplicate_logs_first_data_from_node(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
         _dataprocessing.last_packet_info = {0x02: {'pkt_serial': 0xffff, 'timestamp': None}}
         with self.assertLogs(level='INFO') as cm:
-            _dataprocessing.check_for_duplicate_or_missing_packet(test_data)
+            _dataprocessing.packet_missing_or_duplicate(test_data)
         self.assertIn('First data packet from node 0x01', cm.output[-2])
         self.assertIn('Rx from node 0x01, packet serial 0x1010', cm.output[-1])
 
-    @patch('datarecorder._dataprocessing.check_for_duplicate_or_missing_packet')
+    @patch('datarecorder._dataprocessing.packet_missing_or_duplicate')
     @patch('datarecorder._dataprocessing.expand_radio_data_into_dict')
     @patch('datarecorder._dataprocessing.unpack_data_packet')
     @patch('datarecorder._dataprocessing.radio_q')
     def test_process_radio_data(self, mock_radio_q, mock_unpack_data_packet,
-                                mock_expand_radio_data_into_dict, mock_check_for_duplicate_or_missing_packet,
+                                mock_expand_radio_data_into_dict, mock_packet_missing_or_duplicate,
                                 ):
         mock_radio_q.get.return_value = None
         mock_unpack_data_packet.side_effect = ['Dummy data', ValueError]
         mock_expand_radio_data_into_dict.return_value = {'node': None, 'sensors': None}
-        mock_check_for_duplicate_or_missing_packet.return_value = True
+        mock_packet_missing_or_duplicate.return_value = True
         with self.assertLogs(level='DEBUG') as cm:
             _dataprocessing.process_radio_data()
         self.assertIn('process_radio_data called', cm.output[0])
@@ -267,14 +267,14 @@ class TestOledDisplay(TestCase):
 
     @patch('datarecorder._oleddisplay.message_queue')
     @patch('datarecorder._oleddisplay.clear_display')
-    def test_read_message_queue_write_to_display(self, _1, mock_message_queue):
+    def test_display_message_from_queue(self, _1, mock_message_queue):
         mock_message_queue.get.side_effect = [None, queue.Empty]
         dummy_display = {'oled': Mock(), 'lines': deque([])}
         with self.assertLogs(level='DEBUG') as cm:
-            _oleddisplay.read_message_queue_write_to_display(display=dummy_display)
-        self.assertIn('read_message_queue_write_to_display called', cm.output[0])
+            _oleddisplay.display_message_from_queue(display=dummy_display)
+        self.assertIn('display_message_from_queue called', cm.output[0])
         with self.assertLogs(level='ERROR') as cm:
-            _oleddisplay.read_message_queue_write_to_display(display=dummy_display)
+            _oleddisplay.display_message_from_queue(display=dummy_display)
         self.assertIn('Display thread called with empty queue', cm.output[0])
 
     def test_write_message_to_queue(self):

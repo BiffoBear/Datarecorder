@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """A library of shared functions that are used by radio Rx and Tx scripts.
 
-increment_number_with_wrap(serial_number, wrap_at=0x10000) -- increment and modulo a number
+Increment_with_wrap(serial_number, wrap_at=0x10000) -- increment and modulo a number
 crc16(data) -- return a 16 bit CRC for a byte object
 """
 
@@ -85,7 +85,7 @@ def confirm_and_strip_crc(rx_packet):
     raise ValueError('Bad data packet')
 
 
-def increment_number_with_wrap(number: int, wrap_at=0x10000):
+def Increment_with_wrap(number: int, wrap_at=0x10000):
     """Increments an number and returns the modulo of the result.
 
     Arguments:
@@ -94,7 +94,7 @@ def increment_number_with_wrap(number: int, wrap_at=0x10000):
     Keyword Arguments:
     wrap_at -- Used to take the modulo of the incremented number (default 0x10000)
     """
-    _try_to_log('increment_number_with_wrap called')
+    _try_to_log('Increment_with_wrap called')
     try:
         return (number + 1) % wrap_at
     except (ValueError, TypeError) as e:
