@@ -15,7 +15,7 @@ import urllib.error.HTTPError as HTTPError
 logger = logging.getLogger(__name__)
 
 event_queue = queue.Queue()
-event_actions = {0x05: {0x00: {'url': 'http://google.com', 'delay': 0}}}
+event_actions = {0x05: {0x00: {"url": "http://google.com", "delay": 0}}}
 
 
 def read_event_queue_handle_event():
@@ -24,16 +24,20 @@ def read_event_queue_handle_event():
     global event_queue
     try:
         event = event_queue.get()
-        event_action = event_actions[event['node']['code']]
-        if event_action['delay']:
-            time.sleep(event_action['delay'])
-        with urllib.request.urlopen(event_action['url']) as response:
+        event_action = event_actions[event["node"]["code"]]
+        if event_action["delay"]:
+            time.sleep(event_action["delay"])
+        with urllib.request.urlopen(event_action["url"]) as response:
             if response.status != 200:
                 raise HTTPError("Bad response from server")
     except queue.Empty:
         logger.error("Event thread called with empty queue")
     except KeyError:
-        logger.error("Event 0x%02x from node 0x%02X} does not exist", event['code'], event['node'])
+        logger.error(
+            "Event 0x%02x from node 0x%02X} does not exist",
+            event["code"],
+            event["node"],
+        )
     except HTTPError:
         logger.error("Bad response from server")
     finally:
