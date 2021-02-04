@@ -4,15 +4,16 @@ import queue
 import urllib.request
 
 event_queue = queue.Queue()
+event_actions = {0x05: {0x00: {'url': 'http://google.com', 'delay': 0}}}
 
-event_actions = {0x05: {0x00: {'url': 'http://google.com', 'delay': 0}}
 
 def read_event_queue_handle_event():
+    """Take events from the queue and act on them."""
     logger.debug('read_event_queue_handle_event called')
     global event_queue
     try:
         event = event_queue.get()
-        event_action = event_actions[event[node]event[code]]]
+        event_action = event_actions[event[node][code]]
         if event_action['delay']:
             time.sleep(event_action[delay])
         with urllib.request.urlopen(event_action['url']) as response:
@@ -22,7 +23,7 @@ def read_event_queue_handle_event():
     except queue.Empty:
         logger.error('Event thread called with empty queue')
     except KeyError:
-        logger.error(f'Event {event[code}:x2} from node {event[node]:x2} does not exist')
+        logger.error(f'Event {event[code]:02X} from node {event[node]:02X} does not exist')
     except HTTPError:
         logger.error('Bad response from server')
     finally:
