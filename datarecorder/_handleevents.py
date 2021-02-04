@@ -5,15 +5,17 @@ import urllib.request
 
 event_queue = queue.Queue()
 
-event_actions = {0x05: {0x00: 'http://google.com'}}
+event_actions = {0x05: {0x00: {'url': 'http://google.com', 'delay': 0}}
 
 def read_event_queue_handle_event():
     logger.debug('read_event_queue_handle_event called')
     global event_queue
     try:
         event = event_queue.get()
-        url = event_actions[event[node]][event[code]]
-        with urllib.request.Request(url) as response:
+        event_action = event_actions[event[node]event[code]]]
+        if event_action['delay']:
+            time.sleep(event_action[delay])
+        with urllib.request.urlopen(event_action['url']) as response:
             if response.status != 200:
                 raise HTTPError('Bad response from server')    
         response = urllib.request(url)
