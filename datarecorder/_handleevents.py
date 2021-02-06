@@ -19,11 +19,12 @@ event_actions = {0x05: {0x00: {"url": "http://google.com", "delay": 0}}}
 
 
 def _decode_register(register):
+    """Splits the register bytes into a list of event codes."""
+    logger.debug("_decode_register called")
     status_codes = []
     for bit in range(16):
-        if bit & 0x0001:
+        if register >> bit & 0x0001:
             status_codes.append(bit)
-        register = register >> 1
     return status_codes
 
 
@@ -33,6 +34,8 @@ def read_event_queue_handle_event():
     global event_queue
     try:
         events = event_queue.get()
+        logger.debug("Processing...")
+
     except queue.Empty:
         logger.error("Event thread called with empty queue")
         event_queue.task_done()
@@ -50,20 +53,20 @@ def read_event_queue_handle_event():
         except KeyError:
             logger.error(
                 "Event 0x%02x from node 0x%02X} does not exist",
-                event["code"],
-                event["node"],
+                event,
+                node_id,
             )
         except HTTPError:
             logger.error("Bad response from server")
-    logger.debug(decoded_events)
     event_queue.task_done()
 
 
-def write_event_to_queue(events=None):
+def write_event_to_queue(events):
     """Add an event to the event queue."""
     logger.debug("write_event_to_queue called")
     try:
         event_queue.put_nowait(events)
+        logger.debug("Added events to queue. 0x%02x events in queue", event_queue.qsize())
     except queue.Full:
         pass
 

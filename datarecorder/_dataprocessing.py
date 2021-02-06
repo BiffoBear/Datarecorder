@@ -117,7 +117,7 @@ def process_radio_data():
             database.write_sensor_reading_to_db(expanded_data["sensors"])
             if expanded_data["node"]["status_register"]:
                 events = {"node_id": expanded_data["node"]["node_id"], "status_register":expanded_data["node"]["status_register"]}
-                _handleevents.write_event_to_queue(events=events)                
+                _handleevents.write_event_to_queue(events)                
     except ValueError:
         logger.warning("Bad data packet detected")
         _oleddisplay.write_message_to_queue("*Bad data packet Rx*")

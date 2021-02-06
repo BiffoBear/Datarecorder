@@ -15,7 +15,7 @@ import adafruit_rfm69
 from database import database
 from __config__ import RFM69_INTERRUPT_PIN, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 from radiohelper.radiohelper import RFM69_ENCRYPTION_KEY
-from . import _oleddisplay, _dataprocessing
+from . import _oleddisplay, _dataprocessing, _handleevents
 
 logger = logging.getLogger(__name__)
 logger.setLevel(FILE_DEBUG_LEVEL)
@@ -101,6 +101,8 @@ def start_up(
     rfm69 = initialize_rfm69()
     initialize_gpio_interrupt(pi_irq_pin)
     _oleddisplay.init_display_thread()
+    _handleevents.init_event_thread()
+    
     rfm69.listen()
     logger.info("Listening for radio data…")
     return rfm69
@@ -109,6 +111,8 @@ def start_up(
 def shut_down(pi_irq_pin=RFM69_INTERRUPT_PIN):
     """Shutdown interrupt and wait for threads to complete."""
     logger.info("shut_down_called")
+    # TODO: Move shutdown code out to modules.
     rpigpio.remove_event_detect(pi_irq_pin)
     _dataprocessing.radio_q.join()
+    _handleevents.event_queue.join()
     _oleddisplay.shut_down()

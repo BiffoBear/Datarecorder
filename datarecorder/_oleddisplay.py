@@ -25,7 +25,7 @@ global_display = None  # pylint: disable=invalid-name
 
 
 def initialize_i2c():
-    """Initialize the I2C bus for RTC and display."""
+    """Initialize the I2C bus for OLED display."""
     try:
         logger.debug("initialize_i2c called")
         return busio.I2C(board.SCL, board.SDA)
