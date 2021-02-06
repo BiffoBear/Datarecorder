@@ -55,6 +55,7 @@ def read_event_queue_handle_event():
             )
         except HTTPError:
             logger.error("Bad response from server")
+    logger.debug(decoded_events)
     event_queue.task_done()
 
 
@@ -62,7 +63,7 @@ def write_event_to_queue(events=None):
     """Add an event to the event queue."""
     logger.debug("write_event_to_queue called")
     try:
-        event_queue.put_nowait(event)
+        event_queue.put_nowait(events)
     except queue.Full:
         pass
 

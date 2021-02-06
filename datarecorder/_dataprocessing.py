@@ -115,8 +115,8 @@ def process_radio_data():
         expanded_data = expand_radio_data_into_dict(unpacked_data)
         if not packet_missing_or_duplicate(expanded_data["node"]):
             database.write_sensor_reading_to_db(expanded_data["sensors"])
-            if expanded_data["status_register"]:
-                events = {"node_id": expanded_data["node_id"], "status_register":expanded_data["status_register"]}
+            if expanded_data["node"]["status_register"]:
+                events = {"node_id": expanded_data["node"]["node_id"], "status_register":expanded_data["node"]["status_register"]}
                 _handleevents.write_event_to_queue(events=events)                
     except ValueError:
         logger.warning("Bad data packet detected")
