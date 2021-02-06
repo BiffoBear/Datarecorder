@@ -13,7 +13,7 @@ import struct
 from database import database
 from radiohelper import radiohelper
 from __config__ import FILE_DEBUG_LEVEL
-from . import _oleddisplay
+from . import _oleddisplay, _handleevents
 
 radio_q = queue.Queue()
 
@@ -115,6 +115,9 @@ def process_radio_data():
         expanded_data = expand_radio_data_into_dict(unpacked_data)
         if not packet_missing_or_duplicate(expanded_data["node"]):
             database.write_sensor_reading_to_db(expanded_data["sensors"])
+            if expanded_data["status_register"]:
+                events = {'node_id': expanded_data["node_id"], expanded_data["status_register"]}
+                _handleevents.write_event_to_queue(events=events)                
     except ValueError:
         logger.warning("Bad data packet detected")
         _oleddisplay.write_message_to_queue("*Bad data packet Rx*")

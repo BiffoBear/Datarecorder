@@ -18,20 +18,34 @@ event_queue = queue.Queue()
 event_actions = {0x05: {0x00: {"url": "http://google.com", "delay": 0}}}
 
 
+def _decode_register(register):
+    status_codes = []
+    for bit in range(16):
+        if bit & 0x0001:
+            status_codes.append(bit)
+        register = register >> 1
+    return status_codes
+
+
 def read_event_queue_handle_event():
     """Take events from the queue and act on them."""
     logger.debug("read_event_queue_handle_event called")
     global event_queue
     try:
-        event = event_queue.get()
-        event_action = event_actions[event["node"]["code"]]
-        if event_action["delay"]:
-            time.sleep(event_action["delay"])
-        with urllib.request.urlopen(event_action["url"]) as response:
-            if response.status != 200:
-                raise HTTPError("Bad response from server")
+        events = event_queue.get()
     except queue.Empty:
         logger.error("Event thread called with empty queue")
+        event_queue.task_done()
+    node_id = events["node_id"]
+    decoded_events = _decode_register(events["status_register"])
+    for event in decoded_events:
+        try:
+            event_action = event_actions[node_id][event]
+            if event_action["delay"]:
+                time.sleep(event_action["delay"])
+            with urllib.request.urlopen(event_action["url"]) as response:
+                if response.status != 200:
+                    raise HTTPError("Bad response from server")
     except KeyError:
         logger.error(
             "Event 0x%02x from node 0x%02X} does not exist",
@@ -44,7 +58,7 @@ def read_event_queue_handle_event():
         event_queue.task_done()
 
 
-def write_event_to_queue(event=None):
+def write_event_to_queue(events=None):
     """Add an event to the event queue."""
     logger.debug("write_event_to_queue called")
     try:
