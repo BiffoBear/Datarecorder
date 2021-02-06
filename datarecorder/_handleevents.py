@@ -10,7 +10,7 @@ import threading
 import time
 import queue
 import urllib.request
-import urllib.error.HTTPError as HTTPError
+from urllib.error import HTTPError
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +36,7 @@ def read_event_queue_handle_event():
     except queue.Empty:
         logger.error("Event thread called with empty queue")
         event_queue.task_done()
+        return
     node_id = events["node_id"]
     decoded_events = _decode_register(events["status_register"])
     for event in decoded_events:
@@ -46,16 +47,15 @@ def read_event_queue_handle_event():
             with urllib.request.urlopen(event_action["url"]) as response:
                 if response.status != 200:
                     raise HTTPError("Bad response from server")
-    except KeyError:
-        logger.error(
-            "Event 0x%02x from node 0x%02X} does not exist",
-            event["code"],
-            event["node"],
-        )
-    except HTTPError:
-        logger.error("Bad response from server")
-    finally:
-        event_queue.task_done()
+        except KeyError:
+            logger.error(
+                "Event 0x%02x from node 0x%02X} does not exist",
+                event["code"],
+                event["node"],
+            )
+        except HTTPError:
+            logger.error("Bad response from server")
+    event_queue.task_done()
 
 
 def write_event_to_queue(events=None):
