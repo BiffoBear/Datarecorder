@@ -22,7 +22,6 @@ if testing:
     FILE_DEBUG_LEVEL = logging.DEBUG
     CONSOLE_DEBUG_LEVEL = logging.DEBUG
     DB_URL = 'postgresql://pi:gooseberry@localhost:5432/housedata'
-
 else:
     TESTING = False
     FILE_DEBUG_LEVEL = logging.WARNING

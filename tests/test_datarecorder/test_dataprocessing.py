@@ -50,7 +50,7 @@ class CheckForRepeatPacket(TestCase):
     def test_check_for_duplicate_packet_returns_true_and_dict_if_duplicate(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
         _dataprocessing.last_packet_info = {0x01: {'pkt_serial': 0x1010, 'timestamp': None}}
-        x = _dataprocessing.check_for_duplicate_or_missing_packet(test_data)
+        x = _dataprocessing.packet_missing_or_duplicate(test_data)
         self.assertIsInstance(x, bool)
         self.assertTrue(x)
         self.assertEqual(_dataprocessing.last_packet_info[0x01]['pkt_serial'], 0x1010)
@@ -58,7 +58,7 @@ class CheckForRepeatPacket(TestCase):
     def test_check_for_duplicate_returns_false_and_updates_dict_if_not_duplicate(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
         _dataprocessing.last_packet_info = {0x01: {'pkt_serial': 0x1011, 'timestamp': None}}
-        x = _dataprocessing.check_for_duplicate_or_missing_packet(test_data)
+        x = _dataprocessing.packet_missing_or_duplicate(test_data)
         self.assertIsInstance(x, bool)
         self.assertFalse(x)
         self.assertEqual(_dataprocessing.last_packet_info[0x01]['pkt_serial'], 0x1010)
@@ -66,16 +66,16 @@ class CheckForRepeatPacket(TestCase):
     def test_check_for_duplicate_handles_wrap_around_of_serial_numbers(self):
         test_data = {'node_id': 0x02, 'pkt_serial': 0x0001}
         _dataprocessing.last_packet_info = {0x02: {'pkt_serial': 0xfffe, 'timestamp': None}}
-        _dataprocessing.check_for_duplicate_or_missing_packet(test_data)
+        _dataprocessing.packet_missing_or_duplicate(test_data)
         self.assertEqual(_dataprocessing.last_packet_info[0x02]['pkt_serial'], 0x0001)
         test_data = {'node_id': 0x01, 'pkt_serial': 0x0000}
         _dataprocessing.last_packet_info = {0x01: 0xfffe, }
-        _dataprocessing.check_for_duplicate_or_missing_packet(test_data)
+        _dataprocessing.packet_missing_or_duplicate(test_data)
 
     def test_new_node_added_to_dict(self):
         test_data = {'node_id': 0x01, 'pkt_serial': 0x1010}
         _dataprocessing.last_packet_info = {0x02: {'pkt_serial': 0xffff, 'timestamp': None}}
-        x = _dataprocessing.check_for_duplicate_or_missing_packet(test_data)
+        x = _dataprocessing.packet_missing_or_duplicate(test_data)
         self.assertIsInstance(x, bool)
         self.assertFalse(x)
         self.assertEqual(_dataprocessing.last_packet_info[0x01]['pkt_serial'], 0x1010)

@@ -20,20 +20,20 @@ class TestIntegrationWithDataProcessing(TestCase):
     def test_message_sent_when_packet_written(self, mock_write_message_to_queue):
         _dataprocessing.last_packet_info = {0x02: {'pkt_serial': 0x0000}}
         node_data = {'node_id': 0x02, 'pkt_serial': 0x0001}
-        _dataprocessing.check_for_duplicate_or_missing_packet(node_data)
+        _dataprocessing.packet_missing_or_duplicate(node_data)
         mock_write_message_to_queue.assert_called_with('Rx 0x02 sn 0x0001')
 
     def test_message_sent_when_first_packet_received(self, mock_write_message_to_queue):
         _dataprocessing.last_packet_info = {}
         node_data = {'node_id': 0x01, 'pkt_serial': 0x0001}
-        _dataprocessing.check_for_duplicate_or_missing_packet(node_data)
+        _dataprocessing.packet_missing_or_duplicate(node_data)
         calls = [call('First data node 0x01'), call('Rx 0x01 sn 0x0001')]
         mock_write_message_to_queue.assert_has_calls(calls)
 
     def test_message_sent_when_packet_missing(self, mock_write_message_to_queue):
         _dataprocessing.last_packet_info = {0x01: {'pkt_serial': 0x0000}}
         node_data = {'node_id': 0x01, 'pkt_serial': 0x0002}
-        _dataprocessing.check_for_duplicate_or_missing_packet(node_data)
+        _dataprocessing.packet_missing_or_duplicate(node_data)
         calls = [call('*Data missing from node 0x01*'), call('Rx 0x01 sn 0x0002')]
         mock_write_message_to_queue.assert_has_calls(calls)
 

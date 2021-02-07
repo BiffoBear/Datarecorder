@@ -144,44 +144,44 @@ class TestDataFlow(TestCase):
 
     @patch('datarecorder._oleddisplay.message_queue')
     @patch('datarecorder._oleddisplay.draw_lines')
-    def test_read_message_queue_write_to_display_calls_draw_lines_if_oled_not_None(self, mock_draw_lines,
+    def test_display_message_from_queue_calls_draw_lines_if_oled_not_None(self, mock_draw_lines,
                                                                                    mock_message_queue,
                                                                                    ):
         mock_message_queue.get.return_value = 'dummy text'
         dummy_display = {'oled': 'dummy display', 'lines': deque([])}
-        _oleddisplay.read_message_queue_write_to_display(display=dummy_display)
+        _oleddisplay.display_message_from_queue(display=dummy_display)
         mock_draw_lines.assert_called_once_with(display=dummy_display)
         mock_message_queue.get.assert_called()
         mock_message_queue.task_done.assert_called()
 
     @patch('datarecorder._oleddisplay.message_queue')
     @patch('datarecorder._oleddisplay.draw_lines')
-    def test_read_message_queue_write_to_display_does_not_call_draw_lines_if_oled_None(self, mock_draw_lines,
+    def test_display_message_from_queue_does_not_call_draw_lines_if_oled_None(self, mock_draw_lines,
                                                                                        mock_message_queue,
                                                                                        ):
         mock_message_queue.get.return_value = 'dummy text'
         display = {'oled': None, 'lines': deque([])}
-        _oleddisplay.read_message_queue_write_to_display(display=display)
+        _oleddisplay.display_message_from_queue(display=display)
         mock_draw_lines.assert_not_called()
         mock_message_queue.get.assert_called()
         mock_message_queue.task_done.assert_called()
 
     @patch('datarecorder._oleddisplay.draw_lines')
-    def test_read_message_queue_write_to_display_returns_lines_and_display(self, mock_draw_lines,):
+    def test_display_message_from_queue_returns_lines_and_display(self, mock_draw_lines,):
         _oleddisplay.message_queue.put_nowait('dummy data')
         display = {'oled': 'dummy display', 'lines': deque(['test_lines'])}
         mock_draw_lines.return_value = display
-        returned_data = _oleddisplay.read_message_queue_write_to_display(display=display)
+        returned_data = _oleddisplay.display_message_from_queue(display=display)
         self.assertEqual(display, returned_data)
 
     @patch('datarecorder._oleddisplay.add_screen_line')
     @patch('datarecorder._oleddisplay.message_queue')
-    def test_read_message_queue_write_to_display_raises_exception_and_calls_task_done(self, mock_message_queue,
+    def test_display_message_from_queue_raises_exception_and_calls_task_done(self, mock_message_queue,
                                                                                       mock_add_screen_line,
                                                                                       ):
         mock_message_queue.get.side_effect = [queue.Empty]
         display = {'oled': 'dummy display', 'lines': deque(['test_lines'])}
-        _oleddisplay.read_message_queue_write_to_display(display=display)
+        _oleddisplay.display_message_from_queue(display=display)
         mock_add_screen_line.assert_not_called()
         mock_message_queue.task_done.assert_called_once()
 
@@ -196,7 +196,7 @@ class TestDataFlow(TestCase):
         mock_write_text_to_display.return_value = 'write_text_to_display'
         _oleddisplay.message_queue.put_nowait('Test passing display dict')
         mock_display = {'lines': deque([]), 'oled': Mock(), 'draw': Mock()}
-        data_returned = _oleddisplay.read_message_queue_write_to_display(display=mock_display)
+        data_returned = _oleddisplay.display_message_from_queue(display=mock_display)
         mock_show_display.assert_called_once()
         self.assertEqual('write_text_to_display', data_returned)
 

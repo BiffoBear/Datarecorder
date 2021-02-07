@@ -37,6 +37,16 @@ class SensorData(Base):
     Reading = Column(Float)
 
 
+class NodeEvents(Base):
+    
+    __tablename__ = 'Events'
+    
+    ID = Column(Integer, primary_key=True)
+    Timestamp_UTC = Column(DateTime)
+    Node_ID = Column(Integer, ForeignKey('Nodes.ID'))
+    Event_Code = Column(Integer)
+
+
 class Nodes(Base):
 
     __tablename__ = 'Nodes'
@@ -81,6 +91,21 @@ def write_sensor_reading_to_db(data):
         [s.add(SensorData(Timestamp_UTC=data['timestamp'],
                           Sensor_ID=r[0],
                           Reading=r[1])) for r in data['sensor_readings']]
+        s.commit()
+    except Exception as error:
+        logger.critical(f'IOError writing to database')
+        raise error
+
+
+def write_events_to_db(data):
+    """Takes a dict with timestamp, node and a list of event codes and writes them to the database."""
+    logger.debug(f'write_event_to_db called')
+    try:
+        # noinspection PyCallingNonCallable
+        s = session()
+        [s.add(NodeEvents(Timestamp_UTC=data['timestamp'],
+                          node_ID=data['node_id'],
+                          Event_Code=r)) for r in data['event_codes']]
         s.commit()
     except Exception as error:
         logger.critical(f'IOError writing to database')
