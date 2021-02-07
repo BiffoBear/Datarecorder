@@ -105,9 +105,9 @@ while True:
     radio.timer_reset()
     radio.wait_for_timer()
     readings = [{'name': 'temperature', 'id': 0x05, 'value': bme680.temperature + 273.15},
-                {'name': 'gas', 'id': 0x06 'value': bme680.gas},
+                {'name': 'gas', 'id': 0x06, 'value': bme680.gas},
                 {'name': 'humidity', 'id': 0x07, 'value': bme680.humidity},
-                {'name': 'pressure', 'id': 0x08 'value': bme680.pressure / 100},
+                {'name': 'pressure', 'id': 0x08, 'value': bme680.pressure / 100},
                 {'name': 'house_tank', 'id': 0x09, 'value': house_tank.volume},
                 {'name': 'irrigation_tank', 'id': 0x0a, 'value': irrigation_tank.volume},
                 {'name': 'irrigation_pressure', 'id': 0x0b, 'value': irrigation_pressure.pressure},
