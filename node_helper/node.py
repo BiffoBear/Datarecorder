@@ -117,7 +117,7 @@ class Radio:
         self._status_led = StatusLed(led_pin)
         self._packet_id = 0x0000
         self._register = 0x0000
-        self._timer = None
+        self._timer = time.monotonic() - self._send_period - 1  # Timer is expired until reset
 
     def _led_on(self):
         self._status_led.on()
@@ -147,13 +147,13 @@ class Radio:
         self._rfm69.send(packet)
         self._led_off()
 
-    def update_register(self, *, bit=None, state=None):
+    def update_register(self, *, bit=None, status=None):
         """Set the index:th bit of self._register to 1 if state is True, else to 0."""
-        if 1 > bit > REGISTER_BITS:
+        if 0 > bit >= REGISTER_BITS:
             raise ValueError('Register index out of range.')
-        mask = 1 << (bit - 1)
+        mask = 0x01 << bit
         self._register &= ~mask  # Clear the bit indicated by the mask
-        if state:
+        if status:
             self._register |= mask  # If x was True, set the bit indicated by the mask.
 
     def send_data(self, sensor_data):

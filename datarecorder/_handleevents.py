@@ -14,8 +14,11 @@ from urllib.error import HTTPError
 
 logger = logging.getLogger(__name__)
 
+GATE_OPEN = 'https://biffo.synology.me:5001/webapi/entry.cgi?api=SYNO.SurveillanceStation.Webhook&method="Incoming"&version=1&token=BQdC2UYiqxqP0zEUZ9UXh3uvhPFZCqLls8YcRzk1o5TFj6mx9FFPzm9Tm7LUxwhH'
+GATE_CLOSE = 'https://biffo.synology.me:5001/webapi/entry.cgi?api=SYNO.SurveillanceStation.Webhook&method="Incoming"&version=1&token=A0Wngnir5CqVDnS8M1fDIgWTZviD2FjrJ2caEJZImqjXHqOGuZQz14OOOcn2wFXH'
 event_queue = queue.Queue()
-event_actions = {0x05: {0x00: {"url": "http://google.com", "delay": 0}}}
+event_actions = {0x05: {0x00: {"url": GATE_OPEN, "delay": 0},
+                        0X01: {"url": GATE_CLOSE, "delay": 0}}}
 
 
 def _decode_register(register):
@@ -46,7 +49,9 @@ def read_event_queue_handle_event():
         try:
             event_action = event_actions[node_id][event]
             if event_action["delay"]:
+                logger.debug("delaying...")
                 time.sleep(event_action["delay"])
+                logger.debug("continuing...")
             with urllib.request.urlopen(event_action["url"]) as response:
                 if response.status != 200:
                     raise HTTPError("Bad response from server")
