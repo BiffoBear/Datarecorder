@@ -113,12 +113,12 @@ class TestIrqCallbackFunc(TestCase):
         _dataprocessing.radio_q.put.assert_called_once_with('Hello World!')
 
 
-@patch('datarecorder._oleddisplay.init_display_thread')
-@patch('datarecorder.main.initialize_gpio_interrupt')
-@patch('datarecorder.main.initialize_rfm69')
-@patch('datarecorder.main.initialize_processing_thread')
-@patch('datarecorder.main.initialize_database')
-@patch('datarecorder.main.initialize_logging')
+@patch('Datarecorder.datarecorder._oleddisplay.init_display_thread')
+@patch('Datarecorder.datarecorder.main.initialize_gpio_interrupt')
+@patch('Datarecorder.datarecorder.main.initialize_rfm69')
+@patch('Datarecorder.datarecorder.main.initialize_processing_thread')
+@patch('Datarecorder.datarecorder.main.initialize_database')
+@patch('Datarecorder.datarecorder.main.initialize_logging')
 class TestStartUpFunc(TestCase):
 
     def test_start_up_calls_all_init_functions(self, mock_init_logging,
