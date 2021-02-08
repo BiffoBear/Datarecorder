@@ -128,6 +128,7 @@ class TestStartUpFunc(TestCase):
                                                mock_init_irq,
                                                mock_init_display_thread,
                                                ):
+        print(mock_init_db)
         main.start_up(db_url='Fake_URL', pi_irq_pin=6)
         mock_init_logging.assert_called_once()
         mock_init_logging.assert_called_once_with(FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL)

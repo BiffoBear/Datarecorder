@@ -21,7 +21,7 @@ class ConfirmDatabaseSetup(TestCase):
         self.required_tables_and_columns = {'Sensor Readings': ['ID', 'Timestamp_UTC', 'Sensor_ID', 'Reading', ],
                                             'Sensors': ['ID', 'Node_ID', 'Quantity', 'Name', ],
                                             'Nodes': ['ID', 'Name', 'Location', ],
-                                            }
+                                            'Events': {'ID',  'Timestamp_UTC', 'Node_ID', 'Event_Code'}}
         unittest_helper.initialize_database()
         self.inspector = inspect(database.engine)
 

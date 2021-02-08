@@ -7,20 +7,14 @@ from database import database
 from __config__ import DB_URL
 
 
-def _high_lite_existing_things(thing, existing_things):
-    if thing in existing_things:
-        return f'\x1b[0;32m{thing:02x} \x1b[0m'  # Bold text
-    return f'{thing:02x} '  # Dim text
-
-
 def _layout_existing_things(thing_name=None, existing_things=None):
     if not existing_things:
-        return f'No existing {thing_name}s in database'
-    print_items = [f'\x1b[1mExisting {thing_name.title()}s\x1b[0m\n']
-    for i in range(255):
-        if i % 16 == 0:
+        return f"No existing {thing_name}s in database"
+    print_items = [f"Existing {thing_name.title()}s\n"]
+    for index, thing in enumerate(existing_things):
+        if index % 16 == 0:
             print_items.append('\n')
-        print_items.append(_high_lite_existing_things(i, existing_things))
+        print_items.append(f"{thing:02x} ")
     print_items.append('\n\n')
     string_to_print = ''.join(print_items)
     return string_to_print
