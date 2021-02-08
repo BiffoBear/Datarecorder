@@ -73,7 +73,7 @@ def packet_missing_or_duplicate(node_data):
         )
         _oleddisplay.write_message_to_queue(f"First data node 0x{node_id:02x}")
         _oleddisplay.write_message_to_queue(
-            f"Rx {node_id:02x} sn 0x{new_packet_serial_number:04x}"
+            f"Rx 0x{node_id:02x} sn 0x{new_packet_serial_number:04x}"
         )
         last_packet_info[node_id] = {
             "pkt_serial": new_packet_serial_number,
@@ -98,7 +98,7 @@ def packet_missing_or_duplicate(node_data):
             new_packet_serial_number,
         )
         _oleddisplay.write_message_to_queue(
-            f"Rx 0x{node_id:02x} " "sn 0x{new_packet_serial_number:04x}"
+            f"Rx 0x{node_id:02x} sn 0x{new_packet_serial_number:04x}"
         )
         return False
     return True
