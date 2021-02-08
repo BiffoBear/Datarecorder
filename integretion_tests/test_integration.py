@@ -1,14 +1,14 @@
 from unittest import TestCase
 from unittest.mock import Mock, patch
 from database import database
-from tests import unittest_helper
+from tests import conftest
 from commandline.commandlinetools import setup_node_argparse, setup_sensor_argparse
 
 
 class IntegrationTesting(TestCase):
 
     def setUp(self):
-        unittest_helper.initialize_database(db_in_memory=True)
+        conftest.initialize_database(db_in_memory=True)
 
     def tearDown(self):
         database.engine.dispose()
@@ -17,7 +17,7 @@ class IntegrationTesting(TestCase):
         node_parser = setup_node_argparse()
         args = node_parser.parse_args(['add', '1', 'Test Node Name', 'Some location'])
         args.func(args)
-        self.assertEqual(1, unittest_helper.count_all_node_records())
+        self.assertEqual(1, conftest.count_all_node_records())
 
     def test_user_adds_a_sensor_with_correct_input_data(self):
         node_parser = setup_node_argparse()
@@ -26,7 +26,7 @@ class IntegrationTesting(TestCase):
         sensor_parser = setup_sensor_argparse()
         args = sensor_parser.parse_args(['add', '2', '3', 'Test Sensor Name', 'Mass'])
         args.func(args)
-        self.assertEqual(1, unittest_helper.count_all_sensor_records())
+        self.assertEqual(1, conftest.count_all_sensor_records())
 
     @patch('builtins.print')
     def test_user_adds_two_correct_nodes_then_one_with_bad_data(self, mock_print):
@@ -35,7 +35,7 @@ class IntegrationTesting(TestCase):
         args.func(args)
         args = node_parser.parse_args(['add', '233', 'Test Node Name 2', 'Some location 2'])
         args.func(args)
-        self.assertEqual(2, unittest_helper.count_all_node_records())
+        self.assertEqual(2, conftest.count_all_node_records())
         # duplicate node ID
         args = node_parser.parse_args(['add', '233', 'Test Node Name 3', 'Some location 3'])
         args.func(args)
@@ -52,7 +52,7 @@ class IntegrationTesting(TestCase):
         args.func(args)
         args = sensor_parser.parse_args(['add', '2', '3', 'Test Sensor Name 2', 'Length'])
         args.func(args)
-        self.assertEqual(2, unittest_helper.count_all_sensor_records())
+        self.assertEqual(2, conftest.count_all_sensor_records())
         # duplicate sensor ID
         args = sensor_parser.parse_args(['add', '2', '3', 'Test Sensor Name 3', 'Length'])
         args.func(args)

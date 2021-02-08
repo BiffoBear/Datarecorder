@@ -12,7 +12,7 @@ from sqlalchemy import inspect
 import sqlalchemy
 from sqlalchemy.orm.exc import NoResultFound
 from database import database
-from tests import unittest_helper
+from tests import conftest
 
 
 class ConfirmDatabaseSetup(TestCase):
@@ -22,7 +22,7 @@ class ConfirmDatabaseSetup(TestCase):
                                             'Sensors': ['ID', 'Node_ID', 'Quantity', 'Name', ],
                                             'Nodes': ['ID', 'Name', 'Location', ],
                                             'Events': {'ID',  'Timestamp_UTC', 'Node_ID', 'Event_Code'}}
-        unittest_helper.initialize_database()
+        conftest.initialize_database()
         self.inspector = inspect(database.engine)
 
     def tearDown(self):
@@ -55,13 +55,13 @@ class TestDataBaseInitialization(TestCase):
 class TestWriteSensorDataToDataBase(TestCase):
 
     def setUp(self):
-        unittest_helper.initialize_database()
+        conftest.initialize_database()
 
     def tearDown(self):
         database.engine.dispose()
 
     def test_write_sensor_data_to_database(self):
-        test_time = unittest_helper.global_test_time
+        test_time = conftest.global_test_time
         test_data = {'timestamp': test_time, 'sensor_readings': [(0x01, 1.2345), (0x02, 2.3456)]}
         database.write_sensor_reading_to_db(test_data)
         s = database.session()
@@ -82,7 +82,7 @@ def get_all_nodes():
 class TestAddNodeToDataBase(TestCase):
 
     def setUp(self):
-        unittest_helper.initialize_database()
+        conftest.initialize_database()
 
     def tearDown(self):
         database.engine.dispose()
@@ -183,7 +183,7 @@ def get_all_sensors():
 class TestAddSensorToDatabase(TestCase):
 
     def setUp(self):
-        unittest_helper.initialize_database()
+        conftest.initialize_database()
 
     def tearDown(self):
         database.engine.dispose()
@@ -242,7 +242,7 @@ class TestAddSensorToDatabase(TestCase):
 class TestReadFromDatabaseFunctions(TestCase):
 
     def setUp(self):
-        unittest_helper.initialize_database()
+        conftest.initialize_database()
 
     def tearDown(self):
         database.engine.dispose()
