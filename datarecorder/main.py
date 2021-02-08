@@ -102,7 +102,7 @@ def start_up(
     initialize_gpio_interrupt(pi_irq_pin)
     _oleddisplay.init_display_thread()
     _handleevents.init_event_thread()
-    
+
     rfm69.listen()
     logger.info("Listening for radio data…")
     return rfm69

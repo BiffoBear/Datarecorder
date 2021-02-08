@@ -6,7 +6,6 @@ from commandline.commandlinetools import setup_node_argparse, setup_sensor_argpa
 
 
 class IntegrationTesting(TestCase):
-
     def setUp(self):
         conftest.initialize_database(db_in_memory=True)
 
@@ -15,76 +14,92 @@ class IntegrationTesting(TestCase):
 
     def test_user_adds_a_node_with_correct_input_data(self):
         node_parser = setup_node_argparse()
-        args = node_parser.parse_args(['add', '1', 'Test Node Name', 'Some location'])
+        args = node_parser.parse_args(["add", "1", "Test Node Name", "Some location"])
         args.func(args)
         self.assertEqual(1, conftest.count_all_node_records())
 
     def test_user_adds_a_sensor_with_correct_input_data(self):
         node_parser = setup_node_argparse()
-        args = node_parser.parse_args(['add', '3', 'Test Node Name', 'Some location'])
+        args = node_parser.parse_args(["add", "3", "Test Node Name", "Some location"])
         args.func(args)
         sensor_parser = setup_sensor_argparse()
-        args = sensor_parser.parse_args(['add', '2', '3', 'Test Sensor Name', 'Mass'])
+        args = sensor_parser.parse_args(["add", "2", "3", "Test Sensor Name", "Mass"])
         args.func(args)
         self.assertEqual(1, conftest.count_all_sensor_records())
 
-    @patch('builtins.print')
+    @patch("builtins.print")
     def test_user_adds_two_correct_nodes_then_one_with_bad_data(self, mock_print):
         node_parser = setup_node_argparse()
-        args = node_parser.parse_args(['add', '1', 'Test Node Name', 'Some location'])
+        args = node_parser.parse_args(["add", "1", "Test Node Name", "Some location"])
         args.func(args)
-        args = node_parser.parse_args(['add', '233', 'Test Node Name 2', 'Some location 2'])
+        args = node_parser.parse_args(
+            ["add", "233", "Test Node Name 2", "Some location 2"]
+        )
         args.func(args)
         self.assertEqual(2, conftest.count_all_node_records())
         # duplicate node ID
-        args = node_parser.parse_args(['add', '233', 'Test Node Name 3', 'Some location 3'])
+        args = node_parser.parse_args(
+            ["add", "233", "Test Node Name 3", "Some location 3"]
+        )
         args.func(args)
-        mock_print.assert_called_with('Unable to create node ID 0xe9 -- Record not created, node ID and name must be '
-                                      'unique\n')
+        mock_print.assert_called_with(
+            "Unable to create node ID 0xe9 -- Record not created, node ID and name must be "
+            "unique\n"
+        )
 
-    @patch('builtins.print')
+    @patch("builtins.print")
     def test_user_adds_two_correct_sensors_then_one_with_bad_data(self, mock_print):
         node_parser = setup_node_argparse()
-        args = node_parser.parse_args(['add', '3', 'Test Node Name', 'Some location'])
+        args = node_parser.parse_args(["add", "3", "Test Node Name", "Some location"])
         args.func(args)
         sensor_parser = setup_sensor_argparse()
-        args = sensor_parser.parse_args(['add', '24', '3', 'Test Sensor Name', 'Mass'])
+        args = sensor_parser.parse_args(["add", "24", "3", "Test Sensor Name", "Mass"])
         args.func(args)
-        args = sensor_parser.parse_args(['add', '2', '3', 'Test Sensor Name 2', 'Length'])
+        args = sensor_parser.parse_args(
+            ["add", "2", "3", "Test Sensor Name 2", "Length"]
+        )
         args.func(args)
         self.assertEqual(2, conftest.count_all_sensor_records())
         # duplicate sensor ID
-        args = sensor_parser.parse_args(['add', '2', '3', 'Test Sensor Name 3', 'Length'])
+        args = sensor_parser.parse_args(
+            ["add", "2", "3", "Test Sensor Name 3", "Length"]
+        )
         args.func(args)
-        mock_print.assert_called_with('Unable to create sensor ID 0x02 -- Record not created, Sensor ID and name must '
-                                      'be unique\n')
+        mock_print.assert_called_with(
+            "Unable to create sensor ID 0x02 -- Record not created, Sensor ID and name must "
+            "be unique\n"
+        )
 
-    @patch('builtins.print')
+    @patch("builtins.print")
     def test_show_details_for_node(self, mock_print):
         node_parser = setup_node_argparse()
-        args = node_parser.parse_args(['add', '3', 'Test Node Name', 'Some location'])
+        args = node_parser.parse_args(["add", "3", "Test Node Name", "Some location"])
         args.func(args)
-        args = node_parser.parse_args(['show', '3'])
+        args = node_parser.parse_args(["show", "3"])
         args.func(args)
-        mock_print.assert_called_with('Details for node ID 3:\n\nNode_ID -- 0x03\nName -- Test Node Name\nLocation -- '
-                                      'Some location\n\n')
+        mock_print.assert_called_with(
+            "Details for node ID 3:\n\nNode_ID -- 0x03\nName -- Test Node Name\nLocation -- "
+            "Some location\n\n"
+        )
 
-    @patch('builtins.print')
+    @patch("builtins.print")
     def test_show_details_for_sensors(self, mock_print):
         node_parser = setup_node_argparse()
-        args = node_parser.parse_args(['add', '3', 'Test Node Name', 'Some location'])
+        args = node_parser.parse_args(["add", "3", "Test Node Name", "Some location"])
         args.func(args)
         sensor_parser = setup_sensor_argparse()
-        args = sensor_parser.parse_args(['add', '24', '3', 'Test Sensor Name', 'Mass'])
+        args = sensor_parser.parse_args(["add", "24", "3", "Test Sensor Name", "Mass"])
         args.func(args)
-        args = sensor_parser.parse_args(['show', '24'])
+        args = sensor_parser.parse_args(["show", "24"])
         args.func(args)
-        mock_print.assert_called_with('Details for sensor ID 24:\n\nSensor_ID -- 0x18\nNode_ID -- 0x03\nName -- Test '
-                                      'Sensor Name\nQuantity -- Mass\n\n')
+        mock_print.assert_called_with(
+            "Details for sensor ID 24:\n\nSensor_ID -- 0x18\nNode_ID -- 0x03\nName -- Test "
+            "Sensor Name\nQuantity -- Mass\n\n"
+        )
 
-    @patch('builtins.print')
+    @patch("builtins.print")
     def test_list_for_nodes(self, mock_print):
-        expected_result = '''[1mExisting Sensors[0m
+        expected_result = """[1mExisting Sensors[0m
 
 [90m00 [0m[1m01 [0m[90m02 [0m[90m03 [0m[90m04 [0m[1m05 [0m[90m06 [0m[90m07 [0m[90m08 [0m[90m09 [0m\
 [90m0a [0m[90m0b [0m[90m0c [0m[90m0d [0m[90m0e [0m[90m0f [0m
@@ -119,24 +134,28 @@ class IntegrationTesting(TestCase):
 [90mf0 [0m[90mf1 [0m[90mf2 [0m[90mf3 [0m[90mf4 [0m[90mf5 [0m[90mf6 [0m[90mf7 [0m[90mf8 [0m[90mf9 \
 [0m[90mfa [0m[90mfb [0m[90mfc [0m[90mfd [0m[90mfe [0m
 
-'''
+"""
         node_parser = setup_node_argparse()
-        args = node_parser.parse_args(['add', '1', 'Test Node Name', 'Some location'])
+        args = node_parser.parse_args(["add", "1", "Test Node Name", "Some location"])
         args.func(args)
-        args = node_parser.parse_args(['add', '5', 'Test Node Name 2', 'Some location 2'])
+        args = node_parser.parse_args(
+            ["add", "5", "Test Node Name 2", "Some location 2"]
+        )
         args.func(args)
-        args = node_parser.parse_args(['list'])
+        args = node_parser.parse_args(["list"])
         args.func(args)
-        mock_print.called_with('abc')
+        mock_print.called_with("abc")
 
-    @patch('builtins.print')
+    @patch("builtins.print")
     def test_list_for_sensors(self, mock_print):
         node_parser = setup_node_argparse()
-        args = node_parser.parse_args(['add', '1', 'Test Node Name', 'Some location'])
+        args = node_parser.parse_args(["add", "1", "Test Node Name", "Some location"])
         args.func(args)
         sensor_parser = setup_sensor_argparse()
-        args = sensor_parser.parse_args(['add', '1', '1', 'Test Sensor Name', 'Mass'])
+        args = sensor_parser.parse_args(["add", "1", "1", "Test Sensor Name", "Mass"])
         args.func(args)
-        args = sensor_parser.parse_args(['list'])
+        args = sensor_parser.parse_args(["list"])
         args.func(args)
-        mock_print.call_args.contains('[1mExistimg Sensors[0m\n\n[90m00 [0m[1m01 [0m[90m02 [0m[90m03 [0m[90m04')
+        mock_print.call_args.contains(
+            "[1mExistimg Sensors[0m\n\n[90m00 [0m[1m01 [0m[90m02 [0m[90m03 [0m[90m04"
+        )

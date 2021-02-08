@@ -20,21 +20,21 @@ import board
 import digitalio
 import adafruit_rfm69 as rfm_69
 
-ENCRYPTION_KEY = b'\x16UT\xb6\x92FHaE\xb5B\xde\xbclYs'
-DATA_FORMAT = '>BBHHBBBfBfBfBfBfBfBfBfBfBf'
+ENCRYPTION_KEY = b"\x16UT\xb6\x92FHaE\xb5B\xde\xbclYs"
+DATA_FORMAT = ">BBHHBBBfBfBfBfBfBfBfBfBfBf"
 REGISTER_BITS = 16
 
 
 def _extract_data_from_dict(raw_dicts):
     """Takes sensor id and values from a dict."""
-    list_of_lists = [[item['id'], float(item['value'])] for item in raw_dicts]
+    list_of_lists = [[item["id"], float(item["value"])] for item in raw_dicts]
     return list_of_lists
 
 
 def _pad_data(extracted_data):
     """Extends a list to contain ten items."""
     for x in range(10 - len(extracted_data)):
-        extracted_data.append([0xff, 0.0])
+        extracted_data.append([0xFF, 0.0])
     return extracted_data
 
 
@@ -62,7 +62,7 @@ def _append_crc(data_packet):
     """Appends the 16 bit CRC to the end of the datapacket."""
     crc = _crc16(data_packet)
     data_packet += bytes([crc >> 8])  # high byte
-    data_packet += bytes([crc & 0xff])  # low byte
+    data_packet += bytes([crc & 0xFF])  # low byte
     return bytes(data_packet)
 
 
@@ -106,8 +106,15 @@ class Radio:
     """Creates an instance of an RFM69 radio and provides methods to repeatedly
     send data via the radio."""
 
-    def __init__(self, *, cs_pin=None, reset_pin=None, led_pin=None,
-                 node_id=None, send_period=None):
+    def __init__(
+        self,
+        *,
+        cs_pin=None,
+        reset_pin=None,
+        led_pin=None,
+        node_id=None,
+        send_period=None,
+    ):
         self._cs_pin = digitalio.DigitalInOut(cs_pin)
         self._reset_pin = digitalio.DigitalInOut(reset_pin)
         self._rfm69 = rfm_69.RFM69(board.SPI(), self._cs_pin, self._reset_pin, 433.0)
@@ -117,7 +124,9 @@ class Radio:
         self._status_led = StatusLed(led_pin)
         self._packet_id = 0x0000
         self._register = 0x0000
-        self._timer = time.monotonic() - self._send_period - 1  # Timer is expired until reset
+        self._timer = (
+            time.monotonic() - self._send_period - 1
+        )  # Timer is expired until reset
 
     def _led_on(self):
         self._status_led.on()
@@ -135,8 +144,14 @@ class Radio:
         extracted_data = _extract_data_from_dict(data)
         padded_data = _pad_data(extracted_data)
         flat_data = _flatten_list(padded_data)
-        data_packet = [self._node_id, self._node_id, self._packet_id % 65536,
-                       self._register, 0x00, 0x00]
+        data_packet = [
+            self._node_id,
+            self._node_id,
+            self._packet_id % 65536,
+            self._register,
+            0x00,
+            0x00,
+        ]
         data_packet.extend(flat_data)
         packed_data = struct.pack(DATA_FORMAT, *data_packet)
         prepped_data = _append_crc(packed_data)
@@ -150,7 +165,7 @@ class Radio:
     def update_register(self, *, bit=None, status=None):
         """Set the index:th bit of self._register to 1 if state is True, else to 0."""
         if 0 > bit >= REGISTER_BITS:
-            raise ValueError('Register index out of range.')
+            raise ValueError("Register index out of range.")
         mask = 0x01 << bit
         self._register &= ~mask  # Clear the bit indicated by the mask
         if status:
@@ -162,7 +177,9 @@ class Radio:
         self._send_cycle(data_packet)
         time.sleep((self._node_id % 0x10) / 10 + random.random() * 0.1)
         self._send_cycle(data_packet)
-        print(f'Data packet 0x{self._packet_id:02x} sent from node 0x{self._node_id:02x}')
+        print(
+            f"Data packet 0x{self._packet_id:02x} sent from node 0x{self._node_id:02x}"
+        )
         self._increment_counter_with_wrap()
 
     def timer_reset(self):
@@ -185,5 +202,5 @@ class Radio:
 
     def initial_sleep(self):
         sleep_duration = self._node_id % 0x10 * random.random() + 1
-        print(f'Starting inital sleep of {sleep_duration} seconds...')
+        print(f"Starting inital sleep of {sleep_duration} seconds...")
         time.sleep(sleep_duration)

@@ -2,6 +2,7 @@
 # Required for all nodes.
 from node_helper import node
 import board
+
 # Specific to this node.
 import time
 import digitalio
@@ -13,8 +14,13 @@ LED_PIN = board.D13
 NODE_ID = 0x05
 SEND_PERIOD = 30  # seconds
 
-radio = node.Radio(cs_pin=CS_PIN, reset_pin=RESET_PIN, led_pin=LED_PIN,
-                         node_id=NODE_ID, send_period=SEND_PERIOD)
+radio = node.Radio(
+    cs_pin=CS_PIN,
+    reset_pin=RESET_PIN,
+    led_pin=LED_PIN,
+    node_id=NODE_ID,
+    send_period=SEND_PERIOD,
+)
 
 # Setup node specific sensors, etc.
 gate_open = digitalio.DigitalInOut(board.D4)
@@ -40,7 +46,12 @@ while True:
         radio.send_data([])
     elif not gate_is_open and gate_was_open:
         radio.timer_reset()
-    elif not gate_is_open and not gate_was_open and timer_is_expired and not timer_was_expired:
+    elif (
+        not gate_is_open
+        and not gate_was_open
+        and timer_is_expired
+        and not timer_was_expired
+    ):
         radio.update_register(bit=0, status=gate_is_open)
         radio.update_register(bit=1, status=not gate_is_open)
         radio.send_data([])
