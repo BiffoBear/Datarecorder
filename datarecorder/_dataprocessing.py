@@ -11,9 +11,9 @@ import queue
 from datetime import datetime
 import struct
 from database import database
-from helpers import radiohelper
+from helpers import radiohelper, oled_display
 from __config__ import FILE_DEBUG_LEVEL
-from . import oled_display, _handleevents
+from . import _handleevents
 
 radio_q = queue.Queue()
 

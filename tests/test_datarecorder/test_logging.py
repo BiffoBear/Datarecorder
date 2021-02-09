@@ -5,13 +5,13 @@ import pytest
 import pathlib
 import logging
 import queue
-from collections import deque
 import sqlalchemy
 import RPi.GPIO as rpigpio
-from tests import conftest
-from helpers import radiohelper
-from datarecorder import main, _dataprocessing, oled_display
 import database
+from collections import deque
+from tests import conftest
+from helpers import radiohelper, oled_display
+from datarecorder import main, _dataprocessing 
 from __config__ import FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 
 

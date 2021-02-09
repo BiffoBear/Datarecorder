@@ -11,7 +11,7 @@ import board
 import busio
 import adafruit_ssd1306
 import datarecorder
-from datarecorder import oled_display
+from helpers import oled_display
 from __config__ import DISPLAY_WIDTH, DISPLAY_HEIGHT
 
 
@@ -61,10 +61,10 @@ class TestDisplayHardwareSetup:
 
     def test_setup_hardware_returns_result_of_initialize_oled(self, mocker):
         _ = mocker.patch.object(
-            datarecorder.oled_display, "initialize_i2c", autospec=True
+            oled_display, "initialize_i2c", autospec=True
         )
         mock_initialize_oled = mocker.patch.object(
-            datarecorder.oled_display, "initialize_oled", autospec=True
+            oled_display, "initialize_oled", autospec=True
         )
         mock_initialize_oled.return_value = "dummy oled"
         assert "dummy oled" == oled_display.setup_hardware_oled()
@@ -73,7 +73,7 @@ class TestDisplayHardwareSetup:
 class TestTextImageWriting:
     def test_setup_display_dict_returns_dictionary_object(self, mocker):
         mock_setup_hardware_oled = mocker.patch.object(
-            datarecorder.oled_display, "setup_hardware_oled", autospec=True
+            oled_display, "setup_hardware_oled", autospec=True
         )
         mock_setup_hardware_oled.return_value = "dummy oled"
         returned_result = oled_display.setup_display_dict()
@@ -125,16 +125,16 @@ class TestTextImageWriting:
 class TestTextDeliveryAndLayout:
     def test_add_screen_line_maintains_max_5_item_fifo_queue(self, mocker):
         _1 = mocker.patch.object(
-            datarecorder.oled_display, "setup_hardware_oled", autospec=True
+            oled_display, "setup_hardware_oled", autospec=True
         )
         _2 = mocker.patch.object(
-            datarecorder.oled_display, "clear_display", autospec=True
+            oled_display, "clear_display", autospec=True
         )
         _3 = mocker.patch.object(
-            datarecorder.oled_display, "show_display", autospec=True
+            oled_display, "show_display", autospec=True
         )
         _4 = mocker.patch.object(
-            datarecorder.oled_display, "write_text_to_display", autospec=True
+            oled_display, "write_text_to_display", autospec=True
         )
         dummy_display = {"lines": deque([])}
         expected_result = deque([])
@@ -153,16 +153,16 @@ class TestTextDeliveryAndLayout:
 
     def test_lines_are_drawn_at_correct_coordinates(self, mocker):
         _1 = mocker.patch.object(
-            datarecorder.oled_display, "setup_hardware_oled", autospec=True
+            oled_display, "setup_hardware_oled", autospec=True
         )
         mock_clear_display = mocker.patch.object(
-            datarecorder.oled_display, "clear_display", autospec=True
+            oled_display, "clear_display", autospec=True
         )
         _3 = mocker.patch.object(
-            datarecorder.oled_display, "show_display", autospec=True
+            oled_display, "show_display", autospec=True
         )
         mock_write_text_to_display = mocker.patch.object(
-            datarecorder.oled_display, "write_text_to_display", autospec=True
+            oled_display, "write_text_to_display", autospec=True
         )
         dummy_display = {
             "lines": deque(["0 Line", "1 Line", "2 Line", "3 Line", "4 Line"])
@@ -181,16 +181,16 @@ class TestTextDeliveryAndLayout:
 
     def test_draw_lines_calls_clear_display(self, mocker):
         _1 = mocker.patch.object(
-            datarecorder.oled_display, "setup_hardware_oled", autospec=True
+            oled_display, "setup_hardware_oled", autospec=True
         )
         mock_clear_display = mocker.patch.object(
-            datarecorder.oled_display, "clear_display", autospec=True
+            oled_display, "clear_display", autospec=True
         )
         mock_show_display = mocker.patch.object(
-            datarecorder.oled_display, "show_display", autospec=True
+            oled_display, "show_display", autospec=True
         )
         _4 = mocker.patch.object(
-            datarecorder.oled_display, "write_text_to_display", autospec=True
+            oled_display, "write_text_to_display", autospec=True
         )
         test_display = oled_display.setup_display_dict()
         test_display["lines"] = deque(["Test text"])
@@ -208,10 +208,10 @@ class TestTextDeliveryAndLayout:
 class TestDataFlow:
     def test_display_message_from_queue_calls_draw_lines_if_oled_not_None(self, mocker):
         mock_draw_lines = mocker.patch.object(
-            datarecorder.oled_display, "draw_lines", autospec=True
+            oled_display, "draw_lines", autospec=True
         )
         mock_message_queue = mocker.patch.object(
-            datarecorder.oled_display, "message_queue", autospec=True
+            oled_display, "message_queue", autospec=True
         )
         mock_message_queue.get.return_value = "dummy text"
         dummy_display = {"oled": "dummy display", "lines": deque([])}
@@ -224,10 +224,10 @@ class TestDataFlow:
         self, mocker
     ):
         mock_draw_lines = mocker.patch.object(
-            datarecorder.oled_display, "draw_lines", autospec=True
+            oled_display, "draw_lines", autospec=True
         )
         mock_message_queue = mocker.patch.object(
-            datarecorder.oled_display, "message_queue", autospec=True
+            oled_display, "message_queue", autospec=True
         )
         mock_message_queue.get.return_value = "dummy text"
         display = {"oled": None, "lines": deque([])}
@@ -241,7 +241,7 @@ class TestDataFlow:
         mocker,
     ):
         mock_draw_lines = mocker.patch.object(
-            datarecorder.oled_display, "draw_lines", autospec=True
+            oled_display, "draw_lines", autospec=True
         )
         oled_display.message_queue.put_nowait("dummy data")
         display = {"oled": "dummy display", "lines": deque(["test_lines"])}
@@ -253,10 +253,10 @@ class TestDataFlow:
         self, mocker
     ):
         mock_add_screen_line = mocker.patch.object(
-            datarecorder.oled_display, "add_screen_line", autospec=True
+            oled_display, "add_screen_line", autospec=True
         )
         mock_message_queue = mocker.patch.object(
-            datarecorder.oled_display, "message_queue", autospec=True
+            oled_display, "message_queue", autospec=True
         )
         mock_message_queue.get.side_effect = [queue.Empty]
         display = {"oled": "dummy display", "lines": deque(["test_lines"])}
@@ -267,13 +267,13 @@ class TestDataFlow:
     @pytest.mark.skip(reason="Weird TypeError raised in assert.")
     def test_display_is_passed_up_and_down_correctly(self, mocker):
         mock_show_display = mocker.patch.object(
-            datarecorder.oled_display, "show_display", autospec=True
+            oled_display, "show_display", autospec=True
         )
         mock_setup_hardware_oled = mocker.patch.object(
-            datarecorder.oled_display, "setup_hardware_oled", autospec=True
+            oled_display, "setup_hardware_oled", autospec=True
         )
         mock_write_text_to_display = mocker.patch.object(
-            datarecorder.oled_display, "show_display", autospec=True
+            oled_display, "show_display", autospec=True
         )
         mock_setup_hardware_oled.return_value = "dummy display"
         mock_write_text_to_display.return_value = "write_text_to_display"
@@ -288,13 +288,13 @@ class TestInitAndThreadingCalls:
     def test_setup_called_and_thread_called_and_started_as_daemon(self, mocker):
         mock_threading = mocker.patch.object(threading, "Thread", autospec=True)
         mock_loop_read_message_queue = mocker.patch.object(
-            datarecorder.oled_display, "loop_read_message_queue", autospec=True
+            oled_display, "loop_read_message_queue", autospec=True
         )
         mock_setup_display_dict = mocker.patch.object(
-            datarecorder.oled_display, "setup_display_dict", autospec=True
+            oled_display, "setup_display_dict", autospec=True
         )
         mock_setup_hardware_oled = mocker.patch.object(
-            datarecorder.oled_display, "setup_hardware_oled", autospec=True
+            oled_display, "setup_hardware_oled", autospec=True
         )
         mock_setup_hardware_oled.return_value = "dummy display"
         mock_setup_display_dict.return_value = "x"
@@ -318,13 +318,13 @@ class TestInitAndThreadingCalls:
 
     def test_shut_down_calls_message_queue_join_and_clear_display(self, mocker):
         mock_show_display = mocker.patch.object(
-            datarecorder.oled_display, "show_display", autospec=True
+            oled_display, "show_display", autospec=True
         )
         mock_clear_display = mocker.patch.object(
-            datarecorder.oled_display, "clear_display", autospec=True
+            oled_display, "clear_display", autospec=True
         )
         mock_message_queue = mocker.patch.object(
-            datarecorder.oled_display, "message_queue"
+            oled_display, "message_queue"
         )
         oled_display.shut_down()
         mock_message_queue.join.assert_called_once()
