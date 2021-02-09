@@ -42,7 +42,6 @@ class TestMainLoggingCalls:
         #     main.rfm69_callback(mock_irq)
         # self.assertIn('rfm69_callback called', lm.output[0])
 
-    @pytest.mark.skip(reason="Need to handle assert raises.")
     def test_initialize_rfm69(self, mocker, caplog):
         mock_rfm69 = mocker.patch.object(adafruit_rfm69, "RFM69", autospec=True)
         mock_rfm69.side_effect = [Mock(), RuntimeError]
@@ -50,7 +49,7 @@ class TestMainLoggingCalls:
             main.initialize_rfm69()
         assert "RFM69 radio initialized successfully" in caplog.text
         with caplog.at_level(logging.CRITICAL, logger='Datarecorder.datarecorder.main'):
-            with self.assertRaises(RuntimeError):
+            with pytest.raises(RuntimeError) as error:
                 main.initialize_rfm69()
         assert "RFM69 radio failed to initialize with RuntimeError" in caplog.text
 
@@ -77,18 +76,16 @@ class TestMainLoggingCalls:
 
 class TestDatabase:
     
-    @pytest.mark.skip(reason="Need to handle assert raises.")
-    def test_initialize_database(self):
-        database.database.engine.dispose()
+    def test_initialize_database(self, caplog):
         with caplog.at_level(logging.INFO, logger="Datarecorder.datarecorder.database"):
-            database.database.initialize_database("sqlite://")
+            database.initialize_database("sqlite://")
         assert "Database initialized" in caplog.text
-        database.database.engine.dispose()
         with caplog.at_level(logging.CRITICAL, logger="Datarecorder.datarecorder.database"):
-            with self.assertLogs(level="CRITICAL") as cm:
-                database.database.initialize_database("")
-        assert"Database initialization failed:" in caplog.text
-        database.database.engine.dispose()
+            try:
+                database.initialize_database("")
+            except:
+                pass
+        assert"Database initialization failed:" in caplog.text        
 
 
 class TestDataProcessing:
