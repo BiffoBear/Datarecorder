@@ -114,7 +114,7 @@ def draw_lines(display=None):
 def display_message_from_queue(display=None):
     """Take a message from the queue and write it to the display."""
     logger.debug("display_message_from_queue called")
-    global message_queue  # pylint: disable=invalid-name
+    global message_queue
     try:
         text = message_queue.get()
         display = add_screen_line(display=display, text=text)
