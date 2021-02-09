@@ -3,7 +3,7 @@
 
 from unittest import TestCase
 import struct
-from Datarecorder.radiohelper import radiohelper
+from Datarecorder.helpers import radiohelper
 
 RX_DATA_BAD_CRC = (
     b"\r\n\n\n\xf0\xf0\xaa\xbb\x00=\xfc\xb9$\x01?\x9e\x04\x19\x02@\x16"

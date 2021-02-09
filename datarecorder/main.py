@@ -14,7 +14,7 @@ import RPi.GPIO as rpigpio
 import adafruit_rfm69
 from database import database
 from __config__ import RFM69_INTERRUPT_PIN, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
-from radiohelper.radiohelper import RFM69_ENCRYPTION_KEY
+from helpers.radiohelper import RFM69_ENCRYPTION_KEY
 from . import _oleddisplay, _dataprocessing, _handleevents
 
 logger = logging.getLogger(__name__)

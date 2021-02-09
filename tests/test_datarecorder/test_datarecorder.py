@@ -22,7 +22,7 @@ from __config__ import (
     FILE_DEBUG_LEVEL,
     CONSOLE_DEBUG_LEVEL,
 )
-from Datarecorder.radiohelper.radiohelper import RFM69_ENCRYPTION_KEY
+from Datarecorder.helpers.radiohelper import RFM69_ENCRYPTION_KEY
 
 
 class TestInterruptSetup(TestCase):
