@@ -1,0 +1,195 @@
+# Setup Raspberry Pi for house monitor role.
+
+# Burn Raspberry Pi OS Lite to SD card
+
+# Open Mac Terminal
+
+touch /volumes/boot/ssh
+
+# Install SD card in Raspberry Pi and start up
+
+# SSH into Raspberry Pi. Default password raspberry
+
+ssh pi@raspberrypi.local
+
+# Change password
+
+passwd 
+
+# Change hostname to datarecorder with raspi-config and reboot
+
+sudo raspi-config
+sudo reboot
+
+# Copy ssh public key to Raspberry Pi and login
+
+ssh-copy-id pi@datarecorder.local
+ssh pi@datarecorder.local
+
+# Upgrade system
+
+sudo apt-get update
+sudo apt-get upgrade
+
+# Install pip3
+
+sudo apt-get install -y python3-pip
+
+# Run Adafruit Blinka setup script
+
+cd ~
+sudo pip3 install --upgrade adafruit-python-shell
+wget https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/raspi-blinka.py
+sudo python3 raspi-blinka.py
+
+
+# Setup RTC
+
+# Check that 0x68 is on the I2C bus
+
+sudo i2cdetect -y 1
+
+# Add device tree overlay
+
+sudo nano /boot/config.txt
+
+# append following line to to end of file:
+dtoverlay=i2c-rtc,ds3231
+
+# Reboot and check for UU on I2C bus
+
+sudo reboot
+sudo i2cdetect -y 1
+
+# Remove fake hwclock
+
+sudo apt-get -y remove fake-hwclock
+sudo update-rc.d -f fake-hwclock remove
+sudo systemctl disable fake-hwclock
+
+# Edit the hwclock script
+
+sudo nano /lib/udev/hwclock-set
+
+# Comment out these lines:
+#if [ -e /run/systemd/system ] ; then
+# exit 0
+#fi
+#/sbin/hwclock --rtc=$dev --systz --badyear
+#/sbin/hwclock --rtc=$dev --systz
+
+# Check whether RTC has correct date and time
+
+sudo hwclock -r
+
+# If date time is wrong, connect to Internet and check pi date time
+
+date
+
+# Once that is correct, write to RTC and confirm
+
+sudo hwclock -w
+sudo hwclock -r
+
+# Setup Zero2go Omni with 12V PSU and 5V from battery
+
+# Manually update wiringpi
+
+wget https://project-downloads.drogon.net/wiringpi-latest.deb
+sudo dpkg -i wiringpi-latest.deb
+
+# Install software
+
+wget http://www.uugear.com/repo/Zero2GoOmini/installZero2Go.sh
+sudo sh installZero2Go.sh
+sudo reboot
+
+# Setup for UPS mode (with 12 V main supply and 5V from battery
+
+cd ~/zero2go
+bash ./zero2go.sh
+
+# 1. On
+# 2. 4 seconds
+# 3. 5 seconds
+# 4. 6 Volts
+# 5. 8 Volts
+# 6. Always on
+# These settings use the battery backup to shutdown the pi as soon as power is cut.
+
+# Tidy up
+
+rm installZero2Go.sh
+rm raspi-blinka.py
+rm -r wiringpi-latest.deb
+rm -r uwi
+
+# Install postgressql
+
+sudo apt-get install -y postgresql
+sudo su postgres
+createuser pi --interactive
+# Answer all questions n
+psql
+\password pi
+# Enter password taht will match __config__.py entry
+exit
+
+createdb housedata -O pi
+exit
+
+# Install software from github
+
+cd ~
+mkdir house-data
+cd house-data
+git clone https://github.com/BiffoBear/Datarecorder.git
+
+# Install PIL requirements
+
+sudo apt-get update
+sudo apt-get install libjpeg-dev -y
+sudo apt-get install zlib1g-dev -y
+sudo apt-get install libfreetype6-dev -y
+sudo apt-get install liblcms1-dev -y
+sudo apt-get install libopenjp2-7 -y
+sudo apt-get install libtiff5 -y
+
+# Install Python 3 venv
+
+sudo apt-get install -y python3-venv
+cd ~
+python3 -m venv --system-site-packages dr-env
+dr-env/bin/pip3 install -r house-data/Datarecorder/requirements.txt
+
+# Check that 0x3d is on the I2C bus
+
+sudo i2cdetect -y 1
+
+# Install daemontools
+
+sudo apt-get install -y daemontools daemontools-run
+
+# Check http://samliu.github.io/2017/01/10/daemontools-cheatsheet.html for instructions
+
+sudo mkdir /etc/service/datarecorder
+
+sudo nano /etc/service/datarecorder/run
+
+# Add these lines to the file and save
+
+#!/bin/bash
+cd /home/pi/house-data/Datarecorder
+exec sudo -u pi /home/pi/dr-env/bin/python3 /home/pi/house-data/Datarecorder/recorddata.py
+
+# Change permissions (service launches automatically)
+sudo chmod u+x /etc/service/datarecorder/run
+
+# svc seems to use relative paths so best used from the /etc/service directory.
+cd /etc/service
+
+# Kill a daemon and don't restart it.
+sudo svc -k myservice
+
+# Start a daemon.
+sudo svc -u myservice
