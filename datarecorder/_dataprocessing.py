@@ -47,8 +47,8 @@ def expand_radio_data_into_dict(data):
     }
     zipped_sensor_readings = list(
         zip(
-            readings[radiohelper.sensor_offset :: 2],
-            readings[radiohelper.sensor_offset + 1 :: 2],
+            readings[radiohelper.SENSOR_OFFSET :: 2],
+            readings[radiohelper.SENSOR_OFFSET + 1 :: 2],
         )
     )
     munged_data["sensors"]["sensor_readings"] = [
@@ -81,7 +81,7 @@ def packet_missing_or_duplicate(node_data):
         }
         return False
     if new_packet_serial_number != old_packet_serial_number:
-        if new_packet_serial_number != radiohelper.Increment_with_wrap(
+        if new_packet_serial_number != radiohelper.increment_with_wrap(
             old_packet_serial_number
         ):
             logger.warning("Data packet missing from node 0x%2.2x", node_id)

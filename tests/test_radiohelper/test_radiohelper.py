@@ -53,23 +53,23 @@ def split_crc_result_into_bytes(crc_result):
 
 
 class TestIncrementNumber(TestCase):
-    def test_Increment_with_wrap_increments(self):
-        self.assertEqual(0x02, radiohelper.Increment_with_wrap(0x01))
+    def test_increment_with_wrap_increments(self):
+        self.assertEqual(0x02, radiohelper.increment_with_wrap(0x01))
 
-    def test_Increment_with_wrap_wraps(self):
-        self.assertEqual(0x00, radiohelper.Increment_with_wrap(0xFFFF))
+    def test_increment_with_wrap_wraps(self):
+        self.assertEqual(0x00, radiohelper.increment_with_wrap(0xFFFF))
 
-    def test_Increment_with_wrap_raises_typeerror_if_number_not_number(self):
+    def test_increment_with_wrap_raises_typeerror_if_number_not_number(self):
         for incorrect_arg in ("x", []):
             with self.assertRaises(TypeError) as dm:
                 # noinspection PyTypeChecker
-                radiohelper.Increment_with_wrap(incorrect_arg)
+                radiohelper.increment_with_wrap(incorrect_arg)
             self.assertIn("number and wrap_at must be numbers", dm.exception.args)
 
-    def test_Increment_with_wrap_raises_typeerror_if_wrap_at_is_not_number(self):
+    def test_increment_with_wrap_raises_typeerror_if_wrap_at_is_not_number(self):
         for incorrect_arg in ("x", []):
             with self.assertRaises(TypeError) as dm:
-                radiohelper.Increment_with_wrap(1, wrap_at=incorrect_arg)
+                radiohelper.increment_with_wrap(1, wrap_at=incorrect_arg)
             self.assertIn("number and wrap_at must be numbers", dm.exception.args)
 
 
@@ -96,7 +96,7 @@ class TestDecodeData(TestCase):
     def test_data_format_string_is_valid(self):
         self.assertEqual(radiohelper.RADIO_DATA_FORMAT, CURRENT_DATA_STRUCT_FORMAT)
         self.assertLessEqual(
-            radiohelper.set_packet_length, radiohelper.MAX_PACKET_LENGTH
+            radiohelper.PACKET_LENGTH, radiohelper.MAX_PACKET_LENGTH
         )
         self.assertEqual(
             radiohelper.RADIO_DATA_FORMAT[0], ">"
@@ -104,8 +104,8 @@ class TestDecodeData(TestCase):
         self.assertEqual(
             radiohelper.RADIO_DATA_FORMAT[1:3], "BB"
         )  # first 2 bytes must be unsigned char
-        self.assertEqual(radiohelper.sensor_count, SENSOR_COUNT)
-        self.assertEqual(radiohelper.sensor_offset, FIRST_SENSOR_OFFSET)
+        self.assertEqual(radiohelper.SENSOR_COUNT, SENSOR_COUNT)
+        self.assertEqual(radiohelper.SENSOR_OFFSET, FIRST_SENSOR_OFFSET)
 
     def test_check_crc_returns_true_or_false(self):
         test_data = struct.pack(">HH", 0xAAAA, 0xBBBB)

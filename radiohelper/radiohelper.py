@@ -1,36 +1,31 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""A library of shared functions that are used by radio Rx and Tx scripts.
+"""A library of functions that are used by radio Rx scripts.
 
 Increment_with_wrap(serial_number, wrap_at=0x10000) -- increment and modulo a number
 crc16(data) -- return a 16 bit CRC for a byte object
 """
 
 
-# 60 (0x3c) bytes are available, limited by the radio specs. The last two bytes are for the CRC leaving 58 for data.
+# 60 (0x3c) bytes are available, limited by the radio specs.
 # STRUCT_FORMAT 7 status bytes, 10 sensor ID + float pairs and two bytes for error checking
 # Byte address    Code    Purpose
 # 0x00            B       Node ID of Tx node
-# 0x01            B       Tx node ID repeat (compared with byte 0x00 if CRC fails, gives confidence that ID is correct)
-# 0x02 - 03       H       Reserved for packet serial number
+# 0x01            B       Tx node ID repeat (If CRC fails and both ID's match, helps id the node)
+# 0x02 - 03       H       Packet serial number
 # 0x04 - 05       H       Status bits
 # 0x05 - 06       BB      Reserved
-# 0x07 - 3a       Bf      Pairs of unsigned integer for sensor ID and 4 byte floats for sensor readings
-# 0x3b - 3c               Not used in struct, 16 bit CRC is appended for Tx and stripped after Rx and CRC check
+# 0x07 - 3a       Bf      Pairs of unsigned int for sensor ID and 4 byte float for sensor reading
+# 0x3b - 3c               CRC. Not used in struct, 16 bit CRC is appended after struct created
 
 # sensor 0xff is sent as padding when no sensor exists and should not be recorded in the database.
 
 import struct
+import logging
+from __config__ import FILE_DEBUG_LEVEL
 
-try:
-    # Logging and __config__.py not used on micro-controllers so handle the error
-    from __config__ import FILE_DEBUG_LEVEL
-    import logging
-
-    logger = logging.getLogger(__name__)
-    logger.setLevel(FILE_DEBUG_LEVEL)
-except ModuleNotFoundError:
-    pass
+logger = logging.getLogger(__name__)
+logger.setLevel(FILE_DEBUG_LEVEL)
 
 RFM69_ENCRYPTION_KEY = b"\x16UT\xb6\x92FHaE\xb5B\xde\xbclYs"
 # RFM69_ENCRYPTION_KEY = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
@@ -38,9 +33,9 @@ RADIO_DATA_FORMAT = ">BBHHBBBfBfBfBfBfBfBfBfBfBf"
 MAX_PACKET_LENGTH = (
     58  # Leaves two bytes for the CRC16 as RFM69 max packet size is 60 bytes
 )
-set_packet_length = struct.calcsize(RADIO_DATA_FORMAT)
-sensor_count = RADIO_DATA_FORMAT.count("f")
-sensor_offset = RADIO_DATA_FORMAT.find("Bf") - 1  # lists are zero indexed
+PACKET_LENGTH = struct.calcsize(RADIO_DATA_FORMAT)
+SENSOR_COUNT = RADIO_DATA_FORMAT.count("f")
+SENSOR_OFFSET = RADIO_DATA_FORMAT.find("Bf") - 1  # lists are zero indexed
 
 
 def _try_to_log(log_message):
@@ -91,7 +86,7 @@ def confirm_and_strip_crc(rx_packet):
     raise ValueError("Bad data packet")
 
 
-def Increment_with_wrap(number: int, wrap_at=0x10000):
+def increment_with_wrap(number: int, wrap_at=0x10000):
     """Increments an number and returns the modulo of the result.
 
     Arguments:
@@ -103,5 +98,5 @@ def Increment_with_wrap(number: int, wrap_at=0x10000):
     _try_to_log("Increment_with_wrap called")
     try:
         return (number + 1) % wrap_at
-    except (ValueError, TypeError) as e:
-        raise TypeError("number and wrap_at must be numbers") from e
+    except (ValueError, TypeError) as error:
+        raise TypeError("number and wrap_at must be numbers") from error

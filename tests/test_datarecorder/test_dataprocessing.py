@@ -52,7 +52,7 @@ class TestDataPrep(TestCase):
         sensor_data = data_returned["sensors"]["sensor_readings"]
         self.assertIsInstance(data_returned, dict)
         self.assertEqual(
-            len(sensor_data), radiohelper.sensor_count - 1
+            len(sensor_data), radiohelper.SENSOR_COUNT - 1
         )  # One sensor is 0xff, thus ignored
 
 
