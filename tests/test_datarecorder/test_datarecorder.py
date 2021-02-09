@@ -121,7 +121,7 @@ class TestIrqCallbackFunc(TestCase):
         _dataprocessing.radio_q.put.assert_called_once_with("Hello World!")
 
 
-@patch("Datarecorder.datarecorder._oleddisplay.init_display_thread")
+@patch("Datarecorder.datarecorder.oled_display.init_display_thread")
 @patch("Datarecorder.datarecorder.main.initialize_gpio_interrupt")
 @patch("Datarecorder.datarecorder.main.initialize_rfm69")
 @patch("Datarecorder.datarecorder.main.initialize_processing_thread")

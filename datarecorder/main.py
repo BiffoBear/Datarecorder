@@ -15,13 +15,14 @@ import adafruit_rfm69
 from database import database
 from __config__ import RFM69_INTERRUPT_PIN, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 from helpers.radiohelper import RFM69_ENCRYPTION_KEY
-from . import _oleddisplay, _dataprocessing, _handleevents
+from . import oled_display, _dataprocessing, _handleevents
 
 logger = logging.getLogger(__name__)
 logger.setLevel(FILE_DEBUG_LEVEL)
 
 # Required for rfm69_callback function, not a constant.
 radio = None  # pylint: disable=invalid-name
+
 
 # rfm69_irq required to enable irq callback on Raspberry Pi.
 def rfm69_callback(rfm69_irq):  # pylint: disable=unused-argument
@@ -71,7 +72,7 @@ def initialize_rfm69():
         rfm69 = adafruit_rfm69.RFM69(spi, cs_pin, reset, 433)
         rfm69.encryption_key = RFM69_ENCRYPTION_KEY
         logger.info("RFM69 radio initialized successfully")
-        _oleddisplay.write_message_to_queue("Radio initialized OK")
+        oled_display.write_message_to_queue("Radio initialized OK")
         return rfm69
     except RuntimeError as error:
         logger.critical("RFM69 radio failed to initialize with RuntimeError")
@@ -100,7 +101,7 @@ def start_up(
     initialize_processing_thread()
     rfm69 = initialize_rfm69()
     initialize_gpio_interrupt(pi_irq_pin)
-    _oleddisplay.init_display_thread()
+    oled_display.init_display_thread()
     _handleevents.init_event_thread()
 
     rfm69.listen()
@@ -115,4 +116,4 @@ def shut_down(pi_irq_pin=RFM69_INTERRUPT_PIN):
     rpigpio.remove_event_detect(pi_irq_pin)
     _dataprocessing.radio_q.join()
     _handleevents.event_queue.join()
-    _oleddisplay.shut_down()
+    oled_display.shut_down()

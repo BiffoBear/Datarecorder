@@ -10,7 +10,7 @@ import sqlalchemy
 import RPi.GPIO as rpigpio
 from tests import conftest
 from helpers import radiohelper
-from datarecorder import main, _dataprocessing, _oleddisplay
+from datarecorder import main, _dataprocessing, oled_display
 import database
 from __config__ import FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
 
