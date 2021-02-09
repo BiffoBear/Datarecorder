@@ -1,15 +1,22 @@
 # Version 1.0 2021-01-29
 
-# 60 (0x3c) bytes are available, limited by the radio specs. The last two bytes are for the CRC leaving 58 for data.
+"""A library of functions that are used by radio Tx scripts.
+
+Increment_with_wrap(serial_number, wrap_at=0x10000) -- increment and modulo a number
+crc16(data) -- return a 16 bit CRC for a byte object
+"""
+
+
+# 60 (0x3c) bytes are available, limited by the radio specs.
 # STRUCT_FORMAT 7 status bytes, 10 sensor ID + float pairs and two bytes for error checking
 # Byte address    Code    Purpose
 # 0x00            B       Node ID of Tx node
-# 0x01            B       Tx node ID repeat (compared with byte 0x00 if CRC fails, gives confidence that ID is correct)
-# 0x02 - 03       H       Reserved for packet serial number
+# 0x01            B       Tx node ID repeat (If CRC fails and both ID's match, helps id the node)
+# 0x02 - 03       H       Packet serial number
 # 0x04 - 05       H       Status bits
 # 0x05 - 06       BB      Reserved
-# 0x07 - 3a       Bf      Pairs of unsigned integer for sensor ID and 4 byte floats for sensor readings
-# 0x3b - 3c               Not used in struct, 16 bit CRC is appended for Tx and stripped after Rx and CRC check
+# 0x07 - 3a       Bf      Pairs of unsigned int for sensor ID and 4 byte float for sensor reading
+# 0x3b - 3c               CRC. Not used in struct, 16 bit CRC is appended after struct created
 
 # sensor 0xff is sent as padding when no sensor exists and should not be recorded in the database.
 
@@ -33,7 +40,7 @@ def _extract_data_from_dict(raw_dicts):
 
 def _pad_data(extracted_data):
     """Extends a list to contain ten items."""
-    for x in range(10 - len(extracted_data)):
+    for _ in range(10 - len(extracted_data)):
         extracted_data.append([0xFF, 0.0])
     return extracted_data
 
@@ -44,13 +51,14 @@ def _flatten_list(list_of_lists):
     return flat_list
 
 
-def _crc16(data):
-    """Takes a bytes object and calculates the CRC-16/CCITT-FALSE."""
+# TODO: Write a test to confirm these funcs are compatible with radiohelper.py
+def _crc16(bytes_data):
+    """Takes a bytes object and returns the CRC-16/CCITT-FALSE."""
     # Modified from a stackoverflow answer at https://stackoverflow.com/a/55850496/7969814
     crc = 0xFFFF
-    for i in range(len(data)):
-        crc ^= data[i] << 8
-        for j in range(0, 8):
+    for byte in bytes_data:
+        crc ^= byte << 8
+        for _ in range(8):
             if (crc & 0x8000) > 0:
                 crc = (crc << 1) ^ 0x1021
             else:
@@ -75,9 +83,12 @@ class StatusLed:
         self._led.direction = digitalio.Direction.OUTPUT
         self._led.value = False
 
+    # pylint: disable=invalid-name
     def on(self):
         """Turn on LED."""
         self._led.value = True
+
+    # pylint: enable=invalid-name
 
     def off(self):
         """Turn off LED."""
@@ -89,12 +100,13 @@ class StatusLed:
 
     def flash(self, *, flashes=1, hertz=5):
         """Flash the LED repeatedly."""
-        for flash in range(flashes * 2):
+        for _ in range(flashes * 2):
             self.invert()
             time.sleep(1 / (hertz * 2))
 
     @property
     def value(self):
+        """Current state of the LED."""
         return self._led.value
 
     @value.setter
@@ -129,9 +141,11 @@ class Radio:
         )  # Timer is expired until reset
 
     def _led_on(self):
+        """Switch on the radio status LED."""
         self._status_led.on()
 
     def _led_off(self):
+        """Switch off the radio status LED."""
         self._status_led.off()
 
     def _increment_counter_with_wrap(self):
@@ -158,6 +172,7 @@ class Radio:
         return prepped_data
 
     def _send_cycle(self, packet):
+        """One cycle of sending data and switching LED on and off."""
         self._led_on()
         self._rfm69.send(packet)
         self._led_off()
@@ -183,24 +198,29 @@ class Radio:
         self._increment_counter_with_wrap()
 
     def timer_reset(self):
+        """Reset the timer."""
         self._timer = time.monotonic()
 
     @property
     def timer_expired(self):
+        """Whether the timer has expired."""
         return time.monotonic() > self._timer + self._send_period
 
     @property
     def timer_remaining(self):
+        """Remaining time before the timer expires in seconds."""
         _remaining_time = self._timer + self._send_period - time.monotonic()
         if _remaining_time < 0:
             return 0
         return _remaining_time
 
     def wait_for_timer(self):
+        """Wait for the timer to expire."""
         while not self.timer_expired:
             time.sleep(0.1)
 
     def initial_sleep(self):
+        """Initial sleep period at start up, to stagger radio tx."""
         sleep_duration = self._node_id % 0x10 * random.random() + 1
         print(f"Starting inital sleep of {sleep_duration} seconds...")
         time.sleep(sleep_duration)
