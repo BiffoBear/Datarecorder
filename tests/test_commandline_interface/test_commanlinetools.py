@@ -21,11 +21,11 @@ class TestListNodesAndSensors(TestCase):
         returned_result = commandlinetools._layout_existing_things("sensor", [])
         self.assertEqual(expected_result, returned_result)
 
-    def test_convert_value_to_string(self):
-        self.assertEqual("0x02", commandlinetools._convert_value_to_string(2))
-        self.assertEqual("0x03", commandlinetools._convert_value_to_string(3))
+    def test_convert_integer_to_string(self):
+        self.assertEqual("0x02", commandlinetools._convert_integer_to_string(2))
+        self.assertEqual("0x03", commandlinetools._convert_integer_to_string(3))
         self.assertEqual(
-            "test string", commandlinetools._convert_value_to_string("test string")
+            "test string", commandlinetools._convert_integer_to_string("test string")
         )
 
     def test_layout_thing_details(self):
