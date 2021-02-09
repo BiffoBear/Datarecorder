@@ -95,9 +95,7 @@ class TestDecodeData(TestCase):
 
     def test_data_format_string_is_valid(self):
         self.assertEqual(radiohelper.RADIO_DATA_FORMAT, CURRENT_DATA_STRUCT_FORMAT)
-        self.assertLessEqual(
-            radiohelper.PACKET_LENGTH, radiohelper.MAX_PACKET_LENGTH
-        )
+        self.assertLessEqual(radiohelper.PACKET_LENGTH, radiohelper.MAX_PACKET_LENGTH)
         self.assertEqual(
             radiohelper.RADIO_DATA_FORMAT[0], ">"
         )  # struct should be big-endian
