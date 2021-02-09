@@ -1,1 +1,2 @@
-from database.database import *
+"""Process interactions with the database."""
+from .database import *

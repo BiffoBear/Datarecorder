@@ -19,15 +19,13 @@ logger = logging.getLogger(__name__)
 logger.setLevel(FILE_DEBUG_LEVEL)
 
 Base = declarative_base()
-
-# For PostGreSQL on local machine (host is None for Unix path instead of TCP)
-# postgresql+psycopg2://user:password@host:port/dbname[?key=value&key=value...]
-
 engine = None
 session = None
 
-
+# Classes defined for database ORM and thus have no public methods.
 class SensorData(Base):
+    # pylint: disable=too-few-public-methods
+    """ORM for the database Sensor Readings table."""
 
     __tablename__ = "Sensor Readings"
 
@@ -38,6 +36,8 @@ class SensorData(Base):
 
 
 class NodeEvents(Base):
+    # pylint: disable=too-few-public-methods
+    """ORM for the database Events table."""
 
     __tablename__ = "Events"
 
@@ -48,6 +48,8 @@ class NodeEvents(Base):
 
 
 class Nodes(Base):
+    # pylint: disable=too-few-public-methods
+    """ORM for the database Nodes table."""
 
     __tablename__ = "Nodes"
 
@@ -57,6 +59,8 @@ class Nodes(Base):
 
 
 class Sensors(Base):
+    # pylint: disable=too-few-public-methods
+    """ORM for the database Sensors table."""
 
     __tablename__ = "Sensors"
 
@@ -68,85 +72,89 @@ class Sensors(Base):
 
 
 def initialize_database(db_url):
-    logger.debug(f"initialize_database called")
+    """Initialize the database connection."""
+    logger.debug("initialize_database called")
     global Base, engine, session
     try:
         engine = create_engine(db_url)
         session = sessionmaker()
         session.configure(bind=engine)
         Base.metadata.create_all(engine)
-    except Exception as e:
-        logger.critical(f"Database initialization failed: {e}")
-        raise e
+    except Exception as error:
+        logger.critical(f"Database initialization failed: {error}")
+        raise error
     else:
         logger.info("Database initialized")
 
 
 def write_sensor_reading_to_db(data):
-    """Takes a dict with timestamp and a list of tuples of sensor_readings and writes them out to the database."""
-    logger.debug(f"write_sensor_reading_to_db called")
+    """Take a dict with timestamp and a list of tuples of sensor_readings and write
+    it out to the database."""
+    logger.debug("write_sensor_reading_to_db called")
     try:
         # noinspection PyCallingNonCallable
-        s = session()
+        create_session = session()
         [
-            s.add(
+            create_session.add(
                 SensorData(
-                    Timestamp_UTC=data["timestamp"], Sensor_ID=r[0], Reading=r[1]
+                    Timestamp_UTC=data["timestamp"], Sensor_ID=reading[0], Reading=reading[1]
                 )
             )
-            for r in data["sensor_readings"]
+            for reading in data["sensor_readings"]
         ]
-        s.commit()
+        create_session.commit()
     except Exception as error:
         logger.critical(f"IOError writing to database")
         raise error
 
 
 def write_events_to_db(data):
-    """Takes a dict with timestamp, node and a list of event codes and writes them to the database."""
-    logger.debug(f"write_event_to_db called")
+    """Take a dict with timestamp, node and a list of event codes and write
+    it to the database."""
+    logger.debug("write_event_to_db called")
     try:
         # noinspection PyCallingNonCallable
-        s = session()
+        create_session = session()
         [
-            s.add(
+            create_session.add(
                 NodeEvents(
                     Timestamp_UTC=data["timestamp"],
                     node_ID=data["node_id"],
-                    Event_Code=r,
+                    Event_Code=code,
                 )
             )
-            for r in data["event_codes"]
+            for code in data["event_codes"]
         ]
-        s.commit()
+        create_session.commit()
     except Exception as error:
-        logger.critical(f"IOError writing to database")
+        logger.critical("IOError writing to database")
         raise error
 
 
 def _check_id_and_name_are_valid(
     id_to_check=None, name_to_check=None, record_type=None
 ):
+    """Check that the name and id are valid for the given database record type."""
     try:
         assert type(id_to_check) == int
-    except AssertionError as e:
+    except AssertionError as error:
         raise TypeError(
             f"Record not created, {record_type} ID must be an integer"
-        ) from e
+        ) from error
     try:
         assert 0 <= id_to_check <= 254
-    except AssertionError as e:
+    except AssertionError as error:
         raise ValueError(
             f"Record not created, {record_type} ID must be in range 0 - 254 (0x00 - 0xfe)"
-        ) from e
+        ) from error
     try:
         assert type(name_to_check) == str
         assert name_to_check != ""
         assert name_to_check[0].isalpha()
-    except AssertionError as e:
+    except AssertionError as error:
         raise TypeError(
             f"Record not created, {record_type} name must be a string beginning with a letter"
-        ) from e
+        ) from error
     return True
 
 
@@ -169,38 +177,40 @@ def add_node(node_id=None, name=None, location=None):
     assert _check_id_and_name_are_valid(
         id_to_check=node_id, name_to_check=name, record_type="node"
     )
-    s = session()
+    create_session = session()
     try:
-        s.add(Nodes(ID=node_id, Name=name, Location=location))
-        s.commit()
-    except IntegrityError as e:
-        raise ValueError("Record not created, node ID and name must be unique") from e
+        create_session.add(Nodes(ID=node_id, Name=name, Location=location))
+        create_session.commit()
+    except IntegrityError as error:
+        raise ValueError("Record not created, node ID and name must be unique") from error
 
-
+# TODO: Refactor existence checks
 def _node_id_exists(node_id=None):
-    s = session()
-    t = Nodes
+    """Check if the node id exists in the database."""
+    query_session = session()
+    query_table = Nodes
     try:
-        s.query(t).filter(t.ID == node_id).one()
+        query_session.query(query_table).filter(query_table.ID == node_id).one()
     except NoResultFound:
         return False
     return True
 
 
 def _sensor_id_exists(sensor_id=None):
-    s = session()
-    t = Sensors
+    """Check if the sensor id exists in the database."""
+    query_session = session()
+    query_table = Sensors
     try:
-        s.query(t).filter(t.ID == sensor_id).one()
+        query_session.query(query_table).filter(query_table.ID == sensor_id).one()
     except NoResultFound:
         return False
     return True
 
 
 def add_sensor(sensor_id=None, node_id=None, name=None, quantity=None):
-    """Adds a new sensor to the 'Sensors' table of the 'Sensor Readings' database.
+    """Add a new sensor to the 'Sensors' table of the 'Sensor Readings' database.
 
-    Checks that args are valid before writing the record to the database.
+    Check that args are valid before writing the record to the database.
 
     Arguments:
         sensor_id -- the unique ID of the new sensor, an integer in range 0 - 254
@@ -216,62 +226,65 @@ def add_sensor(sensor_id=None, node_id=None, name=None, quantity=None):
     )
     try:
         assert _node_id_exists(node_id)
-    except AssertionError as e:
+    except AssertionError as error:
         raise ValueError(
-            f"Record not created -- node with id {node_id} (0x{node_id:02x}) must already exist in the "
-            f"database"
+            f"Record not created -- node with id {node_id} (0x{node_id:02x}) must "
+            "already exist in the database"
         )
     try:
         SI_UNITS[quantity]
     except KeyError:
         raise ValueError("Sensor not created -- unknown sensor data quantity supplied")
-    s = session()
+    create_session = session()
     try:
-        s.add(Sensors(ID=sensor_id, Node_ID=node_id, Name=name, Quantity=quantity))
-        s.commit()
-    except IntegrityError as e:
-        raise ValueError("Record not created, Sensor ID and name must be unique") from e
+        create_session.add(Sensors(ID=sensor_id, Node_ID=node_id, Name=name, Quantity=quantity))
+        create_session.commit()
+    except IntegrityError as error:
+        raise ValueError("Record not created, Sensor ID and name must be unique") from error
 
 
 def _get_all_ids(table=None):
+    """Get all IDs from the database for the given table."""
     db_session = session()
     table_to_query = {"node": Nodes, "sensor": Sensors}[table]
     query = db_session.query(table_to_query).all()
-    return (x.ID for x in query)
+    return (result.ID for result in query)
 
 
+# TODO refactor to call with the table object
 def get_all_node_ids():
-    """Returns a generator with all the node IDs."""
+    """Generate all the node IDs."""
     return _get_all_ids(table="node")
 
 
+# TODO refactor to call with the table object
 def get_all_sensor_ids():
-    """Returns a generator with all the sensor IDs."""
+    """Generate all the sensor IDs."""
     return _get_all_ids(table="sensor")
 
 
 def _get_node_or_sensor(search_term=None, table=None):
     try:
-        assert type(search_term) == int
-    except AssertionError as e:
-        raise TypeError(f"{table} must be an integer (not {type(search_term)})") from e
+        assert isinstance(search_term, int)
+    except AssertionError as error:
+        raise TypeError(f"{table} must be an integer (not {type(search_term)})") from error
     table_to_query = {"node": Nodes, "sensor": Sensors}[table]
     db_session = session()
     try:
-        query = (
+        query_result = (
             db_session.query(table_to_query)
             .filter(table_to_query.ID == search_term)
             .one()
         )
-    except NoResultFound as e:
+    except NoResultFound as error:
         raise NoResultFound(
             f"node ID 0x{search_term:02x} not found in the database"
-        ) from e
-    return query
+        ) from error
+    return query_result
 
 
 def get_all_sensor_ids_for_a_node(node=None):
-    """Returns a generator with all the sensor IDs attached to a node.
+    """Return a generator with all the sensor IDs attached to a node.
 
     Arguments:
         node -- the node ID to find sensors for, an integer.
@@ -289,7 +302,7 @@ def get_all_sensor_ids_for_a_node(node=None):
 
 
 def get_node_data(node=None):
-    """Returns all the data for a given node ID.
+    """Return all the data for a given node ID.
 
     Arguments:
         node -- node ID whose data is to be returned, an integer
@@ -305,7 +318,7 @@ def get_node_data(node=None):
 
 
 def get_sensor_data(sensor=None):
-    """Returns all the data for a given sensor ID
+    """Return all the data for a given sensor ID
 
     Arguments:
         sensor -- sensor ID whose data is to be returned, an integer
