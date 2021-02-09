@@ -1,7 +1,5 @@
 """Starts the data recording processes."""
 
-# Deprecated. Moving to start_recorder.py
-
 import time
 from datarecorder import main
 from __config__ import RFM69_INTERRUPT_PIN, DB_URL
