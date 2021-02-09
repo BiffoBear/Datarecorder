@@ -10,12 +10,19 @@ import threading
 import time
 import queue
 import urllib.request
-from urllib.error import HTTPError
 
 logger = logging.getLogger(__name__)
 
-GATE_OPEN = 'https://biffo.synology.me:5001/webapi/entry.cgi?api=SYNO.SurveillanceStation.Webhook&method="Incoming"&version=1&token=BQdC2UYiqxqP0zEUZ9UXh3uvhPFZCqLls8YcRzk1o5TFj6mx9FFPzm9Tm7LUxwhH'
-GATE_CLOSE = 'https://biffo.synology.me:5001/webapi/entry.cgi?api=SYNO.SurveillanceStation.Webhook&method="Incoming"&version=1&token=A0Wngnir5CqVDnS8M1fDIgWTZviD2FjrJ2caEJZImqjXHqOGuZQz14OOOcn2wFXH'
+GATE_OPEN = (
+    "https://biffo.synology.me:5001/webapi/entry.cgi?api=SYNO.SurveillanceStation."
+    'Webhook&method="Incoming"&version=1&'
+    "token=BQdC2UYiqxqP0zEUZ9UXh3uvhPFZCqLls8YcRzk1o5TFj6mx9FFPzm9Tm7LUxwhH"
+)
+GATE_CLOSE = (
+    "https://biffo.synology.me:5001/webapi/entry.cgi?api=SYNO.SurveillanceStation."
+    'Webhook&method="Incoming"&version=1&'
+    "token=A0Wngnir5CqVDnS8M1fDIgWTZviD2FjrJ2caEJZImqjXHqOGuZQz14OOOcn2wFXH"
+)
 event_queue = queue.Queue()
 event_actions = {
     0x05: {0x00: {"url": GATE_OPEN, "delay": 0}, 0x01: {"url": GATE_CLOSE, "delay": 0}}
@@ -55,14 +62,14 @@ def read_event_queue_handle_event():
                 logger.debug("continuing...")
             with urllib.request.urlopen(event_action["url"]) as response:
                 if response.status != 200:
-                    raise HTTPError("Bad response from server")
+                    raise IOError("Bad response from server")
         except KeyError:
             logger.error(
                 "Event 0x%02x from node 0x%02X} does not exist",
                 event,
                 node_id,
             )
-        except HTTPError:
+        except IOError:
             logger.error("Bad response from server")
     event_queue.task_done()
 
