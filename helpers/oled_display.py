@@ -138,14 +138,14 @@ def write_message_to_queue(message_text=""):
 
 def shut_down():
     """Shuts down the OLED display and waits for the queue to clear."""
-    logger.info("shut_down called")
+    logger.debug("shut_down called")
     message_queue.join()
     try:
         clear_display(global_display)
         show_display(global_display)
     except AttributeError:
         pass
-    logger.warning("Data recorder shutdown")
+    logger.warning("OLED display shutdown")
 
 
 def init_display_thread():
