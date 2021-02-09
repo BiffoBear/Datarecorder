@@ -2,4 +2,4 @@
 # -*- coding: utf-8 -*-
 """Command line tools to add nodes and sensors to the database."""
 
-from commandline.commandlinetools import *
+from .commandlinetools import *
