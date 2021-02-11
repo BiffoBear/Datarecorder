@@ -1,5 +1,9 @@
 import pytest
+from unittest.mock import call
 import queue
+import PIL
+import board
+import adafruit_ssd1306
 from collections import deque
 from helpers import display
 
@@ -36,13 +40,13 @@ class TestDisplayClass:
 
     def test_write_to_line_buffer_truncates_long_lines_using_maxlen(self):
         oled = display.Display()
-        assert oled.LINE_MAXLEN == 20
-        test_lines = ["", "A" * 5, "B" * oled.LINE_MAXLEN, "C" * (oled.LINE_MAXLEN + 1)]
+        assert oled._LINE_MAXLEN == 20
+        test_lines = ["", "A" * 5, "B" * oled._LINE_MAXLEN, "C" * (oled._LINE_MAXLEN + 1)]
         [oled._write_to_buffer(line=line) for line in test_lines]
         expected_result = deque(test_lines[:-1])
-        expected_result.append("".join(["C" * (oled.LINE_MAXLEN - 1), "*"]))
+        expected_result.append("".join(["C" * (oled._LINE_MAXLEN - 1), "*"]))
         assert oled._screen_line_buffer == expected_result
-        oled.LINE_MAXLEN = 18
+        oled._LINE_MAXLEN = 18
         oled._write_to_buffer(line="D" * 20)
         assert oled._screen_line_buffer.pop() == "".join(["D" * 17, "*"])
 
@@ -58,3 +62,15 @@ class TestDisplayClass:
             "Test 5"
         )
         assert oled._line_buffer_to_text() == expected_result
+
+    def test_display_has_settings_for_pil(self):
+        oled = display.Display()
+        assert oled._OLED_WIDTH == 128
+        assert oled._OLED_HEIGHT == 64
+        assert oled._COLOUR_DEPTH == "1"
+        
+    def test_pil_image_is_called_with_correct_args(self, mocker):
+        oled = display.Display()
+        assert isinstance(oled._image, PIL.Image.Image)
+        assert oled._image.mode == oled._COLOUR_DEPTH
+        assert oled._image.size == (oled._OLED_WIDTH, oled._OLED_HEIGHT)
