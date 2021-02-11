@@ -17,8 +17,9 @@ class Display:
         self._OLED_HEIGHT = 64
         self._COLOUR_DEPTH = "1"
         self._image = Image.new(self._COLOUR_DEPTH, (self._OLED_WIDTH, self._OLED_HEIGHT))
+        self._font = ImageFont.load_default()
         
-    def _write_to_buffer(self, *, line=""):
+    def _write_to_buffer(self, *, line):
         if len(line) > self._LINE_MAXLEN:
             line = "".join([line[:self._LINE_MAXLEN - 1], "*"])
             # TODO: logging warning line too long.
@@ -26,3 +27,7 @@ class Display:
 
     def _line_buffer_to_text(self):
         return "\n".join(list(self._screen_line_buffer))
+        
+    def _draw_text_to_image(self, *, text):
+        draw = ImageDraw.Draw(self._image)
+        draw.text((1, 1), text, font=self._font, fill=255)

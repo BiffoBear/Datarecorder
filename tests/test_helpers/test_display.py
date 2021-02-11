@@ -32,7 +32,7 @@ class TestDisplayClass:
     def test_display_class_exists_and_has_a_message_buffer(self):
         oled = display.Display()
         assert oled._screen_line_buffer.maxlen == 5
-        
+  
     def test_write_to_line_buffer_appends_on_the_right(self):
         oled = display.Display()
         [oled._write_to_buffer(line=text) for text in ["1", "2"]]
@@ -68,9 +68,21 @@ class TestDisplayClass:
         assert oled._OLED_WIDTH == 128
         assert oled._OLED_HEIGHT == 64
         assert oled._COLOUR_DEPTH == "1"
-        
+        assert isinstance(oled._font, PIL.ImageFont.ImageFont)
+
     def test_pil_image_is_called_with_correct_args(self, mocker):
         oled = display.Display()
         assert isinstance(oled._image, PIL.Image.Image)
         assert oled._image.mode == oled._COLOUR_DEPTH
         assert oled._image.size == (oled._OLED_WIDTH, oled._OLED_HEIGHT)
+
+    def test_draw_text_on_pil_image(self):
+        oled = display.Display()
+        test_image = PIL.Image.new("1", (128, 64))
+        font = PIL.ImageFont.load_default()
+        draw = PIL.ImageDraw.Draw(test_image)
+        draw.text((1, 1), "Hello World!", font=font, fill=255)
+        oled._draw_text_to_image(text="Hello World!")
+        assert oled._image.getdata == test_image.getdata
+        
+        
