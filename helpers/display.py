@@ -11,7 +11,12 @@ class Display:
     pass
     def __init__(self):
         self._screen_line_buffer = deque([], maxlen=5)
+        self.LINE_MAXLEN = 20
         
     def _write_to_buffer(self, *, line=""):
+        if len(line) > self.LINE_MAXLEN:
+            line = "".join([line[:self.LINE_MAXLEN - 1], "*"])
         self._screen_line_buffer.append(line)
         
+    def _line_buffer_to_text(self):
+        return "\n".join(list(self._screen_line_buffer))
