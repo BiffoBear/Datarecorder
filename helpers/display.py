@@ -48,10 +48,12 @@ class Display:
         self._ssd.show()
 
     def message(self, *, text):
-        self._write_to_buffer(line=text)
-        self._draw_text_to_image(text=self._line_buffer_to_text())
-        self._update_screen()
-
+        try:
+            self._write_to_buffer(line=text)
+            self._draw_text_to_image(text=self._line_buffer_to_text())
+            self._update_screen()
+        except:  # Keep the thread running if the OLED fails as it's not critical.
+            pass
 
 def init():
     return queue.Queue(maxsize=100)

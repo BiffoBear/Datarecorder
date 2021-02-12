@@ -129,3 +129,10 @@ class TestDisplayClass:
         mock_line_buffer_to_text.assert_called_once()
         mock_draw_text_to_image.assert_called_once_with(oled, text=block)
         mock_update_screen.assert_called_once()
+        
+    def test_message_returns_without_calling_functions_if_ssd_is_none(self, mocker):
+        mock_write_line_to_buffer = mocker.patch.object(display.Display, "_write_to_buffer", autospec=True)
+        oled = display.Display()
+        oled._ssd = None
+        oled.message(text="Hello World")
+        assert not mock_write_line_to_buffer.called
