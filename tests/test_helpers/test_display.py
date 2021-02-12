@@ -8,24 +8,22 @@ import adafruit_ssd1306
 from collections import deque
 from helpers import display
 
-def test_display_module_has_a_queue_maxsize_100():
-    assert isinstance(display.message_queue, queue.Queue)
-    try:
-        for item in range(100):
-            display.message_queue.put_nowait(item)
-        with pytest.raises(queue.Full):
-            display.message_queue.put_nowait(101)
-    finally:
-        while not display.message_queue.empty():
-            display.message_queue.get()
-    
+def test_init_returns_a_queue_maxsize_100():
+    result = display.init()
+    assert isinstance(result, queue.Queue)
+    for item in range(100):
+        result.put_nowait(item)
+    with pytest.raises(queue.Full):
+        result.put_nowait(101)
+
+
 def test_write_to_queue_and_queue_is_fifo():
-    assert display.message_queue.empty()
-    display.message_queue.put("Hello World")
-    display.message_queue.put("Byeee!")
-    assert not display.message_queue.empty()
-    assert display.message_queue.get() == "Hello World"
-    assert display.message_queue.get() == "Byeee!"
+    result = display.init()
+    assert result.empty()
+    result.put("Hello World")
+    result.put("Byeee!")
+    assert result.get() == "Hello World"
+    assert result.get() == "Byeee!"
 
 
 class TestDisplayClass:

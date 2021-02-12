@@ -7,8 +7,6 @@ import adafruit_ssd1306
 from collections import deque
 from PIL import Image, ImageDraw, ImageFont
 
-message_queue = queue.Queue(maxsize=100)
-
 
 class Display:
     """Updates screen line buffer and writes to the display."""
@@ -53,3 +51,7 @@ class Display:
         self._write_to_buffer(line=text)
         self._draw_text_to_image(text=self._line_buffer_to_text())
         self._update_screen()
+
+
+def init():
+    return queue.Queue(maxsize=100)
