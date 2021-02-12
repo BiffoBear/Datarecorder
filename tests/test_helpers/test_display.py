@@ -3,6 +3,7 @@ from unittest.mock import call
 import queue
 import PIL
 import board
+import digitalio
 import adafruit_ssd1306
 from collections import deque
 from helpers import display
@@ -84,5 +85,27 @@ class TestDisplayClass:
         draw.text((1, 1), "Hello World!", font=font, fill=255)
         oled._draw_text_to_image(text="Hello World!")
         assert oled._image.getdata == test_image.getdata
+
+    @pytest.mark.parametrize("side_effect, result", [("i2c object", "i2c object"), (ValueError, None)])        
+    def test_init_i2c_is_bus_object_or_none_if_init_error(self, mocker, side_effect, result):
+        mock_i2c = mocker.patch.object(board, "I2C", autospec=True, side_effect=[side_effect])
+        oled = display.Display()
+        mock_i2c.assert_called_once()
+        assert oled._i2c == result
         
+    def test_reset_pin_is_the_correct_type(self):
+        oled = display.Display()
+        assert isinstance(oled._reset_pin, digitalio.DigitalInOut)
         
+    def test_reset_pin_is_set_to_gpio_17(self, mocker):
+        mock_digiio = mocker.patch.object(digitalio, "DigitalInOut")
+        oled = display.Display()
+        mock_digiio.assert_called_once_with(board.D17)
+
+    @pytest.mark.parametrize("side_effect, result", [("ssd object", "ssd object"), (ValueError, None), (AttributeError, None)])
+    def test_ssd_is_ssd1306_object_or_none_if_init_fails(self, mocker, side_effect, result):
+        mock_i2c = mocker.patch.object(board, "I2C", autospec=True, side_effect=["X"])
+        mock_ssd1306 = mocker.patch.object(display.adafruit_ssd1306, "SSD1306_I2C", side_effect=[side_effect])
+        oled = display.Display()
+        mock_ssd1306.assert_called_once_with(oled._OLED_WIDTH, oled._OLED_HEIGHT, oled._i2c, addr=0x3d, reset=oled._reset_pin)
+        assert oled._ssd == result

@@ -1,6 +1,9 @@
 """Writes messages to a small adafruit.com OLED display over an I2C bus."""
 import threading
 import queue
+import board
+import digitalio
+import adafruit_ssd1306
 from collections import deque
 from PIL import Image, ImageDraw, ImageFont
 
@@ -18,7 +21,17 @@ class Display:
         self._COLOUR_DEPTH = "1"
         self._image = Image.new(self._COLOUR_DEPTH, (self._OLED_WIDTH, self._OLED_HEIGHT))
         self._font = ImageFont.load_default()
-        
+        try:
+            self._i2c = board.I2C()
+        except ValueError:
+            self._i2c = None
+            # TODO: logging warning
+        self._reset_pin = digitalio.DigitalInOut(board.D17)
+        try:
+            self._ssd = adafruit_ssd1306.SSD1306_I2C(self._OLED_WIDTH, self._OLED_HEIGHT, self._i2c, addr=0x3d, reset=self._reset_pin)
+        except (ValueError, AttributeError):
+            self._ssd = None
+
     def _write_to_buffer(self, *, line):
         if len(line) > self._LINE_MAXLEN:
             line = "".join([line[:self._LINE_MAXLEN - 1], "*"])
