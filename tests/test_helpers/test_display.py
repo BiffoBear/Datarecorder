@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import call
+from unittest.mock import Mock
 import queue
 import PIL
 import board
@@ -104,8 +104,30 @@ class TestDisplayClass:
 
     @pytest.mark.parametrize("side_effect, result", [("ssd object", "ssd object"), (ValueError, None), (AttributeError, None)])
     def test_ssd_is_ssd1306_object_or_none_if_init_fails(self, mocker, side_effect, result):
-        mock_i2c = mocker.patch.object(board, "I2C", autospec=True, side_effect=["X"])
+        mock_i2c = mocker.patch.object(board, "I2C", autospec=True, side_effect=["I2C"])
         mock_ssd1306 = mocker.patch.object(display.adafruit_ssd1306, "SSD1306_I2C", side_effect=[side_effect])
         oled = display.Display()
         mock_ssd1306.assert_called_once_with(oled._OLED_WIDTH, oled._OLED_HEIGHT, oled._i2c, addr=0x3d, reset=oled._reset_pin)
         assert oled._ssd == result
+        
+    def test_update_screen_calls_ssd_image_image_and_ssd_image_show(self, mocker):
+        mock_i2c = mocker.patch.object(board, "I2C", autospec=True, side_effect=["I2C"])
+        mock_ssd1306 = mocker.patch.object(display.adafruit_ssd1306, "SSD1306_I2C", side_effect=["SSD1306"])
+        oled = display.Display()
+        oled._ssd = Mock()
+        oled._update_screen()
+        oled._ssd.image.assert_called_once_with(oled._image)
+        oled._ssd.show.assert_called_once
+
+    @pytest.mark.parametrize("text,block", [("Hello World", "Text block1"), ("Farewell", "Text Block2")])
+    def test_message_calls_correct_functions(self, mocker, text, block):
+        oled = display.Display()
+        mock_write_line_to_buffer = mocker.patch.object(display.Display, "_write_to_buffer", autospec=True)
+        mock_line_buffer_to_text = mocker.patch.object(display.Display, "_line_buffer_to_text", autospec=True, side_effect=[block])
+        mock_draw_text_to_image = mocker.patch.object(display.Display, "_draw_text_to_image", autospec=True)
+        mock_update_screen = mocker.patch.object(display.Display, "_update_screen")
+        oled.message(text=text)
+        mock_write_line_to_buffer.assert_called_once_with(oled, line=text)
+        mock_line_buffer_to_text.assert_called_once()
+        mock_draw_text_to_image.assert_called_once_with(oled, text=block)
+        mock_update_screen.assert_called_once()

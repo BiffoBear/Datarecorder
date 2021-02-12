@@ -40,7 +40,16 @@ class Display:
 
     def _line_buffer_to_text(self):
         return "\n".join(list(self._screen_line_buffer))
-        
+
     def _draw_text_to_image(self, *, text):
         draw = ImageDraw.Draw(self._image)
         draw.text((1, 1), text, font=self._font, fill=255)
+
+    def _update_screen(self):
+        self._ssd.image(self._image)
+        self._ssd.show()
+
+    def message(self, *, text):
+        self._write_to_buffer(line=text)
+        self._draw_text_to_image(text=self._line_buffer_to_text())
+        self._update_screen()
