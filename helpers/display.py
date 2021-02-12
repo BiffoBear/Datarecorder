@@ -48,6 +48,8 @@ class Display:
         self._ssd.show()
 
     def message(self, *, text):
+        if self._ssd is None:
+            return
         try:
             self._write_to_buffer(line=text)
             self._draw_text_to_image(text=self._line_buffer_to_text())

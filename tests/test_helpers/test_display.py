@@ -119,11 +119,11 @@ class TestDisplayClass:
 
     @pytest.mark.parametrize("text,block", [("Hello World", "Text block1"), ("Farewell", "Text Block2")])
     def test_message_calls_correct_functions(self, mocker, text, block):
-        oled = display.Display()
         mock_write_line_to_buffer = mocker.patch.object(display.Display, "_write_to_buffer", autospec=True)
         mock_line_buffer_to_text = mocker.patch.object(display.Display, "_line_buffer_to_text", autospec=True, side_effect=[block])
         mock_draw_text_to_image = mocker.patch.object(display.Display, "_draw_text_to_image", autospec=True)
         mock_update_screen = mocker.patch.object(display.Display, "_update_screen")
+        oled = display.Display()
         oled.message(text=text)
         mock_write_line_to_buffer.assert_called_once_with(oled, line=text)
         mock_line_buffer_to_text.assert_called_once()
@@ -135,4 +135,12 @@ class TestDisplayClass:
         oled = display.Display()
         oled._ssd = None
         oled.message(text="Hello World")
-        assert not mock_write_line_to_buffer.called
+        mock_write_line_to_buffer.assert_not_called()
+        
+    @pytest.mark.parametrize("error", [ValueError, TypeError, AttributeError])
+    def test_message_ignores_errors(self, mocker, error):
+        mock_write_line_to_buffer = mocker.patch.object(display.Display, "_write_to_buffer", autospec=True, side_effect=[error])
+        mock_update_screen = mocker.patch.object(display.Display, "_update_screen", autospec=True)
+        oled = display.Display()
+        oled.message(text="Hello World")
+        mock_update_screen.assert_not_called()
