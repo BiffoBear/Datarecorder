@@ -47,7 +47,7 @@ class Display:
         self._ssd.image(self._image)
         self._ssd.show()
 
-    def message(self, *, text):
+    def message(self, text):
         if self._ssd is None:
             return
         try:
@@ -57,5 +57,15 @@ class Display:
         except:  # Keep the thread running if the OLED fails as it's not critical.
             pass
 
+
+def thread_loop(screen, msg_queue):
+    text = msg_queue.get()
+    screen.message(text)
+    msg_queue.task_done()
+
+
 def init():
-    return queue.Queue(maxsize=100)
+    oled = Display()
+    message_que = queue.Queue(maxsize=100)
+    threading.Thread(target=thread_loop, args=(oled, message_que), daemon=True, name="messages")
+    return message_que

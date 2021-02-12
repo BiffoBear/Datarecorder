@@ -1,29 +1,15 @@
 import pytest
 from unittest.mock import Mock
+import time
 import queue
+import threading
+import multiprocessing
 import PIL
 import board
 import digitalio
 import adafruit_ssd1306
 from collections import deque
 from helpers import display
-
-def test_init_returns_a_queue_maxsize_100():
-    result = display.init()
-    assert isinstance(result, queue.Queue)
-    for item in range(100):
-        result.put_nowait(item)
-    with pytest.raises(queue.Full):
-        result.put_nowait(101)
-
-
-def test_write_to_queue_and_queue_is_fifo():
-    result = display.init()
-    assert result.empty()
-    result.put("Hello World")
-    result.put("Byeee!")
-    assert result.get() == "Hello World"
-    assert result.get() == "Byeee!"
 
 
 class TestDisplayClass:
@@ -134,7 +120,7 @@ class TestDisplayClass:
         mock_write_line_to_buffer = mocker.patch.object(display.Display, "_write_to_buffer", autospec=True)
         oled = display.Display()
         oled._ssd = None
-        oled.message(text="Hello World")
+        oled.message("Hello World")
         mock_write_line_to_buffer.assert_not_called()
         
     @pytest.mark.parametrize("error", [ValueError, TypeError, AttributeError])
@@ -142,5 +128,29 @@ class TestDisplayClass:
         mock_write_line_to_buffer = mocker.patch.object(display.Display, "_write_to_buffer", autospec=True, side_effect=[error])
         mock_update_screen = mocker.patch.object(display.Display, "_update_screen", autospec=True)
         oled = display.Display()
-        oled.message(text="Hello World")
+        oled.message("Hello World")
         mock_update_screen.assert_not_called()
+
+
+def test_init_returns_a_queue_maxsize_100():
+    result = display.init()
+    assert isinstance(result, queue.Queue)
+    for item in range(100):
+        result.put_nowait(item)
+    with pytest.raises(queue.Full):
+        result.put_nowait(101)
+
+
+def test_write_to_queue_and_queue_is_fifo():
+    result = display.init()
+    assert result.empty()
+    result.put("Hello World")
+    result.put("Byeee!")
+    assert result.get() == "Hello World"
+    assert result.get() == "Byeee!"
+
+
+def test_init_creates_a_display(mocker):
+    mock_display = mocker.patch.object(display, "Display", autospec=True)
+    display.init()
+    mock_display.assert_called_once()
