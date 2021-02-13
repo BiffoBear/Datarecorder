@@ -12,7 +12,7 @@ class Display:
     """Updates screen line buffer and writes to the display."""
 
     def __init__(self):
-        self._screen_line_buffer = deque([], maxlen=5)
+        self._screen_line_buffer = deque([], maxlen=4)
         self._LINE_MAXLEN = 20
         self._OLED_WIDTH = 128
         self._OLED_HEIGHT = 64

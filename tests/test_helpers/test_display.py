@@ -16,7 +16,7 @@ class TestDisplayClass:
     
     def test_display_class_exists_and_has_a_message_buffer(self):
         oled = display.Display()
-        assert oled._screen_line_buffer.maxlen == 5
+        assert oled._screen_line_buffer.maxlen == 4
   
     def test_write_to_line_buffer_appends_on_the_right(self):
         oled = display.Display()
@@ -37,14 +37,13 @@ class TestDisplayClass:
 
     def test_line_buffer_to_text(self):
         oled = display.Display()
-        test_lines = ["Test 1", "Test 2", "Test 3", "Test 4", "Test 5"]
+        test_lines = ["Test 1", "Test 2", "Test 3", "Test 4"]
         [oled._screen_line_buffer.append(line) for line in test_lines]
         expected_result = (
             "Test 1\n"
             "Test 2\n"
             "Test 3\n"
-            "Test 4\n"
-            "Test 5"
+            "Test 4"
         )
         assert oled._line_buffer_to_text() == expected_result
 
