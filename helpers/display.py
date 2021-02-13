@@ -34,7 +34,7 @@ class Display:
 
     def _write_to_buffer(self, *, line):
         if len(line) > self._LINE_MAXLEN:
-            line = "".join([line[:self._LINE_MAXLEN - 1], "*"])
+            line = "".join([line[:self._LINE_MAXLEN - 3], "..."])
             # TODO: logging warning line too long.
         self._screen_line_buffer.append(line)
 
@@ -43,6 +43,7 @@ class Display:
 
     def _draw_text_to_image(self, *, text):
         draw = ImageDraw.Draw(self._image)
+        draw.rectangle((0, 0, self._OLED_WIDTH, self._OLED_HEIGHT), outline=0, fill=0)
         draw.text((1, 1), text, font=self._font, fill=255)
 
     def _update_screen(self):

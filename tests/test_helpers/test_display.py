@@ -29,11 +29,11 @@ class TestDisplayClass:
         test_lines = ["", "A" * 5, "B" * oled._LINE_MAXLEN, "C" * (oled._LINE_MAXLEN + 1)]
         [oled._write_to_buffer(line=line) for line in test_lines]
         expected_result = deque(test_lines[:-1])
-        expected_result.append("".join(["C" * (oled._LINE_MAXLEN - 1), "*"]))
+        expected_result.append("".join(["C" * (oled._LINE_MAXLEN - 3), "..."]))
         assert oled._screen_line_buffer == expected_result
         oled._LINE_MAXLEN = 18
         oled._write_to_buffer(line="D" * 20)
-        assert oled._screen_line_buffer.pop() == "".join(["D" * 17, "*"])
+        assert oled._screen_line_buffer.pop() == "".join(["D" * 15, "..."])
 
     def test_line_buffer_to_text(self):
         oled = display.Display()
@@ -66,6 +66,8 @@ class TestDisplayClass:
         font = PIL.ImageFont.load_default()
         draw = PIL.ImageDraw.Draw(test_image)
         draw.text((1, 1), "Hello World!", font=font, fill=255)
+        # Write to display twice to confirm screen is cleared between writes.
+        oled._draw_text_to_image(text="Farewell!")
         oled._draw_text_to_image(text="Hello World!")
         assert oled._image.getdata == test_image.getdata
 
@@ -93,7 +95,7 @@ class TestDisplayClass:
         mock_ssd1306.assert_called_once_with(oled._OLED_WIDTH, oled._OLED_HEIGHT, oled._i2c, addr=0x3d, reset=oled._reset_pin)
         assert oled._ssd == result
         
-    def test_update_screen_calls_ssd_image_image_and_ssd_image_show(self, mocker):
+    def test_update_calls_ssd_image_image_and_ssd_image_show(self, mocker):
         mock_i2c = mocker.patch.object(board, "I2C", autospec=True, side_effect=["I2C"])
         mock_ssd1306 = mocker.patch.object(display.adafruit_ssd1306, "SSD1306_I2C", side_effect=["SSD1306"])
         oled = display.Display()
