@@ -108,6 +108,7 @@ def start_up(
 
     rfm69.listen()
     logger.info("Listening for radio data…")
+    oled_message("Waiting for data...")
     return rfm69
 
 
