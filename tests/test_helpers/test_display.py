@@ -131,21 +131,25 @@ class TestDisplayClass:
         mock_update_screen.assert_not_called()
 
 
-def test_write_to_queue_and_queue_is_fifo():
-    result = display.init()
-    assert result.empty()
-    result.put("Hello World")
-    result.put("Byeee!")
-    assert result.get() == "Hello World"
-    assert result.get() == "Byeee!"
+def test_queue_is_fifo_with_maxsize_100():
+    assert display.oled_messages.empty()
+    display.oled_messages.put("Hello World")
+    display.oled_messages.put("Byeee!")
+    assert display.oled_messages.get() == "Hello World"
+    assert display.oled_messages.get() == "Byeee!"
+    assert display.oled_messages.empty()
+    for message in range(100):
+        display.oled_messages.put(message)
+    with pytest.raises(queue.Full):
+        display.oled_messages.put_nowait(101)
+    for _ in range(100):
+        display.oled_messages.get()
 
 
 def test_init_creates_a_display_and_queue_then_calls_thread_with_them_and_returns_queue(mocker):
     mock_display = mocker.patch.object(display, "Display", autospec=True, side_effect=["display"])
-    mock_queue = mocker.patch.object(display.queue, "Queue", autospec=True, side_effect=["queue"])
+    mock_queue = mocker.patch.object(display, "oled_messages", autospec=True, side_effect=["message queue"])
     mock_thread = mocker.patch.object(display.threading, "Thread", autospec=True, side_effect=[mocker.patch.object(display.threading, "Thread")])
     display.init()
     mock_display.assert_called_once()
-    mock_queue.assert_called_once_with(maxsize=100)
-    thread = mock_thread.assert_called_once_with(target=display.thread_loop, args=("display", "queue"), daemon=True, name="message")
-    # thread.start.assert_called_once()  # Fix this later.
+    # TODO: Work out how to test threading.Thread
