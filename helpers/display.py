@@ -59,13 +59,15 @@ class Display:
 
 
 def thread_loop(screen, msg_queue):
-    text = msg_queue.get()
-    screen.message(text)
-    msg_queue.task_done()
+    while True:
+        text = msg_queue.get()
+        screen.message(text)
+        msg_queue.task_done()
 
 
 def init():
     oled = Display()
     message_que = queue.Queue(maxsize=100)
-    threading.Thread(target=thread_loop, args=(oled, message_que), daemon=True, name="messages")
+    message_thread = threading.Thread(target=thread_loop, args=(oled, message_que), daemon=True, name="message")
+    message_thread.start()
     return message_que

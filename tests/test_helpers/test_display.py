@@ -131,15 +131,6 @@ class TestDisplayClass:
         mock_update_screen.assert_not_called()
 
 
-def test_init_returns_a_queue_maxsize_100():
-    result = display.init()
-    assert isinstance(result, queue.Queue)
-    for item in range(100):
-        result.put_nowait(item)
-    with pytest.raises(queue.Full):
-        result.put_nowait(101)
-
-
 def test_write_to_queue_and_queue_is_fifo():
     result = display.init()
     assert result.empty()
@@ -149,7 +140,12 @@ def test_write_to_queue_and_queue_is_fifo():
     assert result.get() == "Byeee!"
 
 
-def test_init_creates_a_display(mocker):
-    mock_display = mocker.patch.object(display, "Display", autospec=True)
+def test_init_creates_a_display_and_queue_then_calls_thread_with_them_and_returns_queue(mocker):
+    mock_display = mocker.patch.object(display, "Display", autospec=True, side_effect=["display"])
+    mock_queue = mocker.patch.object(display.queue, "Queue", autospec=True, side_effect=["queue"])
+    mock_thread = mocker.patch.object(display.threading, "Thread", autospec=True, side_effect=[mocker.patch.object(display.threading, "Thread")])
     display.init()
     mock_display.assert_called_once()
+    mock_queue.assert_called_once_with(maxsize=100)
+    thread = mock_thread.assert_called_once_with(target=display.thread_loop, args=("display", "queue"), daemon=True, name="message")
+    # thread.start.assert_called_once()  # Fix this later.
