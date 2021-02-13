@@ -173,7 +173,10 @@ def test_init_creates_a_display_and_queue_then_calls_thread_with_them_and_return
     
 
 def test_shutdown_calls_queue_join(mocker):
-    mock_queue_join = mocker.patch.object(display.message_queue, "join", autospec= True)
+    mock_oled_message = mocker.patch.object(display, "oled_message", autospec=True)
+    mock_queue_join = mocker.patch.object(display.message_queue, "join", autospec=True)
     display.shutdown()
+    assert mock_oled_message.call_count == 4
+    mock_oled_message.assert_called_with("OLED shut down")
     mock_queue_join.assert_called_once()
     

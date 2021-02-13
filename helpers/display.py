@@ -84,5 +84,8 @@ def init():
     
 def shutdown():
     # TDDO: logging warning that oled shutdown called
+    for _ in range(3):
+        oled_message(" ")
+    oled_message("OLED shut down")
     message_queue.join()
     # TODO: logging warning oled shutdown complete
