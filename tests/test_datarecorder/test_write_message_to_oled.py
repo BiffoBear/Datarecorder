@@ -6,14 +6,14 @@ from unittest.mock import call
 import adafruit_rfm69
 import busio
 import digitalio
-import helpers
+from helpers.display import oled_messages
 from datarecorder import _dataprocessing, main
 
 
 class TestIntegrationWithDataProcessing:
     def test_message_from_init_radio(self, mocker):
         mock_write_message_to_queue = mocker.patch.object(
-            helpers.oled_display, "write_message_to_queue"
+            oled_messages, "put"
         )
         _1 = mocker.patch.object(adafruit_rfm69, "RFM69")
         _2 = mocker.patch.object(digitalio, "DigitalInOut")
@@ -23,7 +23,7 @@ class TestIntegrationWithDataProcessing:
 
     def test_message_sent_when_packet_written(self, mocker):
         mock_write_message_to_queue = mocker.patch.object(
-            helpers.oled_display, "write_message_to_queue"
+            oled_messages, "put"
         )
         _dataprocessing.last_packet_info = {0x02: {"pkt_serial": 0x0000}}
         node_data = {"node_id": 0x02, "pkt_serial": 0x0001}
@@ -32,7 +32,7 @@ class TestIntegrationWithDataProcessing:
 
     def test_message_sent_when_first_packet_received(self, mocker):
         mock_write_message_to_queue = mocker.patch.object(
-            helpers.oled_display, "write_message_to_queue"
+            oled_messages, "put"
         )
         _dataprocessing.last_packet_info = {}
         node_data = {"node_id": 0x01, "pkt_serial": 0x0001}
@@ -42,7 +42,7 @@ class TestIntegrationWithDataProcessing:
 
     def test_message_sent_when_packet_missing(self, mocker):
         mock_write_message_to_queue = mocker.patch.object(
-            helpers.oled_display, "write_message_to_queue"
+            oled_messages, "put"
         )
         _dataprocessing.last_packet_info = {0x01: {"pkt_serial": 0x0000}}
         node_data = {"node_id": 0x01, "pkt_serial": 0x0002}
@@ -52,7 +52,7 @@ class TestIntegrationWithDataProcessing:
 
     def test_message_sent_when_bad_packet_received(self, mocker):
         mock_write_message_to_queue = mocker.patch.object(
-            helpers.oled_display, "write_message_to_queue"
+            oled_messages, "put"
         )
         mock_unpack_data_packet = mocker.patch.object(
             _dataprocessing, "unpack_data_packet"

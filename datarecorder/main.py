@@ -13,7 +13,7 @@ import digitalio
 import RPi.GPIO as rpigpio
 import adafruit_rfm69
 from database import database
-from helpers import oled_display
+from helpers.display import oled_messages
 from helpers.radiohelper import RFM69_ENCRYPTION_KEY
 from . import _dataprocessing, _handleevents
 from __config__ import RFM69_INTERRUPT_PIN, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
@@ -73,7 +73,7 @@ def initialize_rfm69():
         rfm69 = adafruit_rfm69.RFM69(spi, cs_pin, reset, 433)
         rfm69.encryption_key = RFM69_ENCRYPTION_KEY
         logger.info("RFM69 radio initialized successfully")
-        oled_display.write_message_to_queue("Radio initialized OK")
+        oled_messages.put("Radio initialized OK")
         return rfm69
     except RuntimeError as error:
         logger.critical("RFM69 radio failed to initialize with RuntimeError")

@@ -132,24 +132,39 @@ class TestDisplayClass:
 
 
 def test_queue_is_fifo_with_maxsize_100():
-    assert display.oled_messages.empty()
-    display.oled_messages.put("Hello World")
-    display.oled_messages.put("Byeee!")
-    assert display.oled_messages.get() == "Hello World"
-    assert display.oled_messages.get() == "Byeee!"
-    assert display.oled_messages.empty()
+    assert display.message_queue.empty()
+    display.message_queue.put("Hello World")
+    display.message_queue.put("Byeee!")
+    assert display.message_queue.get() == "Hello World"
+    assert display.message_queue.get() == "Byeee!"
+    assert display.message_queue.empty()
     for message in range(100):
-        display.oled_messages.put(message)
+        display.message_queue.put(message)
     with pytest.raises(queue.Full):
-        display.oled_messages.put_nowait(101)
+        display.message_queue.put_nowait(101)
     for _ in range(100):
-        display.oled_messages.get()
+        display.message_queue.get()
+
+
+def test_oled_message_puts_to_queue_and_handles_queue_full(mocker):
+    mock_message_queue = mocker.patch.object(display.message_queue, "put_nowait", autospec=True, side_effect=[None, queue.Full])
+    display.oled_message("Hello World")
+    # TODO: Work out how to test for queue.Full error since pytest / unittest don't recognize queue.Full
+    mock_message_queue.assert_called_with("Hello World")
+    display.oled_message("Que_Full")
 
 
 def test_init_creates_a_display_and_queue_then_calls_thread_with_them_and_returns_queue(mocker):
     mock_display = mocker.patch.object(display, "Display", autospec=True, side_effect=["display"])
-    mock_queue = mocker.patch.object(display, "oled_messages", autospec=True, side_effect=["message queue"])
+    mock_queue = mocker.patch.object(display, "message_queue", autospec=True, side_effect=["message queue"])
     mock_thread = mocker.patch.object(display.threading, "Thread", autospec=True, side_effect=[mocker.patch.object(display.threading, "Thread")])
-    display.init()
+    assert display.init() is None
     mock_display.assert_called_once()
     # TODO: Work out how to test threading.Thread
+    
+
+def test_shutdown_calls_queue_join(mocker):
+    mock_queue_join = mocker.patch.object(display.message_queue, "join", autospec= True)
+    display.shutdown()
+    mock_queue_join.assert_called_once()
+    

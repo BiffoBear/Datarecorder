@@ -7,7 +7,7 @@ import adafruit_ssd1306
 from collections import deque
 from PIL import Image, ImageDraw, ImageFont
 
-oled_messages = queue.Queue(maxsize=100)
+message_queue = queue.Queue(maxsize=100)
 
 
 class Display:
@@ -60,6 +60,14 @@ class Display:
             pass
 
 
+def oled_message(text):
+    try:
+        message_queue.put_nowait(text)
+    except queue.Full:
+        # TODO: logging warning that queue is full
+        pass
+
+
 def thread_loop(screen, msg_queue):
     while True:
         text = msg_queue.get()
@@ -69,7 +77,11 @@ def thread_loop(screen, msg_queue):
 
 def init():
     oled = Display()
-    message_que = queue.Queue(maxsize=100)
-    message_thread = threading.Thread(target=thread_loop, args=(oled, oled_messages), daemon=True, name="message")
+    message_thread = threading.Thread(target=thread_loop, args=(oled, message_queue), daemon=True, name="message")
     message_thread.start()
-    return message_que
+    
+    
+def shutdown():
+    # TDDO: logging warning that oled shutdown called
+    message_queue.join()
+    # TODO: logging warning oled shutdown complete
