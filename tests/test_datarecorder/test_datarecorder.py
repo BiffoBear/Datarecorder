@@ -11,7 +11,7 @@ from unittest.mock import Mock, patch, call
 import board
 import RPi.GPIO as rpigpio
 from Datarecorder.datarecorder import main, _dataprocessing
-from Datarecorder.helpers import oled_display
+from Datarecorder.helpers import display
 from __config__ import (
     RFM69_INTERRUPT_PIN,
     DB_URL,

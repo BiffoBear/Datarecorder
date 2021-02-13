@@ -132,7 +132,14 @@ class TestDisplayClass:
 
 
 def test_queue_is_fifo_with_maxsize_100():
+    # Queue is global and persistent, so empty it before testing.
+    try:
+        while True:
+            display.message_queue.get_nowait()
+    except queue.Empty:
+        pass
     assert display.message_queue.empty()
+    # Perform tests
     display.message_queue.put("Hello World")
     display.message_queue.put("Byeee!")
     assert display.message_queue.get() == "Hello World"

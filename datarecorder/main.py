@@ -13,7 +13,8 @@ import digitalio
 import RPi.GPIO as rpigpio
 import adafruit_rfm69
 from database import database
-from helpers.display import oled_messages
+from helpers import display
+from helpers.display import oled_message
 from helpers.radiohelper import RFM69_ENCRYPTION_KEY
 from . import _dataprocessing, _handleevents
 from __config__ import RFM69_INTERRUPT_PIN, FILE_DEBUG_LEVEL, CONSOLE_DEBUG_LEVEL
@@ -73,7 +74,7 @@ def initialize_rfm69():
         rfm69 = adafruit_rfm69.RFM69(spi, cs_pin, reset, 433)
         rfm69.encryption_key = RFM69_ENCRYPTION_KEY
         logger.info("RFM69 radio initialized successfully")
-        oled_messages.put("Radio initialized OK")
+        oled_message("Radio initialized OK")
         return rfm69
     except RuntimeError as error:
         logger.critical("RFM69 radio failed to initialize with RuntimeError")
@@ -102,7 +103,7 @@ def start_up(
     initialize_processing_thread()
     rfm69 = initialize_rfm69()
     initialize_gpio_interrupt(pi_irq_pin)
-    oled_display.init_display_thread()
+    display.init()
     _handleevents.init_event_thread()
 
     rfm69.listen()
@@ -117,4 +118,4 @@ def shut_down(pi_irq_pin=RFM69_INTERRUPT_PIN):
     rpigpio.remove_event_detect(pi_irq_pin)
     _dataprocessing.radio_q.join()
     _handleevents.event_queue.join()
-    oled_display.shut_down()
+    display.shutdown()

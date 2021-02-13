@@ -12,7 +12,7 @@ from datetime import datetime
 import struct
 from database import database
 from helpers import radiohelper
-from helpers.display import oled_messages
+from helpers.display import oled_message
 from __config__ import FILE_DEBUG_LEVEL
 from . import _handleevents
 
@@ -72,8 +72,8 @@ def packet_missing_or_duplicate(node_data):
             node_id,
             new_packet_serial_number,
         )
-        oled_messages.put(f"First data node 0x{node_id:02x}")
-        oled_messages.put(
+        oled_message(f"First data node 0x{node_id:02x}")
+        oled_message(
             f"Rx 0x{node_id:02x} sn 0x{new_packet_serial_number:04x}"
         )
         last_packet_info[node_id] = {
@@ -86,7 +86,7 @@ def packet_missing_or_duplicate(node_data):
             old_packet_serial_number
         ):
             logger.warning("Data packet missing from node 0x%2.2x", node_id)
-            oled_messages.put(
+            oled_message(
                 f"*Data missing from node 0x{node_id:02x}*"
             )
         last_packet_info[node_id] = {
@@ -98,7 +98,7 @@ def packet_missing_or_duplicate(node_data):
             node_id,
             new_packet_serial_number,
         )
-        oled_messages.put(
+        oled_message(
             f"Rx 0x{node_id:02x} sn 0x{new_packet_serial_number:04x}"
         )
         return False
@@ -124,7 +124,7 @@ def process_radio_data():
                 _handleevents.write_event_to_queue(events)
     except ValueError:
         logger.warning("Bad data packet detected")
-        oled_messages.put("*Bad data packet Rx*")
+        oled_message("*Bad data packet Rx*")
     radio_q.task_done()
 
 
