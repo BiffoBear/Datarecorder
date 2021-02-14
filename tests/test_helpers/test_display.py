@@ -106,6 +106,7 @@ class TestDisplayClass:
 
     @pytest.mark.parametrize("text,block", [("Hello World", "Text block1"), ("Farewell", "Text Block2")])
     def test_message_calls_correct_functions(self, mocker, text, block):
+        mock_ssd1306 = mocker.patch.object(display.adafruit_ssd1306, "SSD1306_I2C", side_effect=["SSD1306"])
         mock_write_line_to_buffer = mocker.patch.object(display.Display, "_write_to_buffer", autospec=True)
         mock_line_buffer_to_text = mocker.patch.object(display.Display, "_line_buffer_to_text", autospec=True, side_effect=[block])
         mock_draw_text_to_image = mocker.patch.object(display.Display, "_draw_text_to_image", autospec=True)

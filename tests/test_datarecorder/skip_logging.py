@@ -59,7 +59,7 @@ class TestMainLoggingCalls:
         _3 = mocker.patch.object(main, "initialize_database", autospec=True)
         _4 = mocker.patch.object(main, "initialize_logging", autospec=True)
         # TODO: Implement logging in new display module
-        # _5 = mocker.patch.object(oled_display, "init_display_thread", autospec=True)
+        _5 = mocker.patch.object(display, "init", autospec=True)
         mock_rfm = mocker.patch.object(main, "initialize_rfm69", autospec=True)
         mock_rfm.return_value = Mock()
         with caplog.at_level(logging.INFO, logger='Datarecorder.datarecorder.main'):
@@ -69,7 +69,7 @@ class TestMainLoggingCalls:
     def test_shutdown(self, mocker, caplog):
         _1 = mocker.patch.object(rpigpio, "remove_event_detect", autospec=True)
         _2 = mocker.patch.object(_dataprocessing.radio_q, "join", autospec=True)
-        _3 = mocker.patch.object(display, "shutdown", autospec=True)
+        _3 = mocker.patch.object(main.display, "shutdown", autospec=True)
         with caplog.at_level(logging.INFO, logger='Datarecorder.datarecorder.main'):
             main.shut_down(0)
         assert "shut_down_called" in caplog.text
