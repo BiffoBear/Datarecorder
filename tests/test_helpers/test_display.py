@@ -25,13 +25,13 @@ class TestDisplayClass:
 
     def test_write_to_line_buffer_truncates_long_lines_using_maxlen(self):
         oled = display.Display()
-        assert oled._LINE_MAXLEN == 20
-        test_lines = ["", "A" * 5, "B" * oled._LINE_MAXLEN, "C" * (oled._LINE_MAXLEN + 1)]
+        assert oled._line_maxlen == 20
+        test_lines = ["", "A" * 5, "B" * oled._line_maxlen, "C" * (oled._line_maxlen + 1)]
         [oled._write_to_buffer(line=line) for line in test_lines]
         expected_result = deque(test_lines[:-1])
-        expected_result.append("".join(["C" * (oled._LINE_MAXLEN - 3), "..."]))
+        expected_result.append("".join(["C" * (oled._line_maxlen - 3), "..."]))
         assert oled._screen_line_buffer == expected_result
-        oled._LINE_MAXLEN = 18
+        oled._line_maxlen = 18
         oled._write_to_buffer(line="D" * 20)
         assert oled._screen_line_buffer.pop() == "".join(["D" * 15, "..."])
 
@@ -49,16 +49,16 @@ class TestDisplayClass:
 
     def test_display_has_settings_for_pil(self):
         oled = display.Display()
-        assert oled._OLED_WIDTH == 128
-        assert oled._OLED_HEIGHT == 64
-        assert oled._COLOUR_DEPTH == "1"
+        assert oled._oled_width == 128
+        assert oled._oled_height == 64
+        assert oled._colour_depth == "1"
         assert isinstance(oled._font, PIL.ImageFont.ImageFont)
 
     def test_pil_image_is_called_with_correct_args(self, mocker):
         oled = display.Display()
         assert isinstance(oled._image, PIL.Image.Image)
-        assert oled._image.mode == oled._COLOUR_DEPTH
-        assert oled._image.size == (oled._OLED_WIDTH, oled._OLED_HEIGHT)
+        assert oled._image.mode == oled._colour_depth
+        assert oled._image.size == (oled._oled_width, oled._oled_height)
 
     def test_draw_text_on_pil_image(self):
         oled = display.Display()
@@ -92,7 +92,7 @@ class TestDisplayClass:
         mock_i2c = mocker.patch.object(board, "I2C", autospec=True, side_effect=["I2C"])
         mock_ssd1306 = mocker.patch.object(display.adafruit_ssd1306, "SSD1306_I2C", side_effect=[side_effect])
         oled = display.Display()
-        mock_ssd1306.assert_called_once_with(oled._OLED_WIDTH, oled._OLED_HEIGHT, oled._i2c, addr=0x3d, reset=oled._reset_pin)
+        mock_ssd1306.assert_called_once_with(oled._oled_width, oled._oled_height, oled._i2c, addr=0x3d, reset=oled._reset_pin)
         assert oled._ssd == result
         
     def test_update_calls_ssd_image_image_and_ssd_image_show(self, mocker):
