@@ -31,7 +31,7 @@ class Display:
         except ValueError:
             self._i2c = None
             # TODO: logging warning
-        self._reset_pin = digitalio.DigitalInOut(board.D17)
+        self._reset_pin = digitalio.DigitalInOut(board.D16)
         # If the OLED can't be initialized, set it to None. Messages will then be ignored
         try:
             self._ssd = adafruit_ssd1306.SSD1306_I2C(
