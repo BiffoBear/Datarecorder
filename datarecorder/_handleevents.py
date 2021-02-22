@@ -14,12 +14,12 @@ import urllib.request
 logger = logging.getLogger(__name__)
 
 GATE_OPEN = (
-    "https://biffo.synology.me:5001/webapi/entry.cgi?api=SYNO.SurveillanceStation."
+    "https://192.168.1.10:5001/webapi/entry.cgi?api=SYNO.SurveillanceStation."
     'Webhook&method="Incoming"&version=1&'
     "token=BQdC2UYiqxqP0zEUZ9UXh3uvhPFZCqLls8YcRzk1o5TFj6mx9FFPzm9Tm7LUxwhH"
 )
 GATE_CLOSE = (
-    "https://biffo.synology.me:5001/webapi/entry.cgi?api=SYNO.SurveillanceStation."
+    "https://192.168.1.10:5001/webapi/entry.cgi?api=SYNO.SurveillanceStation."
     'Webhook&method="Incoming"&version=1&'
     "token=A0Wngnir5CqVDnS8M1fDIgWTZviD2FjrJ2caEJZImqjXHqOGuZQz14OOOcn2wFXH"
 )
